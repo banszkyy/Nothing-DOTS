@@ -111,7 +111,7 @@ public partial struct PlayerSystemServer : ISystem
                 {
                     ConnectionId = source.Value,
                     ConnectionState = PlayerConnectionState.Connected,
-                    Team = -1,
+                    Team = Player.UnassignedTeam,
                     IsCoreComputerSpawned = false,
                     Guid = guid,
                     Nickname = command.ValueRO.Nickname,
@@ -180,7 +180,7 @@ public partial struct PlayerSystemServer : ISystem
         foreach (var player in
             SystemAPI.Query<RefRW<Player>>())
         {
-            if (player.ValueRO.Team == -1)
+            if (player.ValueRO.Team == Player.UnassignedTeam)
             {
                 player.ValueRW.Team = TeamCounter++;
             }

@@ -6,6 +6,8 @@ using UnityEngine.UIElements;
 
 public class UI : PrivateSingleton<UI>
 {
+#if EDITOR_DEBUG
+    [Header("Debug")]
     [SerializeField, ReadOnly] UIDocument?[]? _uiDocuments;
     [SerializeField, ReadOnly] UIDocument? _focusedDocument;
     [SerializeField, ReadOnly] bool _isUiFocused;
@@ -22,6 +24,7 @@ public class UI : PrivateSingleton<UI>
         }
         _isUiFocused = IsUIFocused;
     }
+#endif
 
     static ImmutableArray<UIDocument?> UIDocuments
     {

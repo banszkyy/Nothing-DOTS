@@ -23,6 +23,8 @@ public enum GameOutcome : byte
 [BurstCompile]
 public struct Player : IComponentData
 {
+    public const int UnassignedTeam = -1;
+
     [GhostField] public int ConnectionId;
     [GhostField] public PlayerConnectionState ConnectionState;
     [GhostField] public int Team;

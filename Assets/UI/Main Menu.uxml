@@ -1,14 +1,16 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style" />
+    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; justify-content: center; align-items: center;">
         <ui:GroupBox text="Menu" class="panel">
-            <ui:TextField name="input-host" value="127.0.0.1:7777" />
-            <ui:Label name="input-error-host" class="error" style="display: none;" />
-            <ui:TextField name="input-nickname" value="Someone" max-length="16" />
-            <ui:Label name="input-error-nickname" class="error" style="display: none;" />
-            <ui:Button text="Host" name="button-host" />
-            <ui:Button text="Server" name="button-server" />
-            <ui:Button text="Client" name="button-client" />
+            <ui:TextField name="input-host" value="127.0.0.1:7777"/>
+            <ui:Label name="input-error-host" class="error" style="display: none;"/>
+            <ui:TextField name="input-nickname" value="Someone" max-length="16"/>
+            <ui:Label name="input-error-nickname" class="error" style="display: none;"/>
+            <ui:Button text="Singleplayer" name="button-singleplayer"/>
+            <ui:Button text="Host" name="button-host"/>
+            <ui:Button text="Server" name="button-server"/>
+            <ui:Button text="Client" name="button-client"/>
+            <ui:Button text="Staging" name="button-staging"/>
         </ui:GroupBox>
     </ui:VisualElement>
 </ui:UXML>

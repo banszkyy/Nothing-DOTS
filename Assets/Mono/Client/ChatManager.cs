@@ -9,6 +9,13 @@ using UnityEngine.UIElements;
 
 public class ChatManager : Singleton<ChatManager>
 {
+    public enum ChatMessageSenderKind
+    {
+        System,
+        Server,
+        Player,
+    }
+
     readonly struct ChatMessage
     {
         public readonly int Sender;
@@ -137,9 +144,15 @@ public class ChatManager : Singleton<ChatManager>
     {
         _containerMessages.SyncList(_chatMessages, _chatMessageTemplate, (item, element, reuse) =>
         {
-            element.EnableInClassList("server-message", item.Sender == 0);
-            element.EnableInClassList("system-message", item.Sender == -1);
-            element.EnableInClassList("player-message", item.Sender > 0);
+            ChatMessageSenderKind senderKind = item.Sender switch
+            {
+                -1 => ChatMessageSenderKind.System,
+                0 => World.DefaultGameObjectInjectionWorld.Unmanaged.IsLocal() ? ChatMessageSenderKind.Player : ChatMessageSenderKind.Server,
+                _ => ChatMessageSenderKind.Player,
+            };
+            element.EnableInClassList("server-message", senderKind == ChatMessageSenderKind.Server);
+            element.EnableInClassList("system-message", senderKind == ChatMessageSenderKind.System);
+            element.EnableInClassList("player-message", senderKind == ChatMessageSenderKind.Player);
             element.userData = item;
 
             if (item.Sender > 0)

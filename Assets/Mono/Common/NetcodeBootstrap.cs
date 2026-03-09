@@ -11,6 +11,7 @@ class NetcodeBootstrap : ClientServerBootstrap
     public static new World? ServerWorld = default;
     public static new World? ClientWorld = default;
     public static World? LocalWorld = default;
+    public static World? StagingWorld = default;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Init()
@@ -18,6 +19,7 @@ class NetcodeBootstrap : ClientServerBootstrap
         ServerWorld = null;
         ClientWorld = null;
         LocalWorld = null;
+        StagingWorld = null;
     }
 
     public static void DestroyLocalWorld()
@@ -35,7 +37,7 @@ class NetcodeBootstrap : ClientServerBootstrap
         LocalWorld = null;
     }
 
-    public static IEnumerator CreateLocal()
+    public static IEnumerator CreateLocal(string? savefile)
     {
         LocalWorld = CreateLocalWorld("LocalWorld");
 
@@ -60,17 +62,27 @@ class NetcodeBootstrap : ClientServerBootstrap
             }
         }
 
-        using EntityQuery prefabsQ = LocalWorld.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PrefabDatabase>());
-        if (prefabsQ.TryGetSingleton(out PrefabDatabase prefabs))
+        if (savefile is not null)
         {
-            Debug.Log($"{DebugEx.LocalPrefix} Local player created");
-            Entity newPlayer = LocalWorld.EntityManager.Instantiate(prefabs.Player);
-            LocalWorld.EntityManager.SetComponentData<Player>(newPlayer, new()
+            EntityCommandBuffer entityCommandBuffer = new(Unity.Collections.Allocator.Temp);
+            SaveManager.Load(LocalWorld, entityCommandBuffer, savefile);
+            entityCommandBuffer.Playback(LocalWorld.EntityManager);
+            entityCommandBuffer.Dispose();
+        }
+        else
+        {
+            using EntityQuery prefabsQ = LocalWorld.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PrefabDatabase>());
+            if (prefabsQ.TryGetSingleton(out PrefabDatabase prefabs))
             {
-                ConnectionId = 0,
-                ConnectionState = PlayerConnectionState.Local,
-                Team = -1,
-            });
+                Debug.Log($"{DebugEx.LocalPrefix} Local player created");
+                Entity newPlayer = LocalWorld.EntityManager.Instantiate(prefabs.Player);
+                LocalWorld.EntityManager.SetComponentData<Player>(newPlayer, new()
+                {
+                    ConnectionId = 0,
+                    ConnectionState = PlayerConnectionState.Local,
+                    Team = Player.UnassignedTeam,
+                });
+            }
         }
     }
 
@@ -122,7 +134,7 @@ class NetcodeBootstrap : ClientServerBootstrap
                 {
                     ConnectionId = 0,
                     ConnectionState = PlayerConnectionState.Server,
-                    Team = -1,
+                    Team = Player.UnassignedTeam,
                 });
             }
         }
@@ -155,6 +167,55 @@ class NetcodeBootstrap : ClientServerBootstrap
 
         using EntityQuery driverQ = ClientWorld.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
         driverQ.GetSingletonRW<NetworkStreamDriver>().ValueRW.Connect(ClientWorld.EntityManager, endpoint);
+    }
+
+    public static IEnumerator CreateStaging(string? savefile)
+    {
+        StagingWorld = CreateLocalWorld("StagingWorld");
+
+        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        while (!StagingWorld.IsCreated)
+        {
+            yield return null;
+        }
+
+        if (subScenes != null)
+        {
+            for (int i = 0; i < subScenes.Length; i++)
+            {
+                SceneSystem.LoadParameters loadParameters = new() { Flags = SceneLoadFlags.BlockOnStreamIn };
+                Entity sceneEntity = SceneSystem.LoadSceneAsync(StagingWorld.Unmanaged, new Unity.Entities.Hash128(subScenes[i].SceneGUID.Value), loadParameters);
+                while (!SceneSystem.IsSceneLoaded(StagingWorld.Unmanaged, sceneEntity))
+                {
+                    StagingWorld.Update();
+                    yield return null;
+                }
+            }
+        }
+
+        if (savefile is not null)
+        {
+            EntityCommandBuffer entityCommandBuffer = new(Unity.Collections.Allocator.Temp);
+            SaveManager.Load(StagingWorld, entityCommandBuffer, savefile);
+            entityCommandBuffer.Playback(StagingWorld.EntityManager);
+            entityCommandBuffer.Dispose();
+        }
+        else
+        {
+            using EntityQuery prefabsQ = StagingWorld.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PrefabDatabase>());
+            if (prefabsQ.TryGetSingleton(out PrefabDatabase prefabs))
+            {
+                Debug.Log($"{DebugEx.LocalPrefix} Local player created");
+                Entity newPlayer = StagingWorld.EntityManager.Instantiate(prefabs.Player);
+                StagingWorld.EntityManager.SetComponentData<Player>(newPlayer, new()
+                {
+                    ConnectionId = 0,
+                    ConnectionState = PlayerConnectionState.Local,
+                    Team = Player.UnassignedTeam,
+                });
+            }
+        }
     }
 
     public override bool Initialize(string defaultWorldName)

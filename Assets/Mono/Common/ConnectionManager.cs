@@ -14,12 +14,15 @@ public class ConnectionManager : Singleton<ConnectionManager>
     public static World? ClientWorld => NetcodeBootstrap.ClientWorld;
     public static World? ServerWorld => NetcodeBootstrap.ServerWorld;
     public static World? LocalWorld => NetcodeBootstrap.LocalWorld;
+    public static World? StagingWorld => NetcodeBootstrap.StagingWorld;
 
     public static World ClientOrDefaultWorld => NetcodeBootstrap.ClientWorld ?? NetcodeBootstrap.LocalWorld ?? World.DefaultGameObjectInjectionWorld;
     public static World ServerOrDefaultWorld => NetcodeBootstrap.ServerWorld ?? NetcodeBootstrap.LocalWorld ?? World.DefaultGameObjectInjectionWorld;
+    public static World StagingOrDefaultWorld => NetcodeBootstrap.StagingWorld ?? NetcodeBootstrap.LocalWorld ?? World.DefaultGameObjectInjectionWorld;
 
     [SerializeField, NotNull] GameObject? ServerObjects = default;
     [SerializeField, NotNull] GameObject? ClientObjects = default;
+    [SerializeField, NotNull] GameObject? StagingObjects = default;
 
     NetCodeConnectionEvent LatestEvent;
 
@@ -39,6 +42,11 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
     void Start()
     {
+        MainMenuUI.rootVisualElement.Q<Button>("button-singleplayer").clicked += () =>
+        {
+            if (!HandleInput(out _, out FixedString32Bytes nickname)) return;
+            StartCoroutine(StartSingleplayerAsync(nickname, null));
+        };
         MainMenuUI.rootVisualElement.Q<Button>("button-host").clicked += () =>
         {
             if (!HandleInput(out NetworkEndpoint endpoint, out FixedString32Bytes nickname)) return;
@@ -54,13 +62,18 @@ public class ConnectionManager : Singleton<ConnectionManager>
             if (!HandleInput(out NetworkEndpoint endpoint, out _)) return;
             StartCoroutine(StartServerAsync(endpoint, null));
         };
+        MainMenuUI.rootVisualElement.Q<Button>("button-staging").clicked += () =>
+        {
+            if (!HandleInput(out _, out FixedString32Bytes nickname)) return;
+            StartCoroutine(StartStagingAsync(nickname, null));
+        };
 
 #if UNITY_EDITOR && EDITOR_DEBUG
         if (AutoHost)
         {
             if (Singleplayer)
             {
-                StartCoroutine(StartSingleplayerAsync(DebugNickname));
+                StartCoroutine(StartSingleplayerAsync(DebugNickname, string.IsNullOrWhiteSpace(DebugSavefile) || !File.Exists(DebugSavefile) ? null : DebugSavefile));
             }
             else if (NoClient)
             {
@@ -203,7 +216,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         }
     }
 
-    public IEnumerator StartSingleplayerAsync(FixedString32Bytes nickname)
+    public IEnumerator StartSingleplayerAsync(FixedString32Bytes nickname, string? savefile)
     {
         Debug.Log($"{DebugEx.AnyPrefix} Start singleplayer");
 
@@ -214,7 +227,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         NetcodeBootstrap.DestroyLocalWorld();
 
         Debug.Log($" -> CreateLocal");
-        yield return StartCoroutine(NetcodeBootstrap.CreateLocal());
+        yield return StartCoroutine(NetcodeBootstrap.CreateLocal(savefile));
 
         Debug.Log($" -> DefaultGameObjectInjectionWorld");
         World.DefaultGameObjectInjectionWorld ??= NetcodeBootstrap.LocalWorld!;
@@ -223,6 +236,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
         ServerObjects.SetActive(true);
         Debug.Log($" -> Enabling client objects");
         ClientObjects.SetActive(true);
+        Debug.Log($" -> Disabling staging objects");
+        StagingObjects.SetActive(false);
         yield return new WaitForEndOfFrame();
 
         Debug.Log($" -> Set nickname to \"{nickname}\"");
@@ -256,9 +271,10 @@ public class ConnectionManager : Singleton<ConnectionManager>
         Debug.Log($" -> DefaultGameObjectInjectionWorld");
         World.DefaultGameObjectInjectionWorld ??= ServerWorld!;
 
-        Debug.Log($" -> EnablingServerObjects");
-        yield return new WaitForEndOfFrame();
+        Debug.Log($" -> Enabling server objects");
         ServerObjects.SetActive(true);
+        Debug.Log($" -> Disabling staging objects");
+        StagingObjects.SetActive(false);
         yield return new WaitForEndOfFrame();
 
         using (EntityQuery driverQ = ServerWorld!.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>()))
@@ -274,7 +290,6 @@ public class ConnectionManager : Singleton<ConnectionManager>
         Debug.Log($" -> Set nickname to {nickname}");
         PlayerSystemClient.GetInstance(ClientWorld!.Unmanaged).SetNickname(nickname);
 
-        yield return new WaitForEndOfFrame();
         Debug.Log($" -> Enabling client objects");
         ClientObjects.SetActive(true);
         yield return new WaitForEndOfFrame();
@@ -308,6 +323,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
         ServerObjects.SetActive(false);
         Debug.Log($" -> Enabling client objects");
         ClientObjects.SetActive(true);
+        Debug.Log($" -> Disabling staging objects");
+        StagingObjects.SetActive(false);
         yield return new WaitForEndOfFrame();
 
         Debug.Log($" -> Set nickname to {nickname}");
@@ -334,6 +351,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
         ServerObjects.SetActive(true);
         Debug.Log($" -> Disabling client objects");
         ClientObjects.SetActive(false);
+        Debug.Log($" -> Disabling staging objects");
+        StagingObjects.SetActive(false);
         yield return new WaitForEndOfFrame();
 
         Debug.Log($" -> Disabling UI");
@@ -341,6 +360,45 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
 #if UNITY_EDITOR && EDITOR_DEBUG
         if (SetupManager.Instance.isActiveAndEnabled && savefile == null)
+        {
+            Debug.Log($" -> SetupManager.Instance.Setup()");
+            SetupManager.Instance.Setup();
+        }
+#endif
+    }
+
+    public IEnumerator StartStagingAsync(FixedString32Bytes nickname, string? savefile)
+    {
+        Debug.Log($"{DebugEx.AnyPrefix} Start staging");
+
+        MainMenuUI.enabled = false;
+        NetworkUI.enabled = false;
+
+        Debug.Log($" -> NetcodeBootstrap.DestroyLocalWorld");
+        NetcodeBootstrap.DestroyLocalWorld();
+
+        Debug.Log($" -> CreateLocal");
+        yield return StartCoroutine(NetcodeBootstrap.CreateStaging(savefile));
+
+        Debug.Log($" -> DefaultGameObjectInjectionWorld");
+        World.DefaultGameObjectInjectionWorld ??= NetcodeBootstrap.StagingWorld!;
+
+        Debug.Log($" -> Enabling server objects");
+        ServerObjects.SetActive(true);
+        Debug.Log($" -> Enabling client objects");
+        ClientObjects.SetActive(true);
+        Debug.Log($" -> Enabling staging objects");
+        StagingObjects.SetActive(true);
+        yield return new WaitForEndOfFrame();
+
+        Debug.Log($" -> Set nickname to \"{nickname}\"");
+        PlayerSystemClient.GetInstance(StagingWorld!.Unmanaged).SetNickname(nickname);
+
+        Debug.Log($" -> Disabling UI");
+        MainMenuUI.enabled = false;
+
+#if UNITY_EDITOR && EDITOR_DEBUG
+        if (SetupManager.Instance.isActiveAndEnabled)
         {
             Debug.Log($" -> SetupManager.Instance.Setup()");
             SetupManager.Instance.Setup();

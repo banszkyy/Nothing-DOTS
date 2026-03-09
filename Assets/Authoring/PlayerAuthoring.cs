@@ -11,7 +11,7 @@ class PlayerAuthoring : MonoBehaviour
             Entity entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent<Player>(entity, new()
             {
-                Team = -1,
+                Team = Player.UnassignedTeam,
             });
             AddBuffer<BufferedAcquiredResearch>(entity);
         }

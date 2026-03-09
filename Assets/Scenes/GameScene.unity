@@ -1391,6 +1391,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ServerObjects: {fileID: 1323827595}
   ClientObjects: {fileID: 1551354252}
+  StagingObjects: {fileID: 1439197459}
   MainMenuUI: {fileID: 1516148612}
   NetworkUI: {fileID: 757861203}
   DebugNickname: bruh
@@ -1544,6 +1545,7 @@ Transform:
   - {fileID: 513005738}
   - {fileID: 1323827596}
   - {fileID: 1551354253}
+  - {fileID: 1439197460}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1015712117
@@ -2262,6 +2264,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4a2f1a511f70efc3b94a81a08363184, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1439197459
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1439197460}
+  m_Layer: 0
+  m_Name: Staging
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1439197460
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1439197459}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1001118307}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1460299518
 GameObject:
   m_ObjectHideFlags: 0

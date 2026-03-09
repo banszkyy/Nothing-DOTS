@@ -822,7 +822,7 @@ class SaveManager : MonoBehaviour
                 {
                     ConnectionId = -1,
                     ConnectionState = PlayerConnectionState.Disconnected,
-                    Team = -1,
+                    Team = Player.UnassignedTeam,
                     IsCoreComputerSpawned = false,
                     Guid = default,
                     Nickname = default,
