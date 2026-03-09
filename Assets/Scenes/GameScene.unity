@@ -235,72 +235,86 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SpawnExactUnits: 1
   Units:
-  - Enabled: 0
-    Prefab: {fileID: 1289979656329170851, guid: 9a341ad25308cd27d8c38c9c9143c6fb,
+  - Prefab: {fileID: 1289979656329170851, guid: 9a341ad25308cd27d8c38c9c9143c6fb,
       type: 3}
+    Script: radar-1.bbc
+    Team: 0
+    Enabled: 0
     Spawn:
       x: 8.163315
       y: 0.31123734
-    Script: radar-1.bbc
-    Team: 0
-  - Enabled: 1
-    Prefab: {fileID: 8427767388040926130, guid: cc59288c4e704e5c696de44ebc0bbb67,
+  - Prefab: {fileID: 8427767388040926130, guid: cc59288c4e704e5c696de44ebc0bbb67,
       type: 3}
+    Script: unit-6.bbc
+    Team: 0
+    Enabled: 0
     Spawn:
       x: -5.2052374
       y: 3.8112168
-    Script: unit-6.bbc
-    Team: 0
-  - Enabled: 0
-    Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48,
+  - Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48,
       type: 3}
+    Script: pc.bbc
+    Team: 0
+    Enabled: 0
     Spawn:
       x: 0.9639473
       y: 7.277996
-    Script: pc.bbc
-    Team: 0
-  - Enabled: 0
-    Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
+  - Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
       type: 3}
+    Script: 
+    Team: 0
+    Enabled: 0
     Spawn:
       x: -2.1056495
       y: 1.323555
+  - Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
+      type: 3}
     Script: 
     Team: 0
-  - Enabled: 0
-    Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
-      type: 3}
+    Enabled: 0
     Spawn:
       x: 0.04
       y: -0.003382206
+  - Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
+      type: 3}
     Script: 
     Team: 0
-  - Enabled: 0
-    Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
-      type: 3}
+    Enabled: 0
     Spawn:
       x: -0.87289417
       y: -2.533619
+  - Prefab: {fileID: 1287691938842737703, guid: b686aecd0774a0eb98551c108a20bb36,
+      type: 3}
     Script: 
     Team: 0
-  - Enabled: 0
-    Prefab: {fileID: 1287691938842737703, guid: b686aecd0774a0eb98551c108a20bb36,
-      type: 3}
+    Enabled: 0
     Spawn:
       x: -3.5823903
       y: -0.008090019
+  SpawnRandomUnits_: 1
+  RandomUnits:
+  - Prefab: {fileID: 1287691938842737703, guid: b686aecd0774a0eb98551c108a20bb36,
+      type: 3}
     Script: 
     Team: 0
-  Team: 0
-  GeneratedScript: unit-6.bbc
-  GeneratedCount: 30
-  Density: 37.16
-  Start: {x: 0, y: -0.47109294}
-  End: {x: 0, y: 0}
-  RandomUnitPrefab: {fileID: 1287691938842737703, guid: b686aecd0774a0eb98551c108a20bb36,
-    type: 3}
-  RandomRotation: 1
-  RandomPosition: 1
+    Enabled: 1
+    Count: 50
+    Density: 50
+    Start: {x: 0, y: 0}
+    End: {x: 0, y: 0}
+    RandomRotation: 1
+    RandomPosition: 1
+  - Prefab: {fileID: 8427767388040926130, guid: cc59288c4e704e5c696de44ebc0bbb67,
+      type: 3}
+    Script: unit-6.bbc
+    Team: 0
+    Enabled: 1
+    Count: 4
+    Density: 26.92
+    Start: {x: 0, y: 0}
+    End: {x: 0, y: 0}
+    RandomRotation: 1
+    RandomPosition: 1
   Deterministic: 1
   RandomSeed: 2
 --- !u!1 &120918566
