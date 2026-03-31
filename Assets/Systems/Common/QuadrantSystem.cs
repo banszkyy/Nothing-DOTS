@@ -172,14 +172,10 @@ public struct Cell : IEquatable<Cell>
 
     public static Color Color(uint key)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
         if (key == uint.MaxValue) return UnityEngine.Color.white;
         var random = Unity.Mathematics.Random.CreateFromIndex(key);
         var c = random.NextFloat3();
         return new Color(c.x, c.y, c.z);
-#else
-        return default;
-#endif
     }
 
     public static void Draw(Cell cell, float duration = 0.1f)

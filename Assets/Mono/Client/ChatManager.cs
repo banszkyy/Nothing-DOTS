@@ -111,9 +111,8 @@ public class ChatManager : Singleton<ChatManager>
                 message = ReadOnlySpan<char>.Empty;
             }
 
-            NetcodeUtils.CreateRPC(ConnectionManager.ClientOrDefaultWorld.Unmanaged, new ChatMessageRpc()
+            NetcodeUtils.CreateRPC(ConnectionManager.ClientOrDefaultWorld.Unmanaged, new ChatMessageRequestRpc()
             {
-                Sender = 0,
                 Message = chunk.ToString(),
                 Time = time,
             });

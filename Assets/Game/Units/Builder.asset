@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Builder
   m_EditorClassIdentifier: 
   Prefab: {fileID: 2099412289264216910, guid: dcfcb0932d225e2e58109005d1661adf, type: 3}
+  HologramPrefab: {fileID: 7887398088158380673, guid: 4b6acb99ecae1bf38b6b4b02b246c0a5,
+    type: 3}
   ProductionTime: 1
   RequiredResources: 1
   RequiredResearch: {fileID: 0}

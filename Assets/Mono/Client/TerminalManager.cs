@@ -756,9 +756,9 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             if (terminalSubscription == null)
             {
                 Debug.Log($"{DebugEx.AnyPrefix} Terminal not subscribed, subscribing ...");
-                terminalSubscription = ConnectionManager.ClientOrDefaultWorld.GetSystem<TerminalSystemClient>().Subscribe(t);
+                terminalSubscription = ConnectionManager.ClientOrDefaultWorld.GetSystem<TerminalSystemClient>().Subscribe(unitEntity);
             }
-            else if (!terminalSubscription.Entity.Equals(t))
+            else if (!terminalSubscription.Ghost.Equals(t))
             {
                 Debug.Log($"{DebugEx.AnyPrefix} Wrong terminal subscribed, unsubscribing ...");
                 ConnectionManager.ClientOrDefaultWorld.GetSystem<TerminalSystemClient>().Unsubscribe(t);
@@ -1122,7 +1122,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         _scheduledSource = null;
         if (terminalSubscription != null && ConnectionManager.ClientOrDefaultWorld.IsClient())
         {
-            ConnectionManager.ClientOrDefaultWorld.GetSystem<TerminalSystemClient>().Unsubscribe(terminalSubscription.Entity);
+            ConnectionManager.ClientOrDefaultWorld.GetSystem<TerminalSystemClient>().Unsubscribe(terminalSubscription.Ghost);
             terminalSubscription = null;
         }
 

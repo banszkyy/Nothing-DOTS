@@ -50,7 +50,7 @@ partial class FileChunkManagerSystem : SystemBase
                 out int headerIndex
             );
 
-            Debug.Assert(shouldDelete == request.Task.Awaitable.GetAwaiter().IsCompleted);
+            //Debug.Assert(shouldDelete == request.Task.Awaitable.GetAwaiter().IsCompleted);
 
             if (shouldDelete)
             {

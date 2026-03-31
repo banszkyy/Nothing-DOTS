@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Transporter
   m_EditorClassIdentifier: 
   Prefab: {fileID: 8196213229133260831, guid: db5fdfea86a3f105cba31ebaf6206a76, type: 3}
+  HologramPrefab: {fileID: 7887398088158380673, guid: 0a11cc93fb7b9cbf19d6f92aa5c199e4,
+    type: 3}
   ProductionTime: 1
   RequiredResources: 1
   RequiredResearch: {fileID: 0}

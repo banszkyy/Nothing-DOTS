@@ -7,13 +7,15 @@ using Unity.NetCode;
 class TerminalSubscriptionClient : IDisposable
 {
     public const int MaxLength = 1024;
-    public readonly SpawnedGhost Entity;
+    public readonly SpawnedGhost Ghost;
+    public readonly Entity Entity;
     public readonly NativeList<byte> Data;
     public ulong Offset;
     public int References;
 
-    public TerminalSubscriptionClient(SpawnedGhost entity, Allocator allocator)
+    public TerminalSubscriptionClient(SpawnedGhost ghost, Entity entity, Allocator allocator)
     {
+        Ghost = ghost;
         Entity = entity;
         Data = new(allocator);
         Offset = 0;
@@ -31,63 +33,65 @@ partial class TerminalSystemClient : SystemBase
 {
     readonly Dictionary<SpawnedGhost, TerminalSubscriptionClient> Subscriptions = new();
 
-    public TerminalSubscriptionClient Subscribe(SpawnedGhost entity, in EntityCommandBuffer commandBuffer)
+    public TerminalSubscriptionClient Subscribe(Entity entity, in EntityCommandBuffer commandBuffer)
     {
-        if (!Subscriptions.TryGetValue(entity, out TerminalSubscriptionClient subscription))
+        var ghost = SystemAPI.GetComponentRO<GhostInstance>(entity).ValueRO;
+        if (!Subscriptions.TryGetValue(ghost, out TerminalSubscriptionClient subscription))
         {
-            subscription = new(entity, Allocator.Persistent);
-            Subscriptions.Add(entity, subscription);
+            subscription = new(ghost, entity, Allocator.Persistent);
+            Subscriptions.Add(ghost, subscription);
         }
-        Debug.Log($"{DebugEx.ClientPrefix} Subscribing to terminal of entity {entity}");
+        Debug.Log($"{DebugEx.ClientPrefix} Subscribing to terminal of entity {ghost}");
         NetcodeUtils.CreateRPC(in commandBuffer, World.Unmanaged, new SubscribeTerminalRpc()
         {
-            Entity = entity,
+            Entity = ghost,
             Offset = 0,
         });
         subscription.References++;
         return subscription;
     }
 
-    public TerminalSubscriptionClient Subscribe(SpawnedGhost entity)
+    public TerminalSubscriptionClient Subscribe(Entity entity)
     {
-        if (!Subscriptions.TryGetValue(entity, out TerminalSubscriptionClient subscription))
+        var ghost = SystemAPI.GetComponentRO<GhostInstance>(entity).ValueRO;
+        if (!Subscriptions.TryGetValue(ghost, out TerminalSubscriptionClient subscription))
         {
-            subscription = new(entity, Allocator.Persistent);
-            Subscriptions.Add(entity, subscription);
+            subscription = new(ghost, entity, Allocator.Persistent);
+            Subscriptions.Add(ghost, subscription);
         }
-        Debug.Log($"{DebugEx.ClientPrefix} Subscribing to terminal of entity {entity}");
+        Debug.Log($"{DebugEx.ClientPrefix} Subscribing to terminal of entity {ghost}");
         NetcodeUtils.CreateRPC(World.Unmanaged, new SubscribeTerminalRpc()
         {
-            Entity = entity,
+            Entity = ghost,
             Offset = 0,
         });
         subscription.References++;
         return subscription;
     }
 
-    public void Unsubscribe(SpawnedGhost entity, in EntityCommandBuffer commandBuffer)
+    public void Unsubscribe(SpawnedGhost ghost, in EntityCommandBuffer commandBuffer)
     {
-        if (Subscriptions.TryGetValue(entity, out TerminalSubscriptionClient subscription))
+        if (Subscriptions.TryGetValue(ghost, out TerminalSubscriptionClient subscription))
         {
             if (--subscription.References > 0) return;
         }
-        Debug.Log($"{DebugEx.ClientPrefix} Unsubscribing from terminal of entity {entity}");
+        Debug.Log($"{DebugEx.ClientPrefix} Unsubscribing from terminal of entity {ghost}");
         NetcodeUtils.CreateRPC(in commandBuffer, World.Unmanaged, new UnsubscribeTerminalRpc()
         {
-            Entity = entity,
+            Entity = ghost,
         });
     }
 
-    public void Unsubscribe(SpawnedGhost entity)
+    public void Unsubscribe(SpawnedGhost ghost)
     {
-        if (Subscriptions.TryGetValue(entity, out TerminalSubscriptionClient subscription))
+        if (Subscriptions.TryGetValue(ghost, out TerminalSubscriptionClient subscription))
         {
             if (--subscription.References > 0) return;
         }
-        Debug.Log($"{DebugEx.ClientPrefix} Unsubscribing from terminal of entity {entity}");
+        Debug.Log($"{DebugEx.ClientPrefix} Unsubscribing from terminal of entity {ghost}");
         NetcodeUtils.CreateRPC(World.Unmanaged, new UnsubscribeTerminalRpc()
         {
-            Entity = entity,
+            Entity = ghost,
         });
     }
 
@@ -113,6 +117,13 @@ partial class TerminalSystemClient : SystemBase
                 subscription.Data.AddRange(command.ValueRO.Data.GetUnsafePtr(), command.ValueRO.Data.Length);
                 subscription.Offset = command.ValueRO.Offset + (ulong)command.ValueRO.Data.Length;
             }
+        }
+
+        foreach (var item in Subscriptions)
+        {
+            if (SystemAPI.Exists(item.Value.Entity)) continue;
+            Unsubscribe(item.Key, commandBuffer);
+            break;
         }
     }
 }

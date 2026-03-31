@@ -286,7 +286,7 @@ public class CameraControl : Singleton<CameraControl>
 
     void MoveWithDrag()
     {
-        if (!Mouse.current.middleButton.isPressed || !Keyboard.current.shiftKey.isPressed)
+        if (!Mouse.current.middleButton.isPressed || !Keyboard.current.shiftKey.isPressed || Movement.ReadValue<Vector2>() != default)
         {
             startDragWorld = default;
             startDragScreen = default;

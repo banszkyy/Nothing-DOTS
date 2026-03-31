@@ -1,5 +1,6 @@
 #if UNITY_EDITOR && EDITOR_DEBUG
 #define _DEBUG_COLLISIONS
+#define _DEBUG_COLLIDERS
 #endif
 
 using System;
@@ -22,7 +23,7 @@ unsafe partial struct CollisionSystem : ISystem
         in Collider collider, in float3 offset,
         in Color color, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if DEBUG_COLLIDERS
         switch (collider.Type)
         {
             case ColliderType.Sphere:

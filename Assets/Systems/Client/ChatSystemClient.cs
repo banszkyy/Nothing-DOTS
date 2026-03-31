@@ -10,7 +10,7 @@ public partial struct ChatSystemClient : ISystem
         EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
 
         foreach (var (_, command, entity) in
-            SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<ChatMessageRpc>>()
+            SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<ChatMessageNotificationRpc>>()
             .WithEntityAccess())
         {
             commandBuffer.DestroyEntity(entity);

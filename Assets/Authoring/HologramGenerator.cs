@@ -19,21 +19,34 @@ class HologramGenerator : MonoBehaviour
     {
         transform.position = default;
 
-        yield return new WaitForEndOfFrame();
+        WaitForEndOfFrame wait = new();
 
+        yield return wait;
+        yield return wait;
+
+        GameObject[] children = new GameObject[transform.childCount];
         for (int i = 0; i < transform.childCount; i++)
         {
-            DestroyImmediate(transform.GetChild(i).gameObject, false);
+            children[i] = transform.GetChild(i).gameObject;
         }
 
-        yield return new WaitForEndOfFrame();
+        foreach (GameObject child in children)
+        {
+            DestroyImmediate(child, false);
+            yield return wait;
+        }
+
+        yield return wait;
+        yield return wait;
 
         foreach (UnityEngine.Collider collider in GetComponents<UnityEngine.Collider>())
         {
             DestroyImmediate(collider, false);
+            yield return wait;
         }
 
-        yield return new WaitForEndOfFrame();
+        yield return wait;
+        yield return wait;
 
         if (Prefab.TryGetComponent(out BoxCollider boxCollider))
         {
@@ -48,7 +61,8 @@ class HologramGenerator : MonoBehaviour
             newSphereCollider.radius = sphereCollider.radius;
         }
 
-        yield return new WaitForEndOfFrame();
+        yield return wait;
+        yield return wait;
 
         MeshRenderer[] renderers = Prefab.GetComponentsInChildren<MeshRenderer>(false);
         foreach (MeshRenderer renderer in renderers)
@@ -66,9 +80,8 @@ class HologramGenerator : MonoBehaviour
 
             newObject.transform.SetPositionAndRotation(renderer.transform.position, renderer.transform.rotation);
             newObject.transform.localScale = renderer.transform.localScale;
+            yield return wait;
         }
-
-        yield return new WaitForEndOfFrame();
     }
 #endif
 }

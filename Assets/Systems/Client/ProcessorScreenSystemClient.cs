@@ -87,7 +87,7 @@ partial class ProcessorScreenSystemClient : SystemBase
             if (!Screens.TryGetValue(entity, out TerminalInstance screenInstance))
             {
                 if (!isVisible) continue;
-                TerminalSubscriptionClient? terminalSubscription = World.IsClient() ? World.GetSystem<TerminalSystemClient>().Subscribe(ghostInstance.ValueRO) : null;
+                TerminalSubscriptionClient? terminalSubscription = World.IsClient() ? World.GetSystem<TerminalSystemClient>().Subscribe(entity) : null;
                 Screens.Add(entity, screenInstance = new(CreateScreen(screenOptions.ValueRO), terminalSubscription));
             }
             else
@@ -136,6 +136,14 @@ partial class ProcessorScreenSystemClient : SystemBase
                     }
                 }
             }
+        }
+
+        foreach (var entity in Screens.Keys)
+        {
+            if (SystemAPI.Exists(entity)) continue;
+            ScreenPool.Release(Screens[entity].Screen.Object);
+            Screens.Remove(entity);
+            break;
         }
     }
 }

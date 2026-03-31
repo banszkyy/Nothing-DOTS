@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Apc
   m_EditorClassIdentifier: 
   Prefab: {fileID: 8427767388040926130, guid: cc59288c4e704e5c696de44ebc0bbb67, type: 3}
+  HologramPrefab: {fileID: 7887398088158380673, guid: 99815ad958315e0ec85ddffec9b58f35,
+    type: 3}
   ProductionTime: 1
   RequiredResources: 1
   RequiredResearch: {fileID: 0}

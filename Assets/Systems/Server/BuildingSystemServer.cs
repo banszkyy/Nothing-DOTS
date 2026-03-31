@@ -1,6 +1,5 @@
 using Unity.Burst;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Transforms;
 
@@ -8,22 +7,6 @@ using Unity.Transforms;
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
 public partial struct BuildingSystemServer : ISystem
 {
-    public static Entity PlaceBuilding(
-        EntityCommandBuffer commandBuffer,
-        BufferedBuilding building,
-        float3 position)
-    {
-        Entity newEntity = commandBuffer.Instantiate(building.PlaceholderPrefab);
-        commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(position));
-        commandBuffer.SetComponent<BuildingPlaceholder>(newEntity, new()
-        {
-            BuildingPrefab = building.Prefab,
-            CurrentProgress = 0f,
-            TotalProgress = building.ConstructionTime,
-        });
-        return newEntity;
-    }
-
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
@@ -49,11 +32,10 @@ public partial struct BuildingSystemServer : ISystem
 
             if (requestPlayer.Entity == Entity.Null)
             {
-                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Failed to place building: requested by `{{0}}` but aint have a team", networkId));
+                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Failed to place building: requested by `{{0}}` but doesn't have a team", networkId));
                 continue;
             }
 
-            DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayer.Entity);
             DynamicBuffer<BufferedBuilding> buildings = SystemAPI.GetBuffer<BufferedBuilding>(SystemAPI.GetSingletonEntity<BuildingDatabase>());
 
             BufferedBuilding building = default;
@@ -73,38 +55,55 @@ public partial struct BuildingSystemServer : ISystem
                 continue;
             }
 
-            if (!building.RequiredResearch.IsEmpty)
+            Entity newEntity;
+            if (requestPlayer.Player.InCreative)
             {
-                bool can = false;
-                foreach (var research in acquiredResearches)
+                newEntity = commandBuffer.Instantiate(building.Prefab);
+                commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(command.ValueRO.Position));
+            }
+            else
+            {
+                if (!building.RequiredResearch.IsEmpty)
                 {
-                    if (research.Name != building.RequiredResearch) continue;
-                    can = true;
+                    DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayer.Entity);
+                    bool can = false;
+                    foreach (var research in acquiredResearches)
+                    {
+                        if (research.Name != building.RequiredResearch) continue;
+                        can = true;
+                        break;
+                    }
+
+                    if (!can)
+                    {
+                        Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not researched", building.Name));
+                        continue;
+                    }
+                }
+
+                if (requestPlayer.Player.Resources < building.RequiredResources)
+                {
+                    Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not enought resources ({{1}} < {{2}})", building.Name, requestPlayer.Player.Resources, building.RequiredResources));
                     break;
                 }
 
-                if (!can)
+                foreach (var _player in
+                    SystemAPI.Query<RefRW<Player>>())
                 {
-                    Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not researched", building.Name));
-                    continue;
+                    if (_player.ValueRO.ConnectionId != networkId.Value) continue;
+                    _player.ValueRW.Resources -= building.RequiredResources;
+                    break;
                 }
-            }
 
-            if (requestPlayer.Player.Resources < building.RequiredResources)
-            {
-                Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not enought resources ({{1}} < {{2}})", building.Name, requestPlayer.Player.Resources, building.RequiredResources));
-                break;
+                newEntity = commandBuffer.Instantiate(building.PlaceholderPrefab);
+                commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(command.ValueRO.Position));
+                commandBuffer.SetComponent<BuildingPlaceholder>(newEntity, new()
+                {
+                    BuildingPrefab = building.Prefab,
+                    CurrentProgress = 0f,
+                    TotalProgress = building.ConstructionTime,
+                });
             }
-
-            foreach (var _player in
-                SystemAPI.Query<RefRW<Player>>())
-            {
-                if (_player.ValueRO.ConnectionId != networkId.Value) continue;
-                _player.ValueRW.Resources -= building.RequiredResources;
-                break;
-            }
-
-            Entity newEntity = PlaceBuilding(commandBuffer, building, command.ValueRO.Position);
             commandBuffer.SetComponent<UnitTeam>(newEntity, new()
             {
                 Team = requestPlayer.Player.Team,

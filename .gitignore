@@ -10,6 +10,7 @@
 /Assets/Utils/Editor
 /Assets/TextMesh Pro
 /Assets/Samples
+/Assets/_Recovery
 
 /Packages/packages-lock.json
 
@@ -19,3 +20,4 @@
 *.csproj
 *.slnx
 *.meta
+mono_crash.*.blob

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e947560a50b24943e9c35b4da7fdb8a7, type: 3}
   m_Name: ApcProjectile
   m_EditorClassIdentifier: 
-  Prefab: {fileID: 2786101604496490284, guid: 43271472464ab435ea8449499228d966, type: 3}
+  Prefab: {fileID: 2786101604496490284, guid: 4793149980d2f1ccca360e873e8deb19, type: 3}
   Damage: 1
   Speed: 110
   MetalImpactEffect: {fileID: 8926484042661614526, guid: 922371f4c0413b2e19aebb0a74861943,

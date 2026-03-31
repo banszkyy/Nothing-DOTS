@@ -337,7 +337,7 @@ public class SelectionManager : Singleton<SelectionManager>
         }
     }
 
-    bool OpenEntityUI(Entity entity)
+    static bool OpenEntityUI(Entity entity)
     {
         if (!IsMine(entity))
         {
@@ -528,35 +528,50 @@ public class SelectionManager : Singleton<SelectionManager>
 
     IEnumerator SendUnitCommandClick(int commandId)
     {
-        VirtualGhostEntity[] yeah = _selected.ToArray();
-
-        int i = 0;
-        foreach (VirtualGhostEntity selected in yeah)
+        FixedList64Bytes<SpawnedGhost> ghosts = new();
+        UnitCommandArguments arguments = new()
         {
-            yield return null;
-            NetcodeUtils.CreateRPC(ConnectionManager.ClientOrDefaultWorld.Unmanaged, new UnitCommandRequestRpc()
-            {
-                Entity = selected.GhostInstance,
-                CommandId = commandId,
+            WorldPosition = _unitCommandUIWorldPositionData,
+        };
 
-                WorldPosition = _unitCommandUIWorldPositionData,
-            });
-
-            if (UnitCommandsUI.rootVisualElement != null)
+        foreach (VirtualGhostEntity selected in _selected.ToArray())
+        {
+            if (ghosts.Length >= ghosts.Capacity)
             {
-                ProgressBar progressBar = UnitCommandsUI.rootVisualElement.Q<ProgressBar>("progress");
-                progressBar.value = (float)(++i) / yeah.Length;
-                progressBar.style.display = DisplayStyle.Flex;
+                NetcodeUtils.CreateRPC(ConnectionManager.ClientOrDefaultWorld.Unmanaged, new UnitCommandBulkRequestRpc()
+                {
+                    Entities = ghosts,
+                    CommandId = commandId,
+                    Arguments = arguments,
+                });
+                ghosts.Clear();
+                yield return null;
             }
+
+            ghosts.Add(selected.GhostInstance);
         }
 
-        if (UnitCommandsUI.rootVisualElement != null)
+        if (ghosts.Length > 1)
         {
-            UnitCommandsUI.rootVisualElement.Q<ProgressBar>("progress").style.display = DisplayStyle.None;
+            NetcodeUtils.CreateRPC(ConnectionManager.ClientOrDefaultWorld.Unmanaged, new UnitCommandBulkRequestRpc()
+            {
+                Entities = ghosts,
+                CommandId = commandId,
+                Arguments = arguments,
+            });
+        }
+        else if (ghosts.Length == 1)
+        {
+            NetcodeUtils.CreateRPC(ConnectionManager.ClientOrDefaultWorld.Unmanaged, new UnitCommandRequestRpc()
+            {
+                Entity = ghosts[0],
+                CommandId = commandId,
+                Arguments = arguments,
+            });
         }
     }
 
-    Entity[] UnitsInRect(Rect rect)
+    static Entity[] UnitsInRect(Rect rect)
     {
         using EntityQuery selectablesQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(LocalToWorld), typeof(SelectableUnit));
         using NativeArray<Entity> selectableEntities = selectablesQ.ToEntityArray(Allocator.Temp);
@@ -576,7 +591,7 @@ public class SelectionManager : Singleton<SelectionManager>
         return result.ToArray();
     }
 
-    SelectableUnit GetUnitStatus(Entity unit)
+    static SelectableUnit GetUnitStatus(Entity unit)
     {
         if (!ConnectionManager.ClientOrDefaultWorld.EntityManager.Exists(unit) ||
             !ConnectionManager.ClientOrDefaultWorld.EntityManager.HasComponent<SelectableUnit>(unit))
@@ -599,7 +614,7 @@ public class SelectionManager : Singleton<SelectionManager>
         return unitTeam.Team == localPlayer.Team;
     }
 
-    void SetUnitStatus(Entity unit, SelectableUnit status)
+    static void SetUnitStatus(Entity unit, SelectableUnit status)
     {
         if (!ConnectionManager.ClientOrDefaultWorld.EntityManager.Exists(unit) ||
             !ConnectionManager.ClientOrDefaultWorld.EntityManager.HasComponent<SelectableUnit>(unit))

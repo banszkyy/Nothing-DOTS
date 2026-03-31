@@ -31,6 +31,7 @@ public struct Player : IComponentData
     [GhostField] public float Resources;
     [GhostField] public FixedString32Bytes Nickname;
     [GhostField] public GameOutcome Outcome;
+    [GhostField] public bool InCreative;
     public bool IsCoreComputerSpawned;
     public Guid Guid;
     public float3 Position;
