@@ -82,7 +82,8 @@
         "Textures": "images",
         "RPC": "messages",
         "VFX": "animation",
-        "ThinClient": "client"
+        "ThinClient": "client",
+        "stdlib": "lib"
     },
     "material-icon-theme.files.associations": {
         "*.uxml": "xml",
