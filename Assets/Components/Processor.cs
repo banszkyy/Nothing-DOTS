@@ -134,8 +134,8 @@ struct Processor : IComponentData
     public float2 RadarRequest;
     public float3 RadarResponse;
 
-    public int StdOutBufferCursor;
-    [GhostField] public FixedString512Bytes StdOutBuffer;
+    public ulong StdOutBufferCursor;
+    public FixedString512Bytes StdOutBuffer;
 
     [GhostField] public StatusLED<ProcessorStatus> StatusLED;
     [GhostField] public BlinkingLED NetworkReceiveLED;

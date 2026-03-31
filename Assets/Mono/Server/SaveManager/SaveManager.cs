@@ -445,7 +445,7 @@ class SaveManager : MonoBehaviour
                     v.InputKey = reader.ReadFixedList128Unsafe<char>();
                     v.RadarRequest = reader.ReadFloat2();
                     v.RadarResponse = reader.ReadFloat3();
-                    v.StdOutBufferCursor = reader.ReadInt();
+                    v.StdOutBufferCursor = reader.ReadUlong();
                     v.StdOutBuffer = reader.ReadFixedString512();
                 }
             ),

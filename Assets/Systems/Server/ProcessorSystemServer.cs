@@ -16,6 +16,7 @@ using Unity.NetCode;
 using Unity.Profiling;
 using Unity.Transforms;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 enum UserUIElementType : byte
 {
@@ -65,6 +66,13 @@ struct OwnedData<T>
         Owner = owner;
         Value = value;
     }
+}
+
+struct TerminalSubscriptionServer
+{
+    public SpawnedGhost Entity;
+    public ulong Offset;
+    public Entity Connection;
 }
 
 [BurstCompile]
@@ -150,6 +158,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
     NativeList<OwnedData<BufferedLine>> debugLines;
     NativeList<OwnedData<BufferedWorldLabel>> worldLabels;
     NativeList<OwnedData<UserUIElement>> uiElements;
+    NativeList<TerminalSubscriptionServer> subscribedTerminals;
 
     void ISystem.OnCreate(ref SystemState state)
     {
@@ -164,6 +173,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
         debugLines = new(256, Allocator.Persistent);
         worldLabels = new(256, Allocator.Persistent);
         uiElements = new(256, Allocator.Persistent);
+        subscribedTerminals = new(4, Allocator.Persistent);
 
         // SystemAPI.GetSingleton<RpcCollection>()
         //     .RegisterRpc(ComponentType.ReadWrite<UIElementUpdateRpc>(), default(UIElementUpdateRpc).CompileExecute());
@@ -291,6 +301,84 @@ unsafe partial struct ProcessorSystemServer : ISystem
                     }, connection);
                     uiElements.AsArray().AsSpan()[i].Value.IsDirty = false;
                 }
+            }
+        }
+
+        foreach (var (request, command, entity) in
+            SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<SubscribeTerminalRpc>>()
+            .WithEntityAccess())
+        {
+            commandBuffer.DestroyEntity(entity);
+
+            for (int i = 0; i < subscribedTerminals.Length; i++)
+            {
+                if (subscribedTerminals[i].Connection == request.ValueRO.SourceConnection
+                    && subscribedTerminals[i].Entity.Equals(command.ValueRO.Entity))
+                {
+                    Debug.LogWarning($"{DebugEx.ServerPrefix} Client {request.ValueRO.SourceConnection} is already subscribed to terminal of entity {command.ValueRO.Entity} ({command.ValueRO.Offset})");
+                    goto exists;
+                }
+            }
+
+            Debug.Log($"{DebugEx.ServerPrefix} Client {request.ValueRO.SourceConnection} subscribed to terminal of entity {command.ValueRO.Entity} ({command.ValueRO.Offset})");
+            subscribedTerminals.Add(new TerminalSubscriptionServer()
+            {
+                Entity = command.ValueRO.Entity,
+                Offset = command.ValueRO.Offset,
+                Connection = request.ValueRO.SourceConnection,
+            });
+        exists:;
+        }
+
+        foreach (var (request, command, entity) in
+            SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<UnsubscribeTerminalRpc>>()
+            .WithEntityAccess())
+        {
+            commandBuffer.DestroyEntity(entity);
+
+            for (int i = 0; i < subscribedTerminals.Length; i++)
+            {
+                if (subscribedTerminals[i].Connection == request.ValueRO.SourceConnection
+                    && subscribedTerminals[i].Entity.Equals(command.ValueRO.Entity))
+                {
+                    Debug.Log($"{DebugEx.ServerPrefix} Client {request.ValueRO.SourceConnection} unsubscribed from terminal of entity {command.ValueRO.Entity}");
+                    subscribedTerminals.RemoveAt(i--);
+                }
+            }
+        }
+
+        for (int i = 0; i < subscribedTerminals.Length; i++)
+        {
+            TerminalSubscriptionServer subscription = subscribedTerminals[i];
+            if (!SystemAPI.Exists(subscription.Connection)) continue;
+
+            foreach (var (ghostInstance, processor) in
+                SystemAPI.Query<RefRO<GhostInstance>, RefRW<Processor>>())
+            {
+                if (!subscription.Entity.Equals(ghostInstance.ValueRO)) continue;
+                ulong beginOffset = Math.Max(0, processor.ValueRO.StdOutBufferCursor - (ulong)processor.ValueRO.StdOutBuffer.Length);
+                ulong endOffset = processor.ValueRO.StdOutBufferCursor;
+
+                Debug.Assert(endOffset >= beginOffset);
+                Debug.Assert(endOffset - beginOffset == (ulong)processor.ValueRO.StdOutBuffer.Length);
+
+                if (endOffset > subscription.Offset)
+                {
+                    ulong sendStart = Math.Max(subscription.Offset, beginOffset);
+                    int offset = (int)(sendStart - beginOffset);
+                    int bytesToSend = (int)Math.Min((ulong)FixedString64Bytes.UTF8MaxLengthInBytes, endOffset - sendStart);
+                    FixedString64Bytes data = new(processor.ValueRW.StdOutBuffer.Substring(offset, bytesToSend));
+
+                    NetcodeUtils.CreateRPC<TerminalDataRpc>(commandBuffer, state.WorldUnmanaged, new()
+                    {
+                        Entity = ghostInstance.ValueRO,
+                        Data = data,
+                        Offset = sendStart,
+                    }, subscription.Connection);
+                    subscription.Offset = sendStart + (ulong)data.Length;
+                    subscribedTerminals[i] = subscription;
+                }
+                break;
             }
         }
 
