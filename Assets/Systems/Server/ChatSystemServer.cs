@@ -43,6 +43,13 @@ public partial struct ChatSystemServer : ISystem
 
             if (message.StartsWith('/'))
             {
+                NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ChatMessageNotificationRpc()
+                {
+                    Sender = networkId.Value,
+                    Message = command.ValueRO.Message,
+                    Time = command.ValueRO.Time,
+                }, request.ValueRO.SourceConnection);
+
                 Span<byte> cmd = message.AsSpan()[1..];
                 if (cmd.StartsWith("creative"u8))
                 {
@@ -69,18 +76,12 @@ public partial struct ChatSystemServer : ISystem
                 continue;
             }
 
-            foreach (var (_, entity2) in
-                SystemAPI.Query<RefRO<NetworkId>>()
-                .WithAll<InitializedClient>()
-                .WithEntityAccess())
+            NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ChatMessageNotificationRpc()
             {
-                NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ChatMessageNotificationRpc()
-                {
-                    Sender = networkId.Value,
-                    Message = command.ValueRO.Message,
-                    Time = command.ValueRO.Time,
-                }, entity2);
-            }
+                Sender = networkId.Value,
+                Message = command.ValueRO.Message,
+                Time = command.ValueRO.Time,
+            });
         }
     }
 

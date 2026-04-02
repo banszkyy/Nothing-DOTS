@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using SaintsField.Playa;
 #if UNITY_EDITOR
 using Unity.EditorCoroutines.Editor;
+using UnityEditor;
 #endif
 using UnityEngine;
 
@@ -13,21 +15,46 @@ class HologramGenerator : MonoBehaviour
     [SerializeField, NotNull] Material? Material = default;
 
     [Button]
-    public void Generate() => EditorCoroutineUtility.StartCoroutine(GenerateImpl(), this);
-
-    IEnumerator GenerateImpl()
+    public void Generate()
     {
-        transform.position = default;
+        Wrapper(v => EditorCoroutineUtility.StartCoroutine(GenerateImpl(v), this));
+    }
+
+    void Wrapper(Action<GameObject> callback)
+    {
+        if (PrefabUtility.IsPartOfPrefabAsset(gameObject))
+        {
+            callback.Invoke(gameObject);
+            EditorUtility.SetDirty(gameObject);
+        }
+        else
+        {
+            Undo.RecordObject(gameObject, "Modify Object");
+
+            callback.Invoke(gameObject);
+
+            EditorUtility.SetDirty(gameObject);
+
+            if (PrefabUtility.IsPartOfPrefabInstance(gameObject))
+            {
+                PrefabUtility.RecordPrefabInstancePropertyModifications(gameObject);
+            }
+        }
+    }
+
+    IEnumerator GenerateImpl(GameObject o)
+    {
+        o.transform.position = default;
 
         WaitForEndOfFrame wait = new();
 
         yield return wait;
         yield return wait;
 
-        GameObject[] children = new GameObject[transform.childCount];
-        for (int i = 0; i < transform.childCount; i++)
+        GameObject[] children = new GameObject[o.transform.childCount];
+        for (int i = 0; i < o.transform.childCount; i++)
         {
-            children[i] = transform.GetChild(i).gameObject;
+            children[i] = o.transform.GetChild(i).gameObject;
         }
 
         foreach (GameObject child in children)
@@ -39,7 +66,7 @@ class HologramGenerator : MonoBehaviour
         yield return wait;
         yield return wait;
 
-        foreach (UnityEngine.Collider collider in GetComponents<UnityEngine.Collider>())
+        foreach (UnityEngine.Collider collider in o.GetComponents<UnityEngine.Collider>())
         {
             DestroyImmediate(collider, false);
             yield return wait;
@@ -50,13 +77,13 @@ class HologramGenerator : MonoBehaviour
 
         if (Prefab.TryGetComponent(out BoxCollider boxCollider))
         {
-            BoxCollider newBoxCollider = gameObject.AddComponent<BoxCollider>();
+            BoxCollider newBoxCollider = o.gameObject.AddComponent<BoxCollider>();
             newBoxCollider.center = boxCollider.center;
             newBoxCollider.size = boxCollider.size;
         }
         else if (Prefab.TryGetComponent(out UnityEngine.SphereCollider sphereCollider))
         {
-            UnityEngine.SphereCollider newSphereCollider = gameObject.AddComponent<UnityEngine.SphereCollider>();
+            UnityEngine.SphereCollider newSphereCollider = o.AddComponent<UnityEngine.SphereCollider>();
             newSphereCollider.center = sphereCollider.center;
             newSphereCollider.radius = sphereCollider.radius;
         }
@@ -70,7 +97,7 @@ class HologramGenerator : MonoBehaviour
             MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
 
             GameObject newObject = new(renderer.name, typeof(MeshRenderer), typeof(MeshFilter));
-            newObject.transform.SetParent(transform);
+            newObject.transform.SetParent(o.transform);
 
             MeshFilter newMeshFilter = newObject.GetComponent<MeshFilter>();
             MeshRenderer newRenderer = newObject.GetComponent<MeshRenderer>();
@@ -82,6 +109,8 @@ class HologramGenerator : MonoBehaviour
             newObject.transform.localScale = renderer.transform.localScale;
             yield return wait;
         }
+
+        yield return wait;
     }
 #endif
 }

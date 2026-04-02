@@ -1,13 +1,13 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:Template name="Chat Message" src="project://database/Assets/UI/Chat%20Message.uxml?fileID=9197481963319205126&amp;guid=421bb361d0a0b4969aafa2682f6d6ebe&amp;type=3#Chat Message" />
-    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style" />
+    <ui:Template name="Chat Message" src="project://database/Assets/UI/Chat%20Message.uxml?fileID=9197481963319205126&amp;guid=421bb361d0a0b4969aafa2682f6d6ebe&amp;type=3#Chat Message"/>
+    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement style="position: absolute; top: auto; left: 0; right: auto; bottom: 0; width: 30%; min-width: 200px; max-height: 30%;">
         <ui:ScrollView name="container-messages" style="flex-grow: 1; flex-shrink: 1;">
-            <ui:Instance template="Chat Message" />
+            <ui:Instance template="Chat Message"/>
         </ui:ScrollView>
         <ui:VisualElement name="container-input" style="flex-grow: 0; flex-direction: row; background-color: rgba(0, 0, 0, 0.8); flex-shrink: 0;">
-            <ui:TextField name="input-message" style="flex-grow: 1;" />
-            <ui:Button text="Send" name="button-send" />
+            <ui:TextField name="input-message" class="chat-input" style="padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px;"/>
+            <ui:Button text="\uf1d8" name="button-send" parse-escape-sequences="true" class="chat-send-button"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

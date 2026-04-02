@@ -1,5 +1,5 @@
-<ui:UXML class="chat-message" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0.8);background-color: rgba(0, 0, 0, 0.8); ">
-        <ui:Label text="Label" name="label-message" style="font-size: 11px; white-space: normal; -unity-font-style: normal; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px;" />
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False" class="chat-message">
+    <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0.8); background-color: rgba(0, 0, 0, 0.8);">
+        <ui:Label text="Label" name="label-message" style="font-size: 11px; white-space: normal; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px;"/>
     </ui:VisualElement>
 </ui:UXML>

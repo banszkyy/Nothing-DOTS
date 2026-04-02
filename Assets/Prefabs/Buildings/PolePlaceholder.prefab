@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2948953302368539540
+--- !u!1 &2541142951224647303
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5853786990184334931}
-  - component: {fileID: 8238428776295322239}
-  - component: {fileID: 1826505577673957187}
+  - component: {fileID: 6306185684822597208}
+  - component: {fileID: 4890476195717453674}
+  - component: {fileID: 2008226310271932877}
   m_Layer: 0
   m_Name: Pole
   m_TagString: Untagged
@@ -18,13 +18,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5853786990184334931
+--- !u!4 &6306185684822597208
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2948953302368539540}
+  m_GameObject: {fileID: 2541142951224647303}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -33,13 +33,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6588596533355337177}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!23 &8238428776295322239
+--- !u!23 &4890476195717453674
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2948953302368539540}
+  m_GameObject: {fileID: 2541142951224647303}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -53,6 +53,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -74,17 +76,19 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &1826505577673957187
+--- !u!33 &2008226310271932877
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2948953302368539540}
+  m_GameObject: {fileID: 2541142951224647303}
   m_Mesh: {fileID: 4493585093827132993, guid: 3c33bc76f1b1cffe1b7bc0d14cf52962, type: 3}
 --- !u!1 &5692528052949456400
 GameObject:
@@ -103,7 +107,7 @@ GameObject:
   - component: {fileID: 3289444430414867867}
   - component: {fileID: 4010535767608004536}
   - component: {fileID: -1772278781146432612}
-  - component: {fileID: 5317844576294941696}
+  - component: {fileID: 1970317822100904932}
   m_Layer: 8
   m_Name: PolePlaceholder
   m_TagString: Untagged
@@ -124,7 +128,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5853786990184334931}
+  - {fileID: 6306185684822597208}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1309811503738337756
@@ -240,7 +244,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1578c6f4703a07a5a2ba978c753907e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!65 &5317844576294941696
+--- !u!65 &1970317822100904932
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

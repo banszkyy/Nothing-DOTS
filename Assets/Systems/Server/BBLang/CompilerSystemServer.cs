@@ -25,6 +25,23 @@ public partial class CompilerSystemServer : SystemBase
 {
     const bool EnableLogging = false;
 
+    static readonly CompilerSettings CompilerSettings = new(CodeGeneratorForMain.DefaultCompilerSettings)
+    {
+        Optimizations = OptimizationSettings.All,
+        Cache = CompilerCache,
+    };
+
+    static readonly MainGeneratorSettings GeneratorSettings = new(MainGeneratorSettings.Default)
+    {
+        StackSize = ProcessorSystemServer.BytecodeInterpreterSettings.StackSize,
+        //ILGeneratorSettings = new LanguageCore.IL.Generator.ILGeneratorSettings()
+        //{
+        //    AllowCrash = false,
+        //    AllowHeap = false,
+        //    AllowPointers = true,
+        //},
+    };
+
     [NotNull] public readonly Dictionary<FileId, CompiledSourceServer>? CompiledSources = new();
 
     readonly List<(Task, CancellationTokenSource)> Tasks = new();
@@ -372,15 +389,13 @@ public partial class CompilerSystemServer : SystemBase
             {
                 compiled = StatementCompiler.CompileFile(
                     sourceUri.ToString(),
-                    new CompilerSettings(CodeGeneratorForMain.DefaultCompilerSettings)
+                    new CompilerSettings(CompilerSettings)
                     {
                         UserDefinedAttributes = attributes,
                         ExternalFunctions = externalFunctions.ToImmutableArray(),
-                        Optimizations = OptimizationSettings.All,
                         SourceProviders = ImmutableArray.Create<ISourceProvider>(
                             new NetcodeSourceProvider(source, progresses, EnableLogging)
                         ),
-                        Cache = CompilerCache,
                         CancellationToken = cancellationToken,
                     },
                     source.Diagnostics
@@ -401,15 +416,8 @@ public partial class CompilerSystemServer : SystemBase
             {
                 generated = CodeGeneratorForMain.Generate(
                     compiled,
-                    new MainGeneratorSettings(MainGeneratorSettings.Default)
+                    new MainGeneratorSettings(GeneratorSettings)
                     {
-                        StackSize = ProcessorSystemServer.BytecodeInterpreterSettings.StackSize,
-                        ILGeneratorSettings = new LanguageCore.IL.Generator.ILGeneratorSettings()
-                        {
-                            AllowCrash = false,
-                            AllowHeap = false,
-                            AllowPointers = true,
-                        },
                         CancellationToken = cancellationToken,
                     },
                     null,

@@ -125,16 +125,16 @@ public class ChatManager : Singleton<ChatManager>
     {
         if (message is null) return;
 
-        for (int i = 0; i < _chatMessages.Count; i++)
-        {
-            if (_chatMessages[i].Sender == sender && _chatMessages[i].Time == time)
-            {
-                _chatMessages[i] = new ChatMessage(sender, _chatMessages[i].Message + message, time);
-                goto added;
-            }
-        }
+        //for (int i = 0; i < _chatMessages.Count; i++)
+        //{
+        //    if (_chatMessages[i].Sender == sender && _chatMessages[i].Time == time)
+        //    {
+        //        _chatMessages[i] = new ChatMessage(sender, _chatMessages[i].Message + message, time);
+        //        goto added;
+        //    }
+        //}
         _chatMessages.Add(new ChatMessage(sender, message, time));
-    added:
+        //added:
 
         RefreshChatContainer();
     }

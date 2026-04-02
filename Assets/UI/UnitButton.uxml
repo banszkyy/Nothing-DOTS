@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Button style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; flex-shrink: 1; min-width: 64px; min-height: 64px; max-width: 64px; max-height: 64px;">
+        <ui:VisualElement picking-mode="Ignore" name="image" style="flex-shrink: 0; flex-grow: 1;">
+            <ui:Label text="Unit" name="label-name" style="flex-grow: 1; -unity-font-style: bold; -unity-text-align: middle-center;"/>
+            <ui:VisualElement style="flex-direction: row; font-size: 8px;">
+                <ui:Label text="Resources:" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; -unity-text-align: middle-left;"/>
+                <ui:Label text="0" name="label-resources" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; -unity-text-align: middle-right;"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:Button>
+</ui:UXML>
