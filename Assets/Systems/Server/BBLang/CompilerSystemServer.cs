@@ -291,27 +291,15 @@ public partial class CompilerSystemServer : SystemBase
 
         List<ProgressRecord<(int, int)>> progresses = new();
 
-        ImmutableArray<UserDefinedAttribute> attributes = ImmutableArray.Create<UserDefinedAttribute>(
-            new("UnitCommand", ImmutableArray.Create(LiteralType.Integer, LiteralType.String), CanUseOn.Struct, static (IHaveAttributes context, AttributeUsage attribute, [NotNullWhen(false)] out PossibleDiagnostic? error) =>
+        ImmutableArray<UserDefinedAttribute> attributes = ImmutableArray.Create(
+            UserDefinedAttribute.Create<CompiledStruct>("UnitCommand", ImmutableArray.Create(LiteralType.Integer, LiteralType.String), CanUseOn.Struct, static (CompiledStruct context, AttributeUsage attribute, [NotNullWhen(false)] out PossibleDiagnostic? error) =>
             {
-                if (context is not CompiledStruct @struct)
-                {
-                    error = new PossibleDiagnostic($"Attribute `UnitCommand` is only valid on struct declarations", attribute);
-                    return false;
-                }
-
                 error = null;
                 return true;
             }),
-            new("Context", ImmutableArray.Create(LiteralType.String), CanUseOn.Field, static (IHaveAttributes context, AttributeUsage attribute, [NotNullWhen(false)] out PossibleDiagnostic? error) =>
+            UserDefinedAttribute.Create<CompiledField>("Context", ImmutableArray.Create(LiteralType.String), CanUseOn.Field, static (CompiledField field, AttributeUsage attribute, [NotNullWhen(false)] out PossibleDiagnostic? error) =>
             {
-                if (context is not CompiledField field)
-                {
-                    error = new PossibleDiagnostic($"Attribute `Context` is only valid on field declarations", attribute);
-                    return false;
-                }
-
-                if (!field.Context.Definition.Attributes.TryGetAttribute("UnitCommand", out _))
+                if (!field.Context.Attributes.TryGetAttribute("UnitCommand", out _))
                 {
                     error = new PossibleDiagnostic($"The struct should be flagged with [UnitCommand] attribute", attribute);
                     return false;
