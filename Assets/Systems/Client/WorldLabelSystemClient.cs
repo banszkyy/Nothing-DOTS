@@ -15,7 +15,7 @@ public partial class WorldLabelSystemClientSystem : SystemBase
         {
             if (_canvas == null)
             {
-                foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include))
                 {
                     if (canvas.name != "UICanvas") continue;
                     _canvas = canvas.transform;

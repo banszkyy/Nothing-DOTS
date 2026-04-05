@@ -17,7 +17,7 @@ public class DamageableAuthoring : MonoBehaviour
             {
                 MaxHealth = authoring.MaxHealth,
                 Health = authoring.MaxHealth,
-                DestroyEffect = FindFirstObjectByType<VisualEffectDatabaseAuthoring>().Find(authoring.DestroyEffect),
+                DestroyEffect = FindAnyObjectByType<VisualEffectDatabaseAuthoring>().Find(authoring.DestroyEffect),
             });
             AddBuffer<BufferedDamage>(entity);
         }

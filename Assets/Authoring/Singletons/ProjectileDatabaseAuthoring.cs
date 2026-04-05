@@ -33,8 +33,8 @@ class ProjectileDatabaseAuthoring : MonoBehaviour
                     Prefab = GetEntity(projectile.Prefab, TransformUsageFlags.Dynamic),
                     Damage = projectile.Damage,
                     Speed = projectile.Speed,
-                    MetalImpactEffect = FindFirstObjectByType<VisualEffectDatabaseAuthoring>().Find(projectile.MetalImpactEffect),
-                    DustImpactEffect = FindFirstObjectByType<VisualEffectDatabaseAuthoring>().Find(projectile.DustImpactEffect),
+                    MetalImpactEffect = FindAnyObjectByType<VisualEffectDatabaseAuthoring>().Find(projectile.MetalImpactEffect),
+                    DustImpactEffect = FindAnyObjectByType<VisualEffectDatabaseAuthoring>().Find(projectile.DustImpactEffect),
                 });
             }
         }

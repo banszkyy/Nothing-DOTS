@@ -20,7 +20,7 @@ public partial class EntityInfoUISystemClient : SystemBase
 
         if (_canvas == null)
         {
-            foreach (Canvas canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (Canvas canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include))
             {
                 if (canvas.name != "UICanvas") continue;
                 _canvas = canvas.transform;

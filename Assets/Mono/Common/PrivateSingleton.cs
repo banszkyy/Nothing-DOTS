@@ -11,7 +11,7 @@ public class PrivateSingleton<T> : MonoBehaviour where T : UnityEngine.Object
     {
         get
         {
-            if (_instance == null) _instance = FindFirstObjectByType<T>(FindObjectsInactive.Include);
+            if (_instance == null) _instance = FindAnyObjectByType<T>(FindObjectsInactive.Include);
             return _instance == null ? throw new NullReferenceException($"Singleton `{typeof(T).Name}` is null") : _instance;
         }
     }

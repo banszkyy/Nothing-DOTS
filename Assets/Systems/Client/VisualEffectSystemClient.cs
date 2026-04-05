@@ -114,7 +114,7 @@ public partial class VisualEffectSystemClient : SystemBase
 
         Debug.Log($"{DebugEx.ClientPrefix} Destroying VFX instances ...");
 
-        foreach (VisualEffectHandlerComponent vfx in Object.FindObjectsByType<VisualEffectHandlerComponent>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (VisualEffectHandlerComponent vfx in Object.FindObjectsByType<VisualEffectHandlerComponent>(FindObjectsInactive.Include))
         {
             Object.Destroy(vfx.gameObject);
         }

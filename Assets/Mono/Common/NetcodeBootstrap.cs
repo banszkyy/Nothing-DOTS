@@ -41,7 +41,7 @@ class NetcodeBootstrap : ClientServerBootstrap
     {
         LocalWorld = CreateLocalWorld("LocalWorld");
 
-        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include);
 
         while (!LocalWorld.IsCreated)
         {
@@ -90,7 +90,7 @@ class NetcodeBootstrap : ClientServerBootstrap
     {
         ServerWorld = CreateServerWorld("ServerWorld");
 
-        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include);
 
         while (!ServerWorld.IsCreated)
         {
@@ -144,7 +144,7 @@ class NetcodeBootstrap : ClientServerBootstrap
     {
         ClientWorld = CreateClientWorld("ClientWorld");
 
-        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include);
 
         while (!ClientWorld.IsCreated)
         {
@@ -173,7 +173,7 @@ class NetcodeBootstrap : ClientServerBootstrap
     {
         StagingWorld = CreateLocalWorld("StagingWorld");
 
-        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include);
 
         while (!StagingWorld.IsCreated)
         {
