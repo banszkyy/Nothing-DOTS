@@ -402,7 +402,7 @@ class SaveManager : MonoBehaviour
                     writer.Write(v.IsKeyRequested);
                     writer.WriteUnsafe(v.InputKey);
                     writer.Write(v.RadarRequest);
-                    writer.Write(v.RadarResponse);
+                    writer.WriteUnsafe(v.RadarResponse);
                     writer.Write(v.StdOutBufferCursor);
                     writer.Write(v.StdOutBuffer);
                 },
@@ -444,7 +444,7 @@ class SaveManager : MonoBehaviour
                     v.IsKeyRequested = reader.ReadBool();
                     v.InputKey = reader.ReadFixedList128Unsafe<char>();
                     v.RadarRequest = reader.ReadFloat2();
-                    v.RadarResponse = reader.ReadFloat3();
+                    v.RadarResponse = reader.ReadUnsafe<RadarResponse>();
                     v.StdOutBufferCursor = reader.ReadUlong();
                     v.StdOutBuffer = reader.ReadFixedString512();
                 }

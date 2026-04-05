@@ -132,7 +132,7 @@ struct Processor : IComponentData
     /// XZ direction in local space
     /// </summary>
     public float2 RadarRequest;
-    public float3 RadarResponse;
+    public RadarResponse RadarResponse;
 
     public ulong StdOutBufferCursor;
     public FixedString512Bytes StdOutBuffer;

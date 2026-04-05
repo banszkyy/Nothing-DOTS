@@ -2,6 +2,7 @@
 #define _DEBUG_LINES
 #endif
 
+using System;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
@@ -48,17 +49,50 @@ public partial struct UnitRadarSystemServer : ISystem
 
             if (!RadarCast(map, ray, out RadarHit hit))
             {
-                processor.ValueRW.RadarResponse = float.NaN;
+                processor.ValueRW.RadarResponse = new RadarResponse(float.NaN, 0, 0, 0, 0);
                 return;
             }
 
             float distance = math.distance(hit.Point, ray.Start) + offset;
 
+            if (distance >= Radar.RadarRadius)
+            {
+                processor.ValueRW.RadarResponse = new RadarResponse(float.NaN, 0, 0, 0, 0);
+                return;
+            }
+
 #if DEBUG_LINES
             DebugEx.DrawPoint(hit.Point, 1f, Color.white, DebugDuration, false);
 #endif
 
-            processor.ValueRW.RadarResponse = distance > Radar.RadarRadius ? float.NaN : localTransform.ValueRO.InverseTransformPoint(hit.Point);
+            byte speedSignal = 0;
+            byte clutter = 67;
+            byte fingerprint = 0;
+            byte meta = 0;
+
+            if (SystemAPI.TryGetComponent(hit.Entity.Entity, out Vehicle hitVehicle))
+            {
+                speedSignal = (byte)Math.Clamp(Math.Abs(hitVehicle.Speed) * 13, byte.MinValue, byte.MaxValue);
+                clutter = 0;
+            }
+
+            if (SystemAPI.TryGetComponent(hit.Entity.Entity, out Processor hitProcessor))
+            {
+                clutter = 0;
+                fingerprint |= 0b_00000001;
+                if (hitProcessor.SourceFile != default && hitProcessor.Signal == LanguageCore.Runtime.Signal.None)
+                {
+                    meta |= 0b_00000001;
+                }
+            }
+
+            if (SystemAPI.HasComponent<CombatTurret>(hit.Entity.Entity))
+            {
+                clutter = 0;
+                meta |= 0b_00000010;
+            }
+
+            processor.ValueRW.RadarResponse = new RadarResponse(localTransform.ValueRO.InverseTransformPoint(hit.Point), speedSignal, clutter, fingerprint, meta);
         }
     }
 

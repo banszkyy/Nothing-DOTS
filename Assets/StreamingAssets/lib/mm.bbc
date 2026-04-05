@@ -29,10 +29,19 @@ struct MappedMemory_Transporter
     i32 current_load;
 }
 
+struct RadarResponse
+{
+    float3 point;
+    u8 speedSignal;
+    u8 clutter;
+    u8 fingerprint;
+    u8 meta;
+}
+
 struct MappedMemory_Radar
 {
     f32 direction;
-    float3 response;
+    RadarResponse response;
 }
 
 struct MappedMemory_GPS

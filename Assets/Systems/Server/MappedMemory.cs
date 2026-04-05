@@ -61,13 +61,35 @@ public struct MappedMemory_Transporter
 }
 
 /// <summary>
-/// Size: 16
+/// Size: 20
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct MappedMemory_Radar
 {
     public f32 RadarDirection;
-    public float3 RadarResponse;
+    public RadarResponse RadarResponse;
+}
+
+/// <summary>
+/// Size: 16
+/// </summary>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public readonly struct RadarResponse
+{
+    public readonly float3 Point;
+    public readonly u8 SpeedSignal;
+    public readonly u8 Clutter;
+    public readonly u8 Fingerprint;
+    public readonly u8 Meta;
+
+    public RadarResponse(float3 point, u8 speedSignal, u8 clutter, u8 fingerprint, u8 meta)
+    {
+        Point = point;
+        SpeedSignal = speedSignal;
+        Clutter = clutter;
+        Fingerprint = fingerprint;
+        Meta = meta;
+    }
 }
 
 /// <summary>
@@ -110,10 +132,10 @@ public struct MappedMemory
     [FieldOffset(0)] public MappedMemory_GPS GPS;
     [FieldOffset(24)] public MappedMemory_Pendrive Pendrive;
     [FieldOffset(25)] public MappedMemory_Radar Radar;
-    [FieldOffset(41)] public MappedMemory_Vehicle Vehicle;
-    [FieldOffset(43)] public MappedMemory_LEDS Leds;
+    [FieldOffset(45)] public MappedMemory_Vehicle Vehicle;
+    [FieldOffset(47)] public MappedMemory_LEDS Leds;
 
-    const int GenericModulesSize = 44;
+    const int GenericModulesSize = 48;
 
     [FieldOffset(GenericModulesSize)] public MappedMemory_CombatTurret CombatTurret;
     [FieldOffset(GenericModulesSize)] public MappedMemory_Extractor Extractor;

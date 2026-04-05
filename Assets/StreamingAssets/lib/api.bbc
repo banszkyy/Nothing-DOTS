@@ -87,23 +87,23 @@ export float3 radar(float direction)
 
 export float3 radar()
 {
-    Radar.response.x = 0f;
-    Radar.response.y = 0f;
-    Radar.response.z = 0f;
+    Radar.response.point.x = 0f;
+    Radar.response.point.y = 0f;
+    Radar.response.point.z = 0f;
 
     _radar();
 
-    while (Radar.response.x == 0f || Radar.response.y == 0f || Radar.response.z == 0f)
+    while (Radar.response.point.x == 0f || Radar.response.point.y == 0f || Radar.response.point.z == 0f)
     {
 
     }
 
-    if (isnan(Radar.response.x) || isnan(Radar.response.y) || isnan(Radar.response.z))
+    if (isnan(Radar.response.point.x) || isnan(Radar.response.point.y) || isnan(Radar.response.point.z))
     {
         return new float3;
     }
 
-    return Radar.response;
+    return Radar.response.point;
 }
 
 export void toglobal(byte3* point)
