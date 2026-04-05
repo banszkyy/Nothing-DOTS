@@ -311,7 +311,7 @@ public partial class CompilerSystemServer : SystemBase
                     return false;
                 }
 
-                if (!field.Context.Attributes.TryGetAttribute("UnitCommand", out _))
+                if (!field.Context.Definition.Attributes.TryGetAttribute("UnitCommand", out _))
                 {
                     error = new PossibleDiagnostic($"The struct should be flagged with [UnitCommand] attribute", attribute);
                     return false;
@@ -513,7 +513,7 @@ public partial class CompilerSystemServer : SystemBase
                 List<UnitCommandDefinition> commandDefinitions = new();
                 foreach (CompiledStruct @struct in source.Compiled.Structs)
                 {
-                    if (!@struct.Attributes.TryGetAttribute("UnitCommand", out AttributeUsage? structAttribute))
+                    if (!@struct.Definition.Attributes.TryGetAttribute("UnitCommand", out AttributeUsage? structAttribute))
                     { continue; }
 
                     if (structAttribute.Parameters[0] is not IntLiteralExpression idArgument) continue;
@@ -524,7 +524,7 @@ public partial class CompilerSystemServer : SystemBase
 
                     foreach (CompiledField field in @struct.Fields)
                     {
-                        if (!field.Attributes.TryGetAttribute("Context", out AttributeUsage? attribute)) continue;
+                        if (!field.Definition.Attributes.TryGetAttribute("Context", out AttributeUsage? attribute)) continue;
                         if (attribute.Parameters[0] is not StringLiteralExpression stringLiteral) continue;
                         switch (stringLiteral.Value)
                         {
