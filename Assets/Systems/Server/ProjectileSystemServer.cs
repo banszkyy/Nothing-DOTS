@@ -48,7 +48,7 @@ partial struct ProjectileSystemServer : ISystem
             DynamicBuffer<BufferedDamage> damage = default;
 
 #if DEBUG_LINES
-            Debug.DrawLine(ray.Start, ray.End, Color.Lerp(Color.green, Color.white, 0.5f), 4f);
+            DebugEx.DrawLine(ray.Start, ray.End, Color.Lerp(Color.green, Color.white, 0.5f), 4f);
 #endif
 
             bool didHitTerrain = terrainSystem.Raycast(ray.Start, ray.Direction, math.distance(lastPosition, newPosition), out float terrainHit, out _);

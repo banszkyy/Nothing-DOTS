@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using SaintsField.Playa;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -346,22 +347,31 @@ public class SetupManager : Singleton<SetupManager>
                 if (!spreadUnitSetup.RandomPosition || Deterministic)
                 {
                     int i = 0;
-                    List<MeshFilter> meshes = spreadUnitSetup.Prefab == null ? new() : spreadUnitSetup.Prefab.GetAllComponents<MeshFilter>();
-                    foreach ((Vector2 position, float rotation) in GetPositions(spreadUnitSetup))
+                    GameObject root = spreadUnitSetup.Prefab;
+
+                    List<MeshFilter> meshes = root == null ? new() : root.GetAllComponents<MeshFilter>();
+                    if (meshes.Count == 0)
                     {
-                        if (i++ > 100) break;
-                        bool v = false;
-                        Vector3 p = new(position.x, PositionY, position.y);
-
-                        foreach (MeshFilter item in meshes)
+                        foreach ((Vector2 position, _) in GetPositions(spreadUnitSetup))
                         {
-                            Gizmos.DrawWireMesh(item.sharedMesh, item.transform.position + p, item.transform.rotation, item.transform.lossyScale);
-                            v = true;
+                            if (i++ > 100) break;
+                            Gizmos.DrawSphere(new Vector3(position.x, PositionY, position.y), UnitRadius);
                         }
+                    }
+                    else
+                    {
+                        foreach ((Vector2 position, float rotation) in GetPositions(spreadUnitSetup))
+                        {
+                            if (i++ > 100) break;
+                            Vector3 p = new(position.x, PositionY, position.y);
+                            Quaternion r = Quaternion.Euler(0f, rotation * Mathf.Rad2Deg, 0f);
 
-                        if (v) continue;
-
-                        Gizmos.DrawSphere(p, UnitRadius);
+                            foreach (MeshFilter item in meshes)
+                            {
+                                item.transform.GetPositionAndRotation(out Vector3 lp, out Quaternion lr);
+                                Gizmos.DrawWireMesh(item.sharedMesh, p + (r * lp), r * lr, item.transform.lossyScale);
+                            }
+                        }
                     }
                 }
             }

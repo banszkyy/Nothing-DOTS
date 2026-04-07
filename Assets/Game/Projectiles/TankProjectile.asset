@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: TankProjectile
   m_EditorClassIdentifier: 
   Prefab: {fileID: 2786101604496490284, guid: 43271472464ab435ea8449499228d966, type: 3}
-  Damage: 2
-  Speed: 50
+  Damage: 5
+  Speed: 70
   MetalImpactEffect: {fileID: 8926484042661614526, guid: bdc4dd8447cc02411aeac8c3f652fb3f,
     type: 3}
   DustImpactEffect: {fileID: 8926484042661614526, guid: f187d57176b8bc2b598bac872e9e75e1,

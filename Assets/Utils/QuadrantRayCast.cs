@@ -36,7 +36,7 @@ public static class QuadrantRayCast
 #if DEBUG_LINES
             CollisionSystem.Debug(entities[i].Collider, entities[i].Position, QuadrantSystem.CellColor(entities[i].Key), 1f, false);
             DebugEx.DrawPoint(ray.GetPoint(distance), 1f, QuadrantSystem.CellColor(entities[i].Key), 1f, false);
-            Debug.DrawLine(ray.Start, ray.End, QuadrantSystem.CellColor(entities[i].Key), 1f, false);
+            DebugEx.DrawLine(ray.Start, ray.End, QuadrantSystem.CellColor(entities[i].Key), 1f, false);
 #endif
             hit = new(entities[i], distance);
             return true;

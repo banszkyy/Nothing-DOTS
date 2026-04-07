@@ -334,7 +334,7 @@ partial struct TerrainSystemServer : ISystem
 
         float2 dataPos00 = chunkPosition + dataPosition00;
 
-        //Debug.DrawLine(
+        //DebugEx.DrawLine(
         //    new UnityEngine.Vector3(position.x, 0f, position.y),
         //    new UnityEngine.Vector3(position.x, 100f, position.y),
         //    Color.white,
@@ -592,7 +592,7 @@ partial struct TerrainSystemServer : ISystem
                 traveled = tMaxX;
                 tMaxX += tDeltaX;
 #if RAYCAST_DEBUG
-                Debug.DrawLine(
+                DebugEx.DrawLine(
                     (new float2(gx, gz) * DataPointWorldSize).FlatTo3D(),
                     (new float2(gx + stepX, gz) * DataPointWorldSize).FlatTo3D(),
                     Color.white,
@@ -607,7 +607,7 @@ partial struct TerrainSystemServer : ISystem
                 traveled = tMaxZ;
                 tMaxZ += tDeltaZ;
 #if RAYCAST_DEBUG
-                Debug.DrawLine(
+                DebugEx.DrawLine(
                     (new float2(gx, gz) * DataPointWorldSize).FlatTo3D(),
                     (new float2(gx, gz + stepZ) * DataPointWorldSize).FlatTo3D(),
                     Color.white,

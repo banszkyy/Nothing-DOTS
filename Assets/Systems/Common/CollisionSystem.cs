@@ -213,7 +213,7 @@ unsafe partial struct CollisionSystem : ISystem
                         RefRW<LocalTransform> transform = localTransformQ.GetRefRW(a->Entity);
 #if DEBUG_COLLISIONS
                         DebugEx.Label(transform.ValueRO.Position, a->ResolvedOffset.ToString());
-                        UnityEngine.Debug.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + a->ResolvedOffset, Color.green, 0.1f, false);
+                        DebugEx.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + a->ResolvedOffset, Color.green, 0.1f, false);
 #endif
                         transform.ValueRW.Position += a->ResolvedOffset;
                     }
@@ -241,7 +241,7 @@ unsafe partial struct CollisionSystem : ISystem
         using ProfilerMarker.AutoScope _ = _handleCollision.Auto();
 
 #if DEBUG_COLLISIONS
-        UnityEngine.Debug.DrawLine(a->Position, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
+        DebugEx.DrawLine(a->Position, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
         DebugEx.DrawPoint(a->Position, 0.5f, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
         if (!skipB)
         {

@@ -3,7 +3,9 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections;
+#if UNITY_EDITOR
 using Unity.EditorCoroutines.Editor;
+#endif
 
 #if UNITY_EDITOR
 [UnityEditor.InitializeOnLoad]
@@ -38,6 +40,7 @@ public class ThreadedDataRequester : Singleton<ThreadedDataRequester>
     {
         void CallbackWrapper(T v) => DataQueue.Enqueue(new TaskInfo(v => callback.Invoke((T)v!), v, null));
 
+#if UNITY_EDITOR
         if (InstanceOrNull == null)
         {
             EditorCoroutineUtility.StartCoroutineOwnerless(task.Invoke(CallbackWrapper));
@@ -46,6 +49,9 @@ public class ThreadedDataRequester : Singleton<ThreadedDataRequester>
         {
             InstanceOrNull.StartCoroutine(task.Invoke(CallbackWrapper));
         }
+#else
+        Instance.StartCoroutine(task.Invoke(CallbackWrapper));
+#endif
     }
 
 #if UNITY_EDITOR

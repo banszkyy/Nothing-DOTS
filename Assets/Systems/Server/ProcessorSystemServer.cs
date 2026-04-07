@@ -315,12 +315,12 @@ unsafe partial struct ProcessorSystemServer : ISystem
                 if (subscribedTerminals[i].Connection == request.ValueRO.SourceConnection
                     && subscribedTerminals[i].Entity.Equals(command.ValueRO.Entity))
                 {
-                    Debug.LogWarning($"{DebugEx.ServerPrefix} Client {request.ValueRO.SourceConnection} is already subscribed to terminal of entity {command.ValueRO.Entity} ({command.ValueRO.Offset})");
+                    Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Client {{0}} is already subscribed to terminal of entity {{1}} ({{2}})", request.ValueRO.SourceConnection, command.ValueRO.Entity, command.ValueRO.Offset));
                     goto exists;
                 }
             }
 
-            Debug.Log($"{DebugEx.ServerPrefix} Client {request.ValueRO.SourceConnection} subscribed to terminal of entity {command.ValueRO.Entity} ({command.ValueRO.Offset})");
+            Debug.Log(string.Format($"{DebugEx.ServerPrefix} Client {{0}} subscribed to terminal of entity {{1}} ({{2}})", request.ValueRO.SourceConnection, command.ValueRO.Entity, command.ValueRO.Offset));
             subscribedTerminals.Add(new TerminalSubscriptionServer()
             {
                 Entity = command.ValueRO.Entity,
@@ -341,7 +341,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
                 if (subscribedTerminals[i].Connection == request.ValueRO.SourceConnection
                     && subscribedTerminals[i].Entity.Equals(command.ValueRO.Entity))
                 {
-                    Debug.Log($"{DebugEx.ServerPrefix} Client {request.ValueRO.SourceConnection} unsubscribed from terminal of entity {command.ValueRO.Entity}");
+                    Debug.Log(string.Format($"{DebugEx.ServerPrefix} Client {{0}} unsubscribed from terminal of entity {{1}}", request.ValueRO.SourceConnection, command.ValueRO.Entity));
                     subscribedTerminals.RemoveAt(i--);
                 }
             }

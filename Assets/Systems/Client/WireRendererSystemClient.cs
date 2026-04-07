@@ -168,11 +168,11 @@ public partial class WireRendererSystemClient : SystemBase
             float t = (i * wireResolution) - (distance / 2);
             wirePoint.y -= offset - Catenary(WireCatenary, t);
 
-            Debug.DrawLine(p, wirePoint, color, duration, depthTest);
+            DebugEx.DrawLine(p, wirePoint, color, duration, depthTest);
             p = wirePoint;
         }
 
-        Debug.DrawLine(p, endPosition, color, duration, depthTest);
+        DebugEx.DrawLine(p, endPosition, color, duration, depthTest);
     }
 
     protected override void OnUpdate()

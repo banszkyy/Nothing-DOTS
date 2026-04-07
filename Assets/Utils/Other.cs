@@ -82,7 +82,7 @@ public static partial class Utils
         return 2f * math.sqrt(s * (s - a) * (s - b) * (s - c)) / a;
     }
 
-    public static float3 ToEuler(this in float3 direction) => new(-MathF.Asin(direction.y), MathF.Atan2(direction.x, direction.z), 0f);
+    public static float3 ToEuler(this in float3 direction) => new(-Mathf.Asin(direction.y), Mathf.Atan2(direction.x, direction.z), 0f);
 
     public static bool RayIntersectsTriangle(
         in float3 rayOrigin,

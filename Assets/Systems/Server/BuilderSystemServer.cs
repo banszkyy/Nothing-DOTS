@@ -26,7 +26,7 @@ public partial struct BuilderSystemServer : ISystem
             Ray ray = new(turretTransform.ValueRO.Position, turretTransform.ValueRO.Forward, Builder.BuildRadius, Layers.BuildingPlaceholder, false);
 
 #if DEBUG_LINES
-            Debug.DrawLine(ray.Start, ray.End, Color.white, 0.2f, false);
+            DebugEx.DrawLine(ray.Start, ray.End, Color.white, 0.2f, false);
 #endif
 
             if (!QuadrantRayCast.RayCast(map, ray, out Hit hit))

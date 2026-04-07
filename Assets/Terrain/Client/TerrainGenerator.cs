@@ -132,7 +132,7 @@ public class TerrainGenerator : Singleton<TerrainGenerator>
 
         height = TerrainSystemServer.Sample(heightmap, position, chunkCoord, dataCoord, out normal);
 
-        //Debug.DrawRay(new float3(position.x, height, position.y), normal, Color.blue, 1000f);
+        //DebugEx.DrawRay(new float3(position.x, height, position.y), normal, Color.blue, 1000f);
         return true;
     }
 
@@ -155,7 +155,7 @@ public class TerrainGenerator : Singleton<TerrainGenerator>
 
         height = TerrainSystemServer.Sample(heightmap, position, chunkCoord, dataCoord);
 
-        //Debug.DrawRay(new float3(position.x, height, position.y), normal, Color.blue, 1000f);
+        //DebugEx.DrawRay(new float3(position.x, height, position.y), normal, Color.blue, 1000f);
         return true;
     }
 
@@ -178,7 +178,7 @@ public class TerrainGenerator : Singleton<TerrainGenerator>
 
         height = heightmap[dataCoord.x + dataCoord.y * TerrainSystemServer.NumVertsPerLine];
 
-        //Debug.DrawRay(new float3(position.x, height, position.y), new Vector3(0f, 1f, 0f), Color.blue, 1000f);
+        //DebugEx.DrawRay(new float3(position.x, height, position.y), new Vector3(0f, 1f, 0f), Color.blue, 1000f);
         return true;
     }
 
@@ -395,7 +395,7 @@ public class TerrainGenerator : Singleton<TerrainGenerator>
                 traveled = tMaxX;
                 tMaxX += tDeltaX;
 #if RAYCAST_DEBUG
-                Debug.DrawLine(
+                DebugEx.DrawLine(
                     (new float2(gx, gz) * TerrainSystemServer.DataPointWorldSize).FlatTo3D(),
                     (new float2(gx + stepX, gz) * TerrainSystemServer.DataPointWorldSize).FlatTo3D(),
                     Color.white,
@@ -410,7 +410,7 @@ public class TerrainGenerator : Singleton<TerrainGenerator>
                 traveled = tMaxZ;
                 tMaxZ += tDeltaZ;
 #if RAYCAST_DEBUG
-                Debug.DrawLine(
+                DebugEx.DrawLine(
                     (new float2(gx, gz) * TerrainSystemServer.DataPointWorldSize).FlatTo3D(),
                     (new float2(gx, gz + stepZ) * TerrainSystemServer.DataPointWorldSize).FlatTo3D(),
                     Color.white,

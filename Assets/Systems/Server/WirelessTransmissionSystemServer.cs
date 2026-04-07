@@ -51,7 +51,7 @@ partial struct WirelessTransmissionSystemServer : ISystem
             if (!transmission.Direction.Equals(default))
             {
                 float3 globalDirection = transform.ValueRO.TransformDirection(transmission.Direction);
-                Debug.DrawLine(
+                DebugEx.DrawLine(
                     transmission.Source,
                     globalDirection * Unit.TransmissionRadius,
                     Color.cyan,
@@ -139,7 +139,7 @@ partial struct WirelessTransmissionSystemServer : ISystem
                                 if (dot < transmission.Metadata.Wireless.CosAngle)
                                 {
 #if DEBUG_LINES
-                                    //Debug.DrawLine(transmission.Source, cell[i].Position, Color.orange, 1f, false);
+                                    //DebugEx.DrawLine(transmission.Source, cell[i].Position, Color.orange, 1f, false);
                                     //Debug.Log($"{dot} ({math.dot(transmission.Direction, math.normalize(entityLocalPosition))}) < {transmission.CosAngle} entity: {entity} origin: {transmission.Source}");
                                     DebugEx.DrawSphere(cell[i].Position, 1f, Color.orange, 1f, false);
 #endif

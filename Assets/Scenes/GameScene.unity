@@ -299,6 +299,14 @@ MonoBehaviour:
     Spawn:
       x: -3.5823903
       y: -0.008090019
+  - Prefab: {fileID: 2198220952844499968, guid: 96ae8eafcc6aa2ba89fcb75290eebf31,
+      type: 3}
+    Script: unit-6.bbc
+    Team: 0
+    Enabled: 1
+    Spawn:
+      x: -2.08148
+      y: 0.26084647
   SpawnRandomUnits_: 1
   RandomUnits:
   - Prefab: {fileID: 1287691938842737703, guid: b686aecd0774a0eb98551c108a20bb36,

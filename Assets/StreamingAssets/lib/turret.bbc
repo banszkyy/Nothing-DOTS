@@ -117,12 +117,17 @@ export u8 targetat(float2 target, float2* targetedPosition)
     return (u8)0;
 }
 
-const float ProjectileV = 40f;
-const float ProjectileV2 = ProjectileV * ProjectileV;
-const float ProjectileV4 = ProjectileV2 * ProjectileV2;
+//const float ProjectileV = 110f;
+//const float ProjectileV2 = ProjectileV * ProjectileV;
+//const float ProjectileV4 = ProjectileV2 * ProjectileV2;
 
 u8 solve_ballistic_arc(float3 selfWorldPosition, float3 targetWorldPosition, float3* shootDirection)
 {
+    float ProjectileV;
+    query_attribute(1, &ProjectileV);
+    float ProjectileV2 = ProjectileV * ProjectileV;
+    float ProjectileV4 = ProjectileV2 * ProjectileV2;
+
     float3 diff = targetWorldPosition - selfWorldPosition;
     float groundDistance = sqrt(diff.x * diff.x + diff.z * diff.z);
 

@@ -38,7 +38,7 @@ partial struct ExtractorProcessorSystemServer : ISystem
                     float distanceSq = math.distancesq(resourceNodeTransform.ValueRO.Position, transform.ValueRO.Position);
                     if (distanceSq > Extractor.ExtractRadius * Extractor.ExtractRadius) continue;
 
-                    Debug.DrawLine(transform.ValueRO.Position, resourceNodeTransform.ValueRO.Position, Color.green, .1f);
+                    DebugEx.DrawLine(transform.ValueRO.Position, resourceNodeTransform.ValueRO.Position, Color.green, .1f);
 
                     extractor.ValueRW.ExtractProgress += Extractor.ExtractSpeed * SystemAPI.Time.DeltaTime;
 
@@ -55,7 +55,7 @@ partial struct ExtractorProcessorSystemServer : ISystem
                         if (resource.ValueRO.Amount >= Resource.Capacity) continue;
                         resource.ValueRW.Amount++;
                         extracted = true;
-                        Debug.DrawLine(transform.ValueRO.Position, resourceTransform.ValueRO.Position, Color.cyan, .1f);
+                        DebugEx.DrawLine(transform.ValueRO.Position, resourceTransform.ValueRO.Position, Color.cyan, .1f);
                         break;
                     }
 
@@ -73,7 +73,7 @@ partial struct ExtractorProcessorSystemServer : ISystem
                         {
                             Velocity = velocity,
                         });
-                        Debug.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + new float3(0f, 0f, 2f), Color.blue, 1f);
+                        DebugEx.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + new float3(0f, 0f, 2f), Color.blue, 1f);
                     }
 
                     break;

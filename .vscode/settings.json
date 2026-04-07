@@ -88,6 +88,7 @@
     "material-icon-theme.files.associations": {
         "*.uxml": "xml",
         "*.tss": "css",
-        "*.uss": "css"
+        "*.uss": "css",
+        "*.rsp": "settings"
     }
 }

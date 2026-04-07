@@ -44,7 +44,7 @@ public partial struct UnitRadarSystemServer : ISystem
             RadarRay ray = new(transform.ValueRO.Position + (direction3 * offset), direction, math.max((Radar.RadarRadius * h) - offset, 0f), Layers.BuildingOrUnit);
 
 #if DEBUG_LINES
-            Debug.DrawLine(ray.Start, new float3(ray.End.x, ray.Start.y, ray.End.y), Color.white, DebugDuration, false);
+            DebugEx.DrawLine(ray.Start, new float3(ray.End.x, ray.Start.y, ray.End.y), Color.white, DebugDuration, false);
 #endif
 
             if (!RadarCast(map, ray, out RadarHit hit))
@@ -178,7 +178,7 @@ public partial struct UnitRadarSystemServer : ISystem
             );
 
 #if DEBUG_LINES
-            Debug.DrawLine(ray3.Start, ray3.End, Color.magenta, DebugDuration);
+            DebugEx.DrawLine(ray3.Start, ray3.End, Color.magenta, DebugDuration);
 #endif
 
             if (!CollisionSystem.Raycast(

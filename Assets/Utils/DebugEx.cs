@@ -22,7 +22,7 @@ public static partial class DebugEx
         world.IsClient() ? (FixedString64Bytes)ClientPrefix :
         LocalPrefix;
 
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
     readonly struct UnitSquare
     {
         readonly float3 _0;
@@ -142,7 +142,7 @@ public static partial class DebugEx
 
     public static void DrawSphere(float3 pos, float radius, Color color, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
         int len = _unitSphere.Length / 3;
         for (int i = 0; i < len; i++)
         {
@@ -161,21 +161,25 @@ public static partial class DebugEx
 #endif
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawBoxAligned(float3 start, float3 size, Color color, float duration = 0f, bool depthTest = true)
         => DrawBox(start + size * 0.5f, size, color, duration, depthTest);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawBox(AABB aabb, Color color, float duration = 0f, bool depthTest = true)
         => DrawBox(aabb.Center, aabb.Size, color, duration, depthTest);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawBox(AABB aabb, float3 offset, Color color, float duration = 0f, bool depthTest = true)
         => DrawBox(aabb.Center + offset, aabb.Size, color, duration, depthTest);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawBox(Bounds bounds, Color color, float duration = 0f, bool depthTest = true)
         => DrawBox(bounds.center, bounds.size, color, duration, depthTest);
 
     public static void DrawBox(float3 pos, float3 size, Color color, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
         for (int i = 0; i < 4; i++)
         {
             float3 s = pos + (_unitCube[i] * size);
@@ -199,16 +203,20 @@ public static partial class DebugEx
 
     public static void DrawAxes(float3 pos, float scale = 1f, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
         Debug.DrawLine(pos, pos + new float3(scale, 0f, 0f), Color.red, duration, depthTest);
         Debug.DrawLine(pos, pos + new float3(0f, scale, 0f), Color.green, duration, depthTest);
         Debug.DrawLine(pos, pos + new float3(0f, 0f, scale), Color.blue, duration, depthTest);
 #endif
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DrawLine(Vector3 start, Vector3 end, Color color, float duration = 0f, bool depthTest = true)
+        => Debug.DrawLine(start, end, color, duration, depthTest);
+
     public static void DrawPoint(float3 position, float scale, Color color, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
         float3 right = new(scale, 0f, 0f);
         float3 up = new(0f, scale, 0f);
         float3 forward = new(0f, 0f, scale);
@@ -221,7 +229,7 @@ public static partial class DebugEx
 
     public static void DrawTriangle(float3 a, float3 b, float3 c, Color color, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
         Debug.DrawLine(a, b, color, duration, depthTest);
         Debug.DrawLine(b, c, color, duration, depthTest);
         Debug.DrawLine(c, a, color, duration, depthTest);
@@ -230,7 +238,7 @@ public static partial class DebugEx
 
     public static void DrawTriangle(float3x3 tri, Color color, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
         Debug.DrawLine(tri.c0, tri.c1, color, duration, depthTest);
         Debug.DrawLine(tri.c1, tri.c2, color, duration, depthTest);
         Debug.DrawLine(tri.c2, tri.c0, color, duration, depthTest);
@@ -239,7 +247,7 @@ public static partial class DebugEx
 
     public static void DrawRectangle(float3 start, float3 end, Color color, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
         Debug.DrawLine(start, new float3(start.x, start.y, end.z), color, duration, depthTest);
         Debug.DrawLine(start, new float3(end.x, start.y, start.z), color, duration, depthTest);
         Debug.DrawLine(new float3(start.x, end.y, end.z), end, color, duration, depthTest);
@@ -249,7 +257,7 @@ public static partial class DebugEx
 
     public static void DrawFOV(float3 origin, float3 direction, float angle, float distance, Color color, float duration = 0f, bool depthTest = true)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR
         const float step = 0.01f;
         float directionAngle = math.atan2(direction.z, direction.x);
         float3 prevPoint = origin;
@@ -269,10 +277,11 @@ public static partial class DebugEx
     public static void Label(Vector3 position, string text)
     {
 #if UNITY_EDITOR
-        UnityEditor.Handles.BeginGUI();
         UnityEditor.SceneView view = UnityEditor.SceneView.currentDrawingSceneView;
         Vector3 screenPos = view.camera.WorldToScreenPoint(position);
         Vector2 size = GUI.skin.label.CalcSize(new GUIContent(text));
+
+        UnityEditor.Handles.BeginGUI();
         GUI.Label(new Rect(screenPos.x - (size.x / 2), -screenPos.y + view.position.height + 4, size.x, size.y), text);
         UnityEditor.Handles.EndGUI();
 #endif

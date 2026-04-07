@@ -480,7 +480,7 @@ static unsafe class ProcessorAPI
             ));
 
 #if DEBUG_LINES
-            UnityEngine.Debug.DrawLine(
+            DebugEx.DrawLine(
                 scope->EntityRef.WorldTransform.Position,
                 position,
                 new Color(
@@ -516,7 +516,7 @@ static unsafe class ProcessorAPI
             ));
 
 #if DEBUG_LINES
-            UnityEngine.Debug.DrawLine(
+            DebugEx.DrawLine(
                 scope->EntityRef.WorldTransform.Position,
                 transformed,
                 new Color(
