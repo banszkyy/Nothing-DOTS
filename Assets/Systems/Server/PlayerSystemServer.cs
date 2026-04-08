@@ -18,7 +18,7 @@ public partial struct PlayerSystemServer : ISystem
     void ISystem.OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<PrefabDatabase>();
-        TeamCounter = 0;
+        TeamCounter = 1;
     }
 
     void ISystem.OnUpdate(ref SystemState state)

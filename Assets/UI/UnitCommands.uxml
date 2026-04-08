@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
     <ui:Template name="UnitCommandItem" src="project://database/Assets/UI/UnitCommandItem.uxml" />
-    <Style src="project://database/Assets/UI/Style.uss" />
+    <Style src="project://database/Assets/UI/Styles/Style.uss" />
     <ui:VisualElement class="panel" style="position: absolute;">
         <ui:ProgressBar value="0" name="progress" high-value="1" style="display: none;" />
         <ui:VisualElement name="container-unit-commands">

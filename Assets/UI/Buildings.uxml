@@ -1,10 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:Template name="Building Button" src="project://database/Assets/UI/Building%20Button.uxml" />
-    <Style src="project://database/Assets/UI/Style.uss" />
+    <ui:Template name="BuildingsItem" src="project://database/Assets/UI/BuildingsItem.uxml" />
+    <Style src="project://database/Assets/UI/Styles/Style.uss" />
     <ui:VisualElement style="bottom: 0; position: absolute; right: 0; left: 0;">
         <ui:GroupBox text="Buildings" class="panel">
             <ui:ScrollView scroll-deceleration-rate="0,135" elasticity="0,1" class="menulist">
-                <ui:Instance template="Building Button" />
+                <ui:Instance template="BuildingsItem" />
             </ui:ScrollView>
         </ui:GroupBox>
     </ui:VisualElement>

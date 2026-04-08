@@ -5,6 +5,8 @@ using UnityEngine.UIElements;
 
 public class MainMenuManager : Singleton<MainMenuManager>, IUISetup, IUICleanup
 {
+    public string? ConnectionError;
+
     public void Setup(UIDocument ui)
     {
         ui.rootVisualElement.Q<Button>("button-singleplayer").clicked += () =>
@@ -32,6 +34,24 @@ public class MainMenuManager : Singleton<MainMenuManager>, IUISetup, IUICleanup
             if (!HandleInput(ui, out _, out FixedString32Bytes nickname)) return;
             ConnectionManager.Instance.StartCoroutine(ConnectionManager.Instance.StartStagingAsync(nickname, null));
         };
+
+        if (ConnectionError is not null)
+        {
+            ui.rootVisualElement.Q<Label>("error-connection").text = ConnectionError;
+            ui.rootVisualElement.Q<Label>("error-connection").style.display = DisplayStyle.Flex;
+            ConnectionError = null;
+        }
+        else
+        {
+            ui.rootVisualElement.Q<Label>("error-connection").text = "";
+            ui.rootVisualElement.Q<Label>("error-connection").style.display = DisplayStyle.None;
+        }
+
+        ui.rootVisualElement.Q<Label>("input-error-host").text = "";
+        ui.rootVisualElement.Q<Label>("input-error-host").style.display = DisplayStyle.None;
+
+        ui.rootVisualElement.Q<Label>("input-error-nickname").text = "";
+        ui.rootVisualElement.Q<Label>("input-error-nickname").style.display = DisplayStyle.None;
     }
 
     public void Cleanup(UIDocument ui)

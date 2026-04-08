@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.NetCode;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -54,7 +55,11 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
     void OnButtonExit()
     {
         ConnectionManager.DisconnectEveryone();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.ExitPlaymode();
+#else
         Application.Quit();
+#endif
     }
 
     void OnButtonSave()
@@ -86,19 +91,25 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
             UI_ConnectionItem,
             (player, element, recycled) =>
             {
-                double ping = TimeSpan.FromTicks(player.Ping).TotalMilliseconds;
-
                 element.userData = player.ConnectionId;
                 element.Q<Label>("label-nickname").text = player.Nickname.ToString();
                 element.Q<Label>("label-team").text = player.Team.ToString();
-                element.Q<Label>("label-ping").text = $"{Math.Ceiling(ping)} ms";
-                element.Q<Label>("label-ping").style.color = ping switch
+                if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
                 {
-                    <= 0 => new StyleColor(StyleKeyword.Null),
-                    <= 30 => new StyleColor(Color.green),
-                    <= 100 => new StyleColor(Color.yellow),
-                    _ => new StyleColor(Color.red),
-                };
+                    element.Q<Label>("label-ping").style.display = DisplayStyle.None;
+                }
+                else
+                {
+                    double ping = TimeSpan.FromTicks(player.Ping).TotalMilliseconds;
+                    element.Q<Label>("label-ping").text = $"{Math.Ceiling(ping)} ms";
+                    element.Q<Label>("label-ping").style.color = ping switch
+                    {
+                        <= 0 => new StyleColor(StyleKeyword.Null),
+                        <= 30 => new StyleColor(Color.green),
+                        <= 100 => new StyleColor(Color.yellow),
+                        _ => new StyleColor(Color.red),
+                    };
+                }
                 element.Q<VisualElement>("icon-admin").style.display = player.IsAdmin ? DisplayStyle.Flex : DisplayStyle.None;
                 if (!recycled) element.Q<Button>("button-kick").clicked += () =>
                 {

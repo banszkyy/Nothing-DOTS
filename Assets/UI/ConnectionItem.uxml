@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement class="panel" style="flex-grow: 1; flex-direction: row;">
         <ui:Label text="\uf521" parse-escape-sequences="true" name="icon-admin" style="-unity-text-align: middle-left; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; -unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); color: rgb(255, 165, 0); font-size: 10px;"/>
         <ui:Label text="Someone" name="label-nickname" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; -unity-text-align: middle-left;"/>

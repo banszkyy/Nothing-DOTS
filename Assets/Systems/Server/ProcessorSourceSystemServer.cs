@@ -40,7 +40,7 @@ partial class ProcessorSourceSystemServer : SystemBase
                     case ProcessorCommand.Key:
                         if (processor.ValueRW.InputKey.Length >= processor.ValueRW.InputKey.Capacity)
                         {
-                            Debug.LogWarning($"{DebugEx.ServerPrefix} Couldn't append the key to the stdin stream");
+                            Debug.LogWarning($"{DebugEx.ServerPrefix} Standard input buffer is full");
                             break;
                         }
                         processor.ValueRW.InputKey.Add(unchecked((char)command.ValueRO.Data));

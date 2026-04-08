@@ -1,0 +1,93 @@
+
+.server-message Label {
+    color: rgb(255, 214, 77);
+}
+
+.system-message Label {
+    color: rgb(102, 167, 204);
+}
+
+.player-message Label {
+    color: rgb(255, 255, 255);
+}
+
+.chat-message {
+    transition-property: all, opacity;
+    transition-duration: 0s, 1s;
+    transition-timing-function: ease, ease;
+    transition-delay: 0s, 0s;
+    opacity: 1;
+}
+
+.chat-message.old {
+    opacity: 0;
+}
+
+.chat-message.very-old {
+    display: none;
+}
+
+.show .chat-message {
+    opacity: 1;
+    display: flex;
+    transition-duration: 0s, 0s;
+}
+
+* {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/Roboto-Bold.ttf?fileID=12800000&guid=e800a5ccc3046225db956d38afe30f43&type=3#Roboto-Bold");
+}
+
+.chat-input {
+    flex-grow: 1;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+}
+
+.chat-input > #unity-text-input {
+    padding-top: 0;
+    padding-right: 0;
+    margin-top: 0;
+    margin-right: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.chat-input > #unity-text-input > TextElement {
+    font-size: 11px;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+}
+
+.chat-send-button {
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&guid=08a8c06d1c31b66bead804787c809857&type=3#Font Awesome 7 Free-Solid-900");
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding-top: 0;
+    padding-right: 2px;
+    padding-bottom: 0;
+    padding-left: 2px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.chat-send-button:enabled:hover {
+    color: rgb(255, 255, 255);
+    background-color: rgba(0, 0, 0, 0);
+}

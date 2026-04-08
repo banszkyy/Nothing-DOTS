@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style" />
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style" />
     <ui:VisualElement picking-mode="Ignore" style="flex-direction: row;">
         <ui:VisualElement style="flex-direction: row; background-color: rgb(0, 0, 0); margin-top: 4px; margin-right: 4px; margin-bottom: 4px; margin-left: 4px; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px;">
             <ui:Label text="FPS:" style="margin-top: 0; margin-right: 8px; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
@@ -14,7 +14,7 @@
             <ui:Label text="0" name="label-team" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
         </ui:VisualElement>
         <ui:VisualElement style="flex-direction: row; background-color: rgb(0, 0, 0); margin-top: 4px; margin-right: 4px; margin-bottom: 4px; margin-left: 4px; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; padding-left: 4px; display: none;">
-            <ui:Label text="Selected Units:" tooltip="what" style="margin-top: 0; margin-right: 8px; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
+            <ui:Label text="Selected Units:" style="margin-top: 0; margin-right: 8px; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
             <ui:Label text="0" name="label-selected-units" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
         </ui:VisualElement>
     </ui:VisualElement>

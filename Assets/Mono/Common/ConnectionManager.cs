@@ -85,6 +85,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
     {
         if (e.State == ConnectionState.State.Disconnected)
         {
+            MainMenuManager.Instance.ConnectionError = e.DisconnectReason.ToString();
+
             UIManager.Instance.OpenUI(MainMenuUI)
                 .Setup(MainMenuManager.Instance);
 
@@ -117,6 +119,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
     public IEnumerator StartSingleplayerAsync(FixedString32Bytes nickname, string? savefile)
     {
+        yield return new WaitForFixedUpdate();
+
         Debug.Log($"{DebugEx.AnyPrefix} Start singleplayer");
 
         UIManager.Instance.CloseAllUI();
@@ -155,6 +159,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
     public IEnumerator StartHostAsync(NetworkEndpoint endpoint, FixedString32Bytes nickname, string? savefile)
     {
+        yield return new WaitForFixedUpdate();
+
         Debug.Log($"{DebugEx.AnyPrefix} Start host on `{endpoint}`");
 
         UIManager.Instance.OpenUI(NetworkUI);
@@ -210,6 +216,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
     public IEnumerator StartClientAsync(NetworkEndpoint endpoint, FixedString32Bytes nickname)
     {
+        yield return new WaitForFixedUpdate();
+
         Debug.Log($"{DebugEx.AnyPrefix} Start client on `{endpoint}`");
 
         UIManager.Instance.OpenUI(NetworkUI);
@@ -238,6 +246,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
     public IEnumerator StartServerAsync(NetworkEndpoint endpoint, string? savefile)
     {
+        yield return new WaitForFixedUpdate();
+
         Debug.Log($"{DebugEx.EditorPrefix} Start server on `{endpoint}`");
 
         UIManager.Instance.OpenUI(NetworkUI);
@@ -280,6 +290,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
     public IEnumerator StartStagingAsync(FixedString32Bytes nickname, string? savefile)
     {
+        yield return new WaitForFixedUpdate();
+
         Debug.Log($"{DebugEx.AnyPrefix} Start staging");
 
         UIManager.Instance.CloseAllUI();

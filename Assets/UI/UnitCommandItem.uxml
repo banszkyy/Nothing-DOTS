@@ -1,4 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI/Style.uss" />
+    <Style src="project://database/Assets/UI/Styles/Style.uss" />
     <ui:Button text="Unit Command" name="unit-command-name" style="-unity-text-align: middle-left; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0;" />
 </ui:UXML>

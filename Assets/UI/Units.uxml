@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
     <ui:Template name="UnitButton" src="project://database/Assets/UI/UnitButton.uxml?fileID=9197481963319205126&amp;guid=d033446b04fa1ca8388d418c8e1d9694&amp;type=3#UnitButton"/>
-    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement style="bottom: 0; position: absolute; right: 0; left: 0;">
         <ui:GroupBox text="Units" class="panel">
             <ui:ScrollView scroll-deceleration-rate="0,135" elasticity="0,1" class="menulist">

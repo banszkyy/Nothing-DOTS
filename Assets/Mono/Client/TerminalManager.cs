@@ -398,8 +398,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
     ProgressRecord<(int, int)>? _memoryDownloadProgress;
     Awaitable<RemoteFile>? _memoryDownloadTask;
     string? _scheduledSource;
-    (Tab Condition, Tab Target) _requestedTabSwitch;
-    Tab? _fulfilledTabSwitch;
+    float _terminalCursorBlinkRestart;
 
     void Update()
     {
@@ -409,15 +408,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         {
             UIManager.Instance.CloseUI(this);
             return;
-        }
-
-        if (!_fulfilledTabSwitch.HasValue || _fulfilledTabSwitch.Value != _requestedTabSwitch.Target)
-        {
-            if ((int)_requestedTabSwitch.Condition == ui_TabView.selectedTabIndex)
-            {
-                ui_TabView.selectedTabIndex = (int)_requestedTabSwitch.Target;
-            }
-            _fulfilledTabSwitch = _requestedTabSwitch.Target;
         }
 
         if (Time.time >= refreshAt || !selectingFile.IsDefault)
@@ -484,11 +474,19 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             ui_ButtonSelect.SetEnabled(true);
             ui_ButtonSelect.clickable = new Clickable(() =>
             {
-                selectingFile = Directory.GetFiles(FileChunkManagerSystem.BasePath)
-                    .Select(v => Path.GetRelativePath(FileChunkManagerSystem.BasePath, v))
-                    .Where(v => !v.EndsWith(".meta"))
-                    .ToImmutableArray();
-                BeginFileSelection();
+                if (selectingFile.IsDefaultOrEmpty)
+                {
+                    selectingFile = Directory.GetFiles(FileChunkManagerSystem.BasePath)
+                        .Select(v => Path.GetRelativePath(FileChunkManagerSystem.BasePath, v))
+                        .Where(v => !v.EndsWith(".meta"))
+                        .ToImmutableArray();
+                    BeginFileSelection();
+                }
+                else
+                {
+                    selectingFile = ImmutableArray<string>.Empty;
+                    EndFileSelection();
+                }
             });
         }
         else
@@ -600,6 +598,11 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             });
         });
 
+        ui_LabelTerminal.RegisterCallback<FocusInEvent>(e =>
+        {
+            _terminalCursorBlinkRestart = Time.time;
+        });
+
         RefreshUI(unitEntity);
     }
 
@@ -609,19 +612,25 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui_ButtonHotReload.SetEnabled(false);
         ui_ButtonHalt.SetEnabled(false);
         ui_ButtonReset.SetEnabled(false);
-        ui_ButtonSelect.SetEnabled(false);
         ui_ButtonContinue.SetEnabled(false);
+
+        ui_FilesContainer.style.display = DisplayStyle.Flex;
+        ui_ScrollProgresses.style.display = DisplayStyle.None;
+        ui_ScrollDiagnostics.style.display = DisplayStyle.None;
     }
 
     void EndFileSelection()
     {
         ui_ButtonCompile.SetEnabled(true);
         ui_ButtonHotReload.SetEnabled(true);
-        ui_ButtonSelect.SetEnabled(true);
         ui_ButtonHalt.SetEnabled(true);
         ui_ButtonReset.SetEnabled(true);
         ui_ButtonContinue.SetEnabled(true);
         ui_ScrollFiles.Clear();
+
+        ui_FilesContainer.style.display = DisplayStyle.None;
+        ui_ScrollProgresses.style.display = DisplayStyle.Flex;
+        ui_ScrollDiagnostics.style.display = DisplayStyle.Flex;
     }
 
     static readonly string[] ProgressStatusClasses = new string[]
@@ -631,38 +640,10 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         "success",
     };
 
-    void RefreshFileList()
-    {
-        ui_LabelBasePath.text = FileChunkManagerSystem.BasePath;
-
-        ui_ScrollFiles.SyncList(selectingFile, FileItem, (file, element, recycled) =>
-        {
-            element.userData = file;
-            element.Q<Button>().text = file;
-            if (!recycled)
-            {
-                element.Q<Button>().clicked += () =>
-                {
-                    ui_InputSourcePath.value = (string)element.userData;
-                    selectingFile = ImmutableArray<string>.Empty;
-                    EndFileSelection();
-                };
-            }
-        });
-
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            selectingFile = ImmutableArray<string>.Empty;
-            EndFileSelection();
-        }
-    }
-
     enum Tab
     {
         Terminal,
-        Diagnostics,
-        Progress,
-        Files,
+        Source,
     }
 
     static bool ReadKey(out char c)
@@ -751,7 +732,28 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
     {
         if (!selectingFile.IsEmpty)
         {
-            RefreshFileList();
+            ui_LabelBasePath.text = FileChunkManagerSystem.BasePath;
+
+            ui_ScrollFiles.SyncList(selectingFile, FileItem, (file, element, recycled) =>
+            {
+                element.userData = file;
+                element.Q<Button>().text = file;
+                if (!recycled)
+                {
+                    element.Q<Button>().clicked += () =>
+                    {
+                        ui_InputSourcePath.value = (string)element.userData;
+                        selectingFile = ImmutableArray<string>.Empty;
+                        EndFileSelection();
+                    };
+                }
+            });
+
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                selectingFile = ImmutableArray<string>.Empty;
+                EndFileSelection();
+            }
             return;
         }
 
@@ -813,6 +815,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 ui_ProgressCompilation.value = 0f;
                 SetProgressStatus(null);
             }
+            ui_ScrollProgresses.Clear();
         }
         else
         {
@@ -885,26 +888,22 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             if (source != null)
             {
                 SyncDiagnosticItems(ui_ScrollDiagnostics, source.Diagnostics, default);
-                if (source.Status != CompilationStatus.Done && !float.IsNaN(source.Progress))
+            }
+
+            if (source != null && source.Status != CompilationStatus.Done && !float.IsNaN(source.Progress))
+            {
+                ui_ScrollProgresses.SyncList(source.SubFiles.ToArray(), ProgressItem, (file, element, recycled) =>
                 {
-                    ui_ScrollProgresses.SyncList(source.SubFiles.ToArray(), ProgressItem, (file, element, recycled) =>
-                    {
-                        ProgressBar progressBar = element.Q<ProgressBar>();
-                        progressBar.title = file.Key.Name.ToString();
-                        if (file.Value.Progress.Total == 0)
-                        {
-                            progressBar.value = 0f;
-                        }
-                        else
-                        {
-                            progressBar.value = (float)file.Value.Progress.Current / (float)file.Value.Progress.Total;
-                        }
-                    });
+                    ProgressBar progressBar = element.Q<ProgressBar>();
+                    progressBar.title = file.Key.Name.ToString();
+                    progressBar.value = file.Value.Progress.Total == 0 ? 0f : (float)file.Value.Progress.Current / (float)file.Value.Progress.Total;
+                });
 
-                    ui_ProgressCompilation.value = source.Progress;
-
-                    _requestedTabSwitch = (Tab.Files, Tab.Progress);
-                }
+                ui_ProgressCompilation.value = source.Progress;
+            }
+            else
+            {
+                ui_ScrollProgresses.Clear();
             }
 
             switch (source == null ? CompilationStatus.None : source.Status)
@@ -948,9 +947,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 {
                     if (source != null && source.IsSuccess)
                     {
-                        _requestedTabSwitch = (Tab.Progress, Tab.Terminal);
-
-                        if (ui_TabView.selectedTabIndex == (int)Tab.Terminal)
+                        if (ui_TabView.selectedTabIndex == (int)Tab.Terminal && ui_LabelTerminal.panel.focusController.focusedElement == ui_LabelTerminal)
                         {
                             foreach (char c in Input.inputString)
                             {
@@ -978,8 +975,11 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                         Command = ProcessorCommand.Key,
                                         Data = c,
                                     });
+                                    _terminalCursorBlinkRestart = Time.time;
                                 }
-                                else if (ui_LabelTerminal.panel.focusController.focusedElement == ui_LabelTerminal && Time.time % 1f < .5f)
+
+                                const float BlinkInterval = 1f;
+                                if (ui_LabelTerminal.panel.focusController.focusedElement == ui_LabelTerminal && (Time.time - _terminalCursorBlinkRestart) % BlinkInterval < BlinkInterval * 0.5f)
                                 {
                                     _terminalBuilder.Append("<mark=#ffffffff>_</mark>");
                                 }
@@ -1101,16 +1101,12 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                         ui_ProgressCompilation.title = "Compile failed";
                         ui_ProgressCompilation.value = 1f;
                         SetProgressStatus("error");
-
-                        _requestedTabSwitch = (Tab.Progress, Tab.Diagnostics);
                     }
                     else
                     {
                         ui_ProgressCompilation.title = "Invalid source";
                         ui_ProgressCompilation.value = 1f;
                         SetProgressStatus("error");
-
-                        _requestedTabSwitch = (Tab.Progress, Tab.Diagnostics);
                     }
                     break;
                 }

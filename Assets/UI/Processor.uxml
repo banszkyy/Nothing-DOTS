@@ -2,7 +2,8 @@
     <ui:Template name="TerminalDiagnosticsItem" src="project://database/Assets/UI/TerminalDiagnosticsItem.uxml?fileID=9197481963319205126&amp;guid=a1e4e6549353cff66b9c74b990c63867&amp;type=3#TerminalDiagnosticsItem"/>
     <ui:Template name="TerminalFileItem" src="project://database/Assets/UI/TerminalFileItem.uxml?fileID=9197481963319205126&amp;guid=f38b8fac42e49f32f9b892e445389217&amp;type=3#TerminalFileItem"/>
     <ui:Template name="TerminalProgressItem" src="project://database/Assets/UI/TerminalProgressItem.uxml?fileID=9197481963319205126&amp;guid=9eea0e1bced7ce10ba2cf37db8517d65&amp;type=3#TerminalProgressItem"/>
-    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
+    <Style src="project://database/Assets/UI/Styles/Processor.uss?fileID=7433441132597879392&amp;guid=913710a6a48cfd2aa9a2b83710b5d436&amp;type=3#Processor"/>
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement style="flex-grow: 1;">
         <ui:VisualElement style="flex-direction: row;">
             <ui:ProgressBar value="0" title="Loading ..." name="progress-compilation" high-value="1" tooltip="Processor Status" class="label-left" style="flex-grow: 1;"/>
@@ -12,22 +13,12 @@
         </ui:VisualElement>
         <ui:TabView name="tabs" style="height: 120px; flex-grow: 1;">
             <ui:Tab label="Terminal" enabled="true" style="flex-grow: 1;">
-                <ui:ScrollView name="scroll-terminal" vertical-scroller-visibility="AlwaysVisible" horizontal-scroller-visibility="Hidden" mode="Vertical" class="terminal" style="white-space: normal;">
-                    <ui:Label name="label-terminal" focusable="true" selectable="true" enable-rich-text="true" emoji-fallback-support="false" tabindex="0" text="┌─┬┐  ╔═╦╗  ╓─╥╖  ╒═╤╕&#10;│ ││  ║ ║║  ║ ║║  │ ││&#10;├─┼┤  ╠═╬╣  ╟─╫╢  ╞═╪╡&#10;└─┴┘  ╚═╩╝  ╙─╨╜  ╘═╧╛&#10;┌───────────────────┐&#10;│  ╔═══╗ Some Text  │▒&#10;│  ╚═╦═╝ in the box │▒&#10;╞═╤══╩══╤═══════════╡▒&#10;│ ├──┬──┤           │▒&#10;│ └──┴──┘           │▒&#10;└───────────────────┘▒&#10; ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒&#10;" class="terminal" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/NotoSansMono-VariableFont_wdth,wght.ttf?fileID=12800000&amp;guid=712786169bbdbed48a42ec0f34e99fc9&amp;type=3#NotoSansMono-VariableFont_wdth,wght&quot;); font-size: 12px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; border-top-left-radius: 0; border-left-width: 0; border-top-width: 0; border-bottom-width: 0; border-right-width: 0; flex-basis: auto; width: 336px; -unity-paragraph-spacing: -24px; white-space: normal;"/>
+                <ui:ScrollView name="scroll-terminal" vertical-scroller-visibility="AlwaysVisible" horizontal-scroller-visibility="Hidden" mode="Vertical" class="terminal" style="white-space: normal; flex-basis: auto;">
+                    <ui:Label name="label-terminal" focusable="true" selectable="true" enable-rich-text="true" emoji-fallback-support="false" tabindex="0" text="┌─┬┐  ╔═╦╗  ╓─╥╖  ╒═╤╕&#10;│ ││  ║ ║║  ║ ║║  │ ││&#10;├─┼┤  ╠═╬╣  ╟─╫╢  ╞═╪╡&#10;└─┴┘  ╚═╩╝  ╙─╨╜  ╘═╧╛&#10;┌───────────────────┐&#10;│  ╔═══╗ Some Text  │▒&#10;│  ╚═╦═╝ in the box │▒&#10;╞═╤══╩══╤═══════════╡▒&#10;│ ├──┬──┤           │▒&#10;│ └──┴──┘           │▒&#10;└───────────────────┘▒&#10; ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒&#10;" class="terminal" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/NotoSansMono-VariableFont_wdth,wght.ttf?fileID=12800000&amp;guid=712786169bbdbed48a42ec0f34e99fc9&amp;type=3#NotoSansMono-VariableFont_wdth,wght&quot;); font-size: 12px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; border-top-left-radius: 0; border-left-width: 0; border-top-width: 0; border-bottom-width: 0; border-right-width: 0; -unity-paragraph-spacing: -24px; white-space: normal; flex-basis: auto; -unity-text-align: lower-left; min-width: 336px;"/>
                 </ui:ScrollView>
             </ui:Tab>
-            <ui:Tab label="Diagnostics" style="flex-grow: 1;">
-                <ui:ScrollView name="scroll-diagnostics">
-                    <ui:Instance template="TerminalDiagnosticsItem" name="TerminalDiagnosticsItem"/>
-                </ui:ScrollView>
-            </ui:Tab>
-            <ui:Tab label="Progress" style="flex-grow: 1;">
-                <ui:ScrollView name="scroll-progresses">
-                    <ui:Instance template="TerminalProgressItem"/>
-                </ui:ScrollView>
-            </ui:Tab>
-            <ui:Tab label="Files" style="flex-grow: 1;">
-                <ui:VisualElement style="flex-direction: row;">
+            <ui:Tab label="Source" name="" style="flex-grow: 1;">
+                <ui:VisualElement name="source-toolbar" style="flex-direction: row; flex-shrink: 0;">
                     <ui:TextField name="input-source-path" tooltip="Source File Path" style="flex-grow: 1; margin-top: 0; margin-bottom: 0;"/>
                     <ui:Button text="\uf07c" name="button-select" parse-escape-sequences="true" tooltip="Select File" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
                     <ui:Button text="\uf06d" name="button-hotreload" parse-escape-sequences="true" tooltip="Hot-reload" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
@@ -39,6 +30,12 @@
                         <ui:Instance template="TerminalFileItem"/>
                     </ui:ScrollView>
                 </ui:VisualElement>
+                <ui:ScrollView name="scroll-progresses">
+                    <ui:Instance template="TerminalProgressItem"/>
+                </ui:ScrollView>
+                <ui:ScrollView name="scroll-diagnostics">
+                    <ui:Instance template="TerminalDiagnosticsItem" name="TerminalDiagnosticsItem"/>
+                </ui:ScrollView>
             </ui:Tab>
         </ui:TabView>
     </ui:VisualElement>

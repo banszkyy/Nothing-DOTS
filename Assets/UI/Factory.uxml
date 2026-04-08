@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:Template name="Factory Queue Item" src="project://database/Assets/UI/Factory%20Avaliable%20Item.uxml?fileID=9197481963319205126&amp;guid=0034aa35a18d2f9e686a4ade6d65ef21&amp;type=3#Factory Avaliable Item"/>
-    <ui:Template name="FactoryQueueItem" src="project://database/Assets/UI/Factory%20Queue%20Item.uxml?fileID=9197481963319205126&amp;guid=ac5ad4311bd900c61a09e54aa5a26f44&amp;type=3#Factory Queue Item"/>
-    <ui:Template name="Terminal" src="project://database/Assets/UI/Terminal.uxml?fileID=9197481963319205126&amp;guid=b7b1b5db4ce3d99cc983100f7025c813&amp;type=3#Terminal"/>
-    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
+    <ui:Template name="Factory Queue Item" src="project://database/Assets/UI/FactoryAvaliableItem.uxml?fileID=9197481963319205126&amp;guid=0034aa35a18d2f9e686a4ade6d65ef21&amp;type=3#FactoryAvaliableItem"/>
+    <ui:Template name="FactoryQueueItem" src="project://database/Assets/UI/FactoryQueueItem.uxml?fileID=9197481963319205126&amp;guid=ac5ad4311bd900c61a09e54aa5a26f44&amp;type=3#FactoryQueueItem"/>
+    <ui:Template name="Terminal" src="project://database/Assets/UI/Processor.uxml?fileID=9197481963319205126&amp;guid=b7b1b5db4ce3d99cc983100f7025c813&amp;type=3#Processor"/>
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement picking-mode="Ignore" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; justify-content: center; align-items: center;">
         <ui:GroupBox text="Factory" class="panel" style="min-height: 200px; min-width: 231px; width: 70%; height: 70%;">
             <ui:TabView tabindex="-1" style="flex-grow: 1;">
@@ -27,7 +27,7 @@
                         </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:Tab>
-                <ui:Tab label="Terminal" style="flex-grow: 1;">
+                <ui:Tab label="Processor" style="flex-grow: 1;">
                     <ui:Instance template="Terminal"/>
                 </ui:Tab>
             </ui:TabView>

@@ -1,0 +1,80 @@
+
+.terminal {
+    background-color: rgb(0, 0, 0);
+    flex-shrink: 0;
+    flex-grow: 1;
+    flex-basis: 100px;
+    display: flex;
+    border-left-color: rgb(0, 0, 0);
+    border-right-color: rgb(0, 0, 0);
+    border-top-color: rgb(0, 0, 0);
+    border-bottom-color: rgb(0, 0, 0);
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+}
+
+.terminal:enabled:focus {
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+}
+
+.diagnostics-item {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    flex-grow: 1;
+    background-color: rgb(0, 0, 0);
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-left-color: rgb(0, 0, 0);
+    border-right-color: rgb(0, 0, 0);
+    border-top-color: rgb(0, 0, 0);
+    border-bottom-color: rgb(0, 0, 0);
+}
+
+.diagnostics-item > .unity-foldout > Toggle {
+    margin-top: 0;
+    margin-right: 0;
+    margin-left: 0;
+    margin-bottom: 0;
+}
+
+.diagnostics-item > .unity-foldout > .unity-foldout__content {
+    margin-left: 0;
+}
+
+.diagnostics-item > .unity-foldout > .unity-foldout__toggle > .unity-foldout__input > .unity-foldout__text {
+    padding-top: 0;
+    padding-right: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+}
+
+.diagnostics-item > .unity-foldout > .unity-foldout__toggle > .unity-foldout__input > #unity-checkmark {
+    -unity-background-image-tint-color: rgb(209, 209, 209);
+    width: 14px;
+    height: 14px;
+}
+
+.terminal #unity-content-container {
+    flex-grow: 1;
+}

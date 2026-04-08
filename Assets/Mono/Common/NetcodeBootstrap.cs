@@ -151,7 +151,7 @@ class NetcodeBootstrap : ClientServerBootstrap
                 {
                     ConnectionId = 0,
                     ConnectionState = PlayerConnectionState.Server,
-                    Team = Player.UnassignedTeam,
+                    Team = 0,
                 });
             }
             else

@@ -11,26 +11,30 @@ public static class UIExtensions
         this VisualElement container,
         DynamicBuffer<T> collection,
         VisualTreeAsset itemAsset,
-        Action<T, VisualElement, bool> updater)
+        Action<T, VisualElement, bool> updater,
+        Predicate<T>? predicate = null)
         where T : unmanaged
         => SyncList(
             container,
             collection.AsNativeArray(),
             itemAsset,
-            updater
+            updater,
+            predicate
         );
 
     public static void SyncList<T>(
         this VisualElement container,
         NativeList<T> collection,
         VisualTreeAsset itemAsset,
-        Action<T, VisualElement, bool> updater)
+        Action<T, VisualElement, bool> updater,
+        Predicate<T>? predicate = null)
         where T : unmanaged
         => SyncList(
             container,
             collection.AsArray(),
             itemAsset,
-            updater
+            updater,
+            predicate
         );
 
     public static void SyncList<T>(
@@ -73,16 +77,19 @@ public static class UIExtensions
         this VisualElement container,
         IReadOnlyList<T> collection,
         VisualTreeAsset itemAsset,
-        Action<T, VisualElement, bool> updater)
+        Action<T, VisualElement, bool> updater,
+        Predicate<T>? predicate = null)
     {
         VisualElement[] childrenElement = container.Children().ToArray();
-        int i;
+        int n = 0;
 
-        for (i = 0; i < collection.Count; i++)
+        for (int i = 0; i < collection.Count; i++)
         {
-            if (i < childrenElement.Length)
+            if (predicate is not null && !predicate(collection[i])) continue;
+
+            if (n < childrenElement.Length)
             {
-                VisualElement element = childrenElement[i];
+                VisualElement element = childrenElement[n];
                 updater.Invoke(collection[i], element, true);
             }
             else
@@ -91,9 +98,11 @@ public static class UIExtensions
                 container.Add(element);
                 updater.Invoke(collection[i], element, false);
             }
+
+            n++;
         }
 
-        for (; i < childrenElement.Length; i++)
+        for (int i = n; i < childrenElement.Length; i++)
         {
             container.Remove(childrenElement[i]);
         }
