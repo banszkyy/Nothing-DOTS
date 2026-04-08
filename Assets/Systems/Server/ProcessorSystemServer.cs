@@ -151,7 +151,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
         public required NativeList<OwnedData<UserUIElement>>.ParallelWriter UIElements;
         public required ProcessorRef ProcessorRef;
         public required EntityRef EntityRef;
-        public required EntityCommandBuffer.ParallelWriter CommandBuffer;
     }
 
     NativeArray<ExternalFunctionScopedSync> scopedExternalFunctions;
@@ -388,7 +387,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
         new ProcessorJob()
         {
             scopedExternalFunctions = scopedExternalFunctions,
-            commandBuffer = commandBuffer.AsParallelWriter(),
 
             debugLines = debugLines.AsParallelWriter(),
             worldLabels = worldLabels.AsParallelWriter(),
@@ -417,7 +415,6 @@ partial struct ProcessorJob : IJobEntity
     [ReadOnly] public ComponentLookup<CoreComputer> QCoreComputer;
     [ReadOnly] public ComponentLookup<Radar> QRadar;
     [ReadOnly] public ComponentLookup<Facility> QFacility;
-    public EntityCommandBuffer.ParallelWriter commandBuffer;
 
     [BurstCompile(CompileSynchronously = true)]
     unsafe void Execute(
@@ -461,7 +458,6 @@ partial struct ProcessorJob : IJobEntity
                 LocalTransform = localTransform,
                 Team = team,
             },
-            CommandBuffer = commandBuffer,
         };
 
         NativeList<ExternalFunctionScopedSync> scopedExternalFunctions = new(this.scopedExternalFunctions.Length + processor.Source.GeneratedFunctions.Length, Allocator.Temp);

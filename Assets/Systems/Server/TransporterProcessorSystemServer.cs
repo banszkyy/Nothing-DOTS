@@ -20,7 +20,7 @@ partial struct TransporterProcessorSystemServer : ISystem
     void ISystem.OnUpdate(ref SystemState state)
     {
         PrefabDatabase prefabDatabase = SystemAPI.GetSingleton<PrefabDatabase>();
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (processor, transporter, transform, localTransform) in
             SystemAPI.Query<RefRW<Processor>, RefRW<Transporter>, RefRO<LocalToWorld>, RefRO<LocalTransform>>())
@@ -82,6 +82,7 @@ partial struct TransporterProcessorSystemServer : ISystem
 
                     if (!ok)
                     {
+                        if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
                         Entity newResource = commandBuffer.Instantiate(prefabDatabase.Resource);
                         commandBuffer.SetComponent<Resource>(newResource, new()
                         {
@@ -118,6 +119,7 @@ partial struct TransporterProcessorSystemServer : ISystem
 
                         if (resource.ValueRO.Amount <= 0)
                         {
+                            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
                             commandBuffer.DestroyEntity(resourceEntity);
                         }
                         break;

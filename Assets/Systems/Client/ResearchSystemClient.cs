@@ -20,13 +20,14 @@ public partial struct ResearchSystemClient : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (command, entity) in
             SystemAPI.Query<RefRO<ResearchesResponseRpc>>()
             .WithAll<ReceiveRpcCommandRequest>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
 
             bool alreadyAdded = false;
@@ -49,6 +50,7 @@ public partial struct ResearchSystemClient : ISystem
             .WithAll<ReceiveRpcCommandRequest>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
 
             NetcodeUtils.CreateRPC<ResearchesRequestRpc>(commandBuffer, state.WorldUnmanaged);

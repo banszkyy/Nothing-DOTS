@@ -225,7 +225,21 @@ static unsafe class BinaryReaderExtensions
         return res;
     }
 
-    public static Guid ReadGuid(this BinaryReader reader) => new(reader.ReadBytes(16));
+    public static void ReadBytes(this BinaryReader reader, Span<byte> result)
+    {
+        fixed (byte* ptr = result)
+        {
+            reader.ReadBytes(ptr, result.Length);
+        }
+    }
+
+    public static Guid ReadGuid(this BinaryReader reader)
+    {
+        byte* buffer = stackalloc byte[16];
+        reader.ReadBytes(buffer, 16);
+        return new(new ReadOnlySpan<byte>(buffer, 16));
+    }
+
     public static T ReadUnsafe<T>(this BinaryReader reader) where T : unmanaged
     {
         T res;

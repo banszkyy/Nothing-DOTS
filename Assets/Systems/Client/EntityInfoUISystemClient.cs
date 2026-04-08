@@ -16,7 +16,7 @@ public partial class EntityInfoUISystemClient : SystemBase
 
     protected override void OnUpdate()
     {
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         if (_canvas == null)
         {
@@ -50,6 +50,7 @@ public partial class EntityInfoUISystemClient : SystemBase
                 comp.Bounds = SystemAPI.GetComponent<MeshBounds>(entity).Bounds;
             }
 
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             commandBuffer.AddComponent<EntityInfoUIReference>(entity, new()
             {
                 Value = comp,
@@ -126,6 +127,7 @@ public partial class EntityInfoUISystemClient : SystemBase
 #endif
 
             Object.Destroy(uiRef.Value.gameObject);
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             commandBuffer.RemoveComponent<EntityInfoUIReference>(entity);
         }
     }

@@ -101,13 +101,14 @@ partial class TerminalSystemClient : SystemBase
 
     protected override unsafe void OnUpdate()
     {
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (command, entity) in
             SystemAPI.Query<RefRO<TerminalDataRpc>>()
             .WithAll<ReceiveRpcCommandRequest>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             commandBuffer.DestroyEntity(entity);
 
             if (!Subscriptions.TryGetValue(command.ValueRO.Entity, out TerminalSubscriptionClient subscription)) continue;
@@ -126,6 +127,7 @@ partial class TerminalSystemClient : SystemBase
         foreach (var item in Subscriptions)
         {
             if (SystemAPI.Exists(item.Value.Entity)) continue;
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             Unsubscribe(item.Key, commandBuffer);
             break;
         }

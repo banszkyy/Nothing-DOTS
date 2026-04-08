@@ -80,10 +80,11 @@ partial struct TerrainSystemServer : ISystem
         JobHandle handle = task.ScheduleParallel(Queue.Length, 4, default);
         handle.Complete();
 
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         for (int i = 0; i < Queue.Length; i++)
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             GenerateChunkFeatures(
                 Queue[i],
                 results[i].AsReadOnly(),

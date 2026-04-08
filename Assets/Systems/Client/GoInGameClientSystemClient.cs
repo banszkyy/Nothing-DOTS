@@ -19,13 +19,14 @@ public partial struct GoInGameClientSystemClient : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (id, entity) in
             SystemAPI.Query<RefRO<NetworkId>>()
             .WithNone<NetworkStreamInGame>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.AddComponent<NetworkStreamInGame>(entity);
             NetcodeUtils.CreateRPC<GoInGameRpc>(commandBuffer, state.WorldUnmanaged);
         }

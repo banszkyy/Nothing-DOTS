@@ -23,13 +23,14 @@ public partial struct TurretShootingSystemClient : ISystem
             ComponentType.ReadWrite<VisualEffectSpawn>(),
         });
 
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<BeginInitializationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (command, entity) in
             SystemAPI.Query<RefRO<ShootRpc>>()
             .WithAll<ReceiveRpcCommandRequest>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
 
             Entity projectilePrefab = projectiles[command.ValueRO.ProjectileIndex].Prefab;

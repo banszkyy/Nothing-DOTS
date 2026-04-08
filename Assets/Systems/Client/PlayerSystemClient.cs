@@ -32,12 +32,13 @@ public partial struct PlayerSystemClient : ISystem
 
     void ISystem.OnUpdate(ref SystemState state)
     {
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (_, command, entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<ServerGuidResponseRpc>>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
 
             ServerGuid = Marshal.As<FixedBytes16, Guid>(command.ValueRO.Guid);
@@ -50,6 +51,7 @@ public partial struct PlayerSystemClient : ISystem
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<SessionResponseRpc>>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
 
             SessionStatus = command.ValueRO.StatusCode;
@@ -69,7 +71,7 @@ public partial struct PlayerSystemClient : ISystem
                         SaveSession(ServerGuid, PlayerGuid);
                     }
 
-                    break;
+                    return;
                 }
                 case SessionStatusCode.InvalidGuid:
                 {
@@ -95,6 +97,7 @@ public partial struct PlayerSystemClient : ISystem
 
             Debug.Log($"{DebugEx.ClientPrefix} Requesting server guid");
 
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ServerGuidRequestRpc());
 
             return;
@@ -102,6 +105,8 @@ public partial struct PlayerSystemClient : ISystem
 
         if (SessionRequestSent) return;
         SessionRequestSent = true;
+
+        if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
 
         if (PlayerGuid == default)
         {

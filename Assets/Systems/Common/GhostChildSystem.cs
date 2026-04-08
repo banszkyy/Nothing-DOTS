@@ -9,7 +9,7 @@ partial struct GhostChildSystem : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (ghostChild, transform, entity) in
             SystemAPI.Query<RefRW<GhostChild>, RefRW<LocalTransform>>()
@@ -25,6 +25,7 @@ partial struct GhostChildSystem : ISystem
                 {
                     if (ghostChild.ValueRO.ParentEntity.Equals(parnetGhost.ValueRO))
                     {
+                        if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
                         if (!SystemAPI.HasComponent<Parent>(entity))
                         {
                             commandBuffer.AddComponent<Parent>(entity, new()
@@ -55,6 +56,7 @@ partial struct GhostChildSystem : ISystem
             {
                 if (SystemAPI.HasComponent<Parent>(entity))
                 {
+                    if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
                     commandBuffer.RemoveComponent<Parent>(entity);
                 }
                 ghostChild.ValueRW.LocalParentEntity = default;
