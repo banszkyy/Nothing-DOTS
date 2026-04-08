@@ -24,8 +24,6 @@ public class ConnectionManager : Singleton<ConnectionManager>
     [SerializeField, NotNull] GameObject? ClientObjects = default;
     [SerializeField, NotNull] GameObject? StagingObjects = default;
 
-    NetCodeConnectionEvent LatestEvent;
-
     [Header("UI")]
     [SerializeField, NotNull] UIDocument? MainMenuUI = default;
     [SerializeField, NotNull] UIDocument? NetworkUI = default;
@@ -42,32 +40,6 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
     void Start()
     {
-        MainMenuUI.rootVisualElement.Q<Button>("button-singleplayer").clicked += () =>
-        {
-            if (!HandleInput(out _, out FixedString32Bytes nickname)) return;
-            StartCoroutine(StartSingleplayerAsync(nickname, null));
-        };
-        MainMenuUI.rootVisualElement.Q<Button>("button-host").clicked += () =>
-        {
-            if (!HandleInput(out NetworkEndpoint endpoint, out FixedString32Bytes nickname)) return;
-            StartCoroutine(StartHostAsync(endpoint, nickname, null));
-        };
-        MainMenuUI.rootVisualElement.Q<Button>("button-client").clicked += () =>
-        {
-            if (!HandleInput(out NetworkEndpoint endpoint, out FixedString32Bytes nickname)) return;
-            StartCoroutine(StartClientAsync(endpoint, nickname));
-        };
-        MainMenuUI.rootVisualElement.Q<Button>("button-server").clicked += () =>
-        {
-            if (!HandleInput(out NetworkEndpoint endpoint, out _)) return;
-            StartCoroutine(StartServerAsync(endpoint, null));
-        };
-        MainMenuUI.rootVisualElement.Q<Button>("button-staging").clicked += () =>
-        {
-            if (!HandleInput(out _, out FixedString32Bytes nickname)) return;
-            StartCoroutine(StartStagingAsync(nickname, null));
-        };
-
 #if UNITY_EDITOR && EDITOR_DEBUG
         if (AutoHost)
         {
@@ -83,108 +55,44 @@ public class ConnectionManager : Singleton<ConnectionManager>
             {
                 StartCoroutine(StartHostAsync(DebugPort == 0 ? NetworkEndpoint.AnyIpv4 : NetworkEndpoint.Parse("127.0.0.1", DebugPort), DebugNickname, string.IsNullOrWhiteSpace(DebugSavefile) || !File.Exists(DebugSavefile) ? null : DebugSavefile));
             }
+            return;
         }
 #endif
+
+        StartCoroutine(FirstStart());
     }
 
-    bool HandleInput([NotNullWhen(true)] out NetworkEndpoint endpoint, out FixedString32Bytes nickname)
+    IEnumerator FirstStart()
     {
-        bool ok = true;
-
-        Label inputErrorLabel = MainMenuUI.rootVisualElement.Q<Label>("input-error-host");
-        inputErrorLabel.style.display = DisplayStyle.None;
-
-        string inputNickname = MainMenuUI.rootVisualElement.Q<TextField>("input-nickname").value.Trim();
-
-        if (inputNickname.Length >= FixedString32Bytes.UTF8MaxLengthInBytes)
-        {
-            inputErrorLabel.text = "Too long nickname";
-            inputErrorLabel.style.display = DisplayStyle.Flex;
-            ok = false;
-        }
-        else if (string.IsNullOrEmpty(inputNickname))
-        {
-            inputErrorLabel.text = "Empty nickname";
-            inputErrorLabel.style.display = DisplayStyle.Flex;
-            ok = false;
-        }
-
-        nickname = inputNickname;
-
-        string inputHost = MainMenuUI.rootVisualElement.Q<TextField>("input-host").value;
-        if (!ParseInput(inputHost, out endpoint, out string? inputErrorHost))
-        {
-            inputErrorLabel.text = inputErrorHost;
-            inputErrorLabel.style.display = DisplayStyle.Flex;
-            ok = false;
-        }
-        if (ok)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    bool ParseInput(
-        string input,
-        [NotNullWhen(true)] out NetworkEndpoint endpoint,
-        [NotNullWhen(false)] out string? error)
-    {
-        if (!input.Contains(':'))
-        {
-            error = $"Invalid host input";
-            endpoint = default;
-            return false;
-        }
-
-        if (!ushort.TryParse(input.Split(':')[1], out ushort port))
-        {
-            error = $"Invalid host input";
-            endpoint = default;
-            return false;
-        }
-
-        if (!NetworkEndpoint.TryParse(input.Split(':')[0], port, out endpoint))
-        {
-            error = $"Invalid host input";
-            return false;
-        }
-
-        error = null;
-        return true;
+        yield return new WaitForEndOfFrame();
+        UIManager.Instance.OpenUI(MainMenuUI)
+            .Setup(MainMenuManager.Instance);
     }
 
     public void OnNetworkEventClient(NetCodeConnectionEvent e)
     {
-        LatestEvent = e;
-        RefreshUI();
-        StartCoroutine(LateUIRefresh());
+        RefreshUI(e);
+        StartCoroutine(LateUIRefresh(e));
     }
 
-    IEnumerator LateUIRefresh()
+    IEnumerator LateUIRefresh(NetCodeConnectionEvent e)
     {
         yield return new WaitForEndOfFrame();
-        RefreshUI();
+        RefreshUI(e);
     }
 
-    void RefreshUI()
+    void RefreshUI(NetCodeConnectionEvent e)
     {
-        if (LatestEvent.State == ConnectionState.State.Disconnected)
+        if (e.State == ConnectionState.State.Disconnected)
         {
-            MainMenuUI.enabled = true;
-            NetworkUI.enabled = false;
-            UIManager.Instance.CloseAllUI(MainMenuUI);
+            UIManager.Instance.OpenUI(MainMenuUI)
+                .Setup(MainMenuManager.Instance);
 
             Debug.Log($" -> Disabling client objects");
             ClientObjects.SetActive(false);
         }
-        else if (LatestEvent.State == ConnectionState.State.Connected)
+        else if (e.State == ConnectionState.State.Connected)
         {
-            MainMenuUI.enabled = false;
-            NetworkUI.enabled = false;
             UIManager.Instance.CloseAllUI();
 
             Debug.Log($" -> Enabling client objects");
@@ -192,11 +100,9 @@ public class ConnectionManager : Singleton<ConnectionManager>
         }
         else
         {
-            MainMenuUI.enabled = false;
-            NetworkUI.enabled = true;
-            UIManager.Instance.CloseAllUI(NetworkUI);
+            UIManager.Instance.OpenUI(NetworkUI);
 
-            string text = LatestEvent.State switch
+            NetworkUI.rootVisualElement.Q<Label>("label-status").text = e.State switch
             {
                 ConnectionState.State.Unknown => $"?",
                 ConnectionState.State.Disconnected => throw new UnreachableException(),
@@ -206,13 +112,6 @@ public class ConnectionManager : Singleton<ConnectionManager>
                 ConnectionState.State.Connected => throw new UnreachableException(),
                 _ => throw new UnreachableException(),
             };
-
-            if (NetworkUI.rootVisualElement is not null)
-            {
-                Label label = NetworkUI.rootVisualElement.Q<Label>("label-status");
-                label.text = text;
-                label.style.display = string.IsNullOrEmpty(text) ? DisplayStyle.None : DisplayStyle.Flex;
-            }
         }
     }
 
@@ -220,8 +119,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
     {
         Debug.Log($"{DebugEx.AnyPrefix} Start singleplayer");
 
-        MainMenuUI.enabled = false;
-        NetworkUI.enabled = false;
+        UIManager.Instance.CloseAllUI();
 
         Debug.Log($" -> NetcodeBootstrap.DestroyLocalWorld");
         NetcodeBootstrap.DestroyLocalWorld();
@@ -244,7 +142,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         PlayerSystemClient.GetInstance(LocalWorld!.Unmanaged).SetNickname(nickname);
 
         Debug.Log($" -> Disabling UI");
-        MainMenuUI.enabled = false;
+        UIManager.Instance.CloseUI(MainMenuUI);
 
 #if UNITY_EDITOR && EDITOR_DEBUG
         if (SetupManager.Instance.isActiveAndEnabled)
@@ -259,14 +157,20 @@ public class ConnectionManager : Singleton<ConnectionManager>
     {
         Debug.Log($"{DebugEx.AnyPrefix} Start host on `{endpoint}`");
 
-        MainMenuUI.enabled = false;
-        NetworkUI.enabled = true;
+        UIManager.Instance.OpenUI(NetworkUI);
 
         Debug.Log($" -> NetcodeBootstrap.DestroyLocalWorld");
         NetcodeBootstrap.DestroyLocalWorld();
 
         Debug.Log($" -> NetcodeBootstrap.CreateServer({endpoint})");
-        yield return StartCoroutine(NetcodeBootstrap.CreateServer(endpoint, savefile));
+        Ref<bool> success = new(true);
+        yield return StartCoroutine(NetcodeBootstrap.CreateServer(endpoint, savefile, success));
+        if (!success.Value)
+        {
+            UIManager.Instance.OpenUI(MainMenuUI)
+                .Setup<MainMenuManager>();
+            yield break;
+        }
 
         Debug.Log($" -> DefaultGameObjectInjectionWorld");
         World.DefaultGameObjectInjectionWorld ??= ServerWorld!;
@@ -285,7 +189,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
         Debug.Log($" -> endpoint = {endpoint}");
 
         Debug.Log($" -> NetcodeBootstrap.CreateClient({endpoint})");
-        yield return StartCoroutine(NetcodeBootstrap.CreateClient(endpoint));
+        Ref<Entity> connectionEntity = new(Entity.Null);
+        yield return StartCoroutine(NetcodeBootstrap.CreateClient(endpoint, connectionEntity));
 
         Debug.Log($" -> Set nickname to {nickname}");
         PlayerSystemClient.GetInstance(ClientWorld!.Unmanaged).SetNickname(nickname);
@@ -307,14 +212,14 @@ public class ConnectionManager : Singleton<ConnectionManager>
     {
         Debug.Log($"{DebugEx.AnyPrefix} Start client on `{endpoint}`");
 
-        MainMenuUI.enabled = false;
-        NetworkUI.enabled = true;
+        UIManager.Instance.OpenUI(NetworkUI);
 
         Debug.Log($" -> NetcodeBootstrap.DestroyLocalWorld");
         NetcodeBootstrap.DestroyLocalWorld();
 
         Debug.Log($" -> NetcodeBootstrap.CreateClient({endpoint})");
-        yield return StartCoroutine(NetcodeBootstrap.CreateClient(endpoint));
+        Ref<Entity> connectionEntity = new(Entity.Null);
+        yield return StartCoroutine(NetcodeBootstrap.CreateClient(endpoint, connectionEntity));
 
         Debug.Log($" -> DefaultGameObjectInjectionWorld");
         World.DefaultGameObjectInjectionWorld ??= ClientWorld!;
@@ -335,14 +240,20 @@ public class ConnectionManager : Singleton<ConnectionManager>
     {
         Debug.Log($"{DebugEx.EditorPrefix} Start server on `{endpoint}`");
 
-        MainMenuUI.enabled = false;
-        NetworkUI.enabled = true;
+        UIManager.Instance.OpenUI(NetworkUI);
 
         Debug.Log($" -> NetcodeBootstrap.DestroyLocalWorld");
         NetcodeBootstrap.DestroyLocalWorld();
 
         Debug.Log($" -> NetcodeBootstrap.CreateServer({endpoint})");
-        yield return StartCoroutine(NetcodeBootstrap.CreateServer(endpoint, savefile));
+        Ref<bool> success = new(false);
+        yield return StartCoroutine(NetcodeBootstrap.CreateServer(endpoint, savefile, success));
+        if (!success.Value)
+        {
+            UIManager.Instance.OpenUI(MainMenuUI)
+                .Setup<MainMenuManager>();
+            yield break;
+        }
 
         Debug.Log($" -> DefaultGameObjectInjectionWorld");
         World.DefaultGameObjectInjectionWorld ??= ServerWorld!;
@@ -356,7 +267,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         yield return new WaitForEndOfFrame();
 
         Debug.Log($" -> Disabling UI");
-        MainMenuUI.enabled = false;
+        UIManager.Instance.CloseUI(MainMenuUI);
 
 #if UNITY_EDITOR && EDITOR_DEBUG
         if (SetupManager.Instance.isActiveAndEnabled && savefile == null)
@@ -371,8 +282,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
     {
         Debug.Log($"{DebugEx.AnyPrefix} Start staging");
 
-        MainMenuUI.enabled = false;
-        NetworkUI.enabled = false;
+        UIManager.Instance.CloseAllUI();
 
         Debug.Log($" -> NetcodeBootstrap.DestroyLocalWorld");
         NetcodeBootstrap.DestroyLocalWorld();
@@ -395,7 +305,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         PlayerSystemClient.GetInstance(StagingWorld!.Unmanaged).SetNickname(nickname);
 
         Debug.Log($" -> Disabling UI");
-        MainMenuUI.enabled = false;
+        UIManager.Instance.CloseUI(MainMenuUI);
 
 #if UNITY_EDITOR && EDITOR_DEBUG
         if (SetupManager.Instance.isActiveAndEnabled)

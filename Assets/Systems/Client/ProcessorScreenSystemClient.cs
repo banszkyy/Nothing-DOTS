@@ -26,13 +26,13 @@ partial class ProcessorScreenSystemClient : SystemBase
         }
     }
 
-    public struct TerminalInstance
+    public class TerminalInstance
     {
         public readonly ProcessorScreenInstance Screen;
         public readonly TerminalSubscriptionClient? Subscription;
         public readonly TerminalRenderer Renderer;
         public readonly StringBuilder Builder;
-        public ulong Offset;
+        public ulong RenderedVersion;
 
         public TerminalInstance(ProcessorScreenInstance screen, TerminalSubscriptionClient? subscription)
         {
@@ -40,7 +40,7 @@ partial class ProcessorScreenSystemClient : SystemBase
             Subscription = subscription;
             Renderer = new TerminalRenderer();
             Builder = new();
-            Offset = 0;
+            RenderedVersion = 0;
         }
     }
 
@@ -66,14 +66,23 @@ partial class ProcessorScreenSystemClient : SystemBase
         Screens.Clear();
         ScreenPool?.Clear();
 
-        ScreenPool ??= new(
-            createFunc: () => Object.Instantiate(Prefab),
+        ScreenPool = new(
+            createFunc: () =>
+            {
+                if (Prefab == null)
+                {
+                    Prefab = SystemAPI.ManagedAPI.GetSingleton<ProcessorScreenOptions>().ScreenPrefab;
+                    if (Prefab == null)
+                    {
+                        throw new System.NullReferenceException($"ProcessorScreenOptions.ScreenPrefab is null");
+                    }
+                }
+                return Object.Instantiate(Prefab);
+            },
             actionOnGet: o => o.SetActive(true),
             actionOnRelease: o => o.SetActive(false),
             actionOnDestroy: static o => Object.Destroy(o)
         );
-
-        Prefab = SystemAPI.ManagedAPI.GetSingleton<ProcessorScreenOptions>().ScreenPrefab;
     }
 
     protected override void OnUpdate()
@@ -106,13 +115,13 @@ partial class ProcessorScreenSystemClient : SystemBase
             if (World.IsClient())
             {
                 // The subscription will never be null on client side
-                System.ReadOnlySpan<byte> stdout = screenInstance.Subscription!.Data.AsReadOnly().AsReadOnlySpan();
-                if (screenInstance.Offset != screenInstance.Subscription.Offset)
+                if (screenInstance.RenderedVersion != screenInstance.Subscription!.Version)
                 {
+                    System.ReadOnlySpan<byte> stdout = screenInstance.Subscription.Data.AsReadOnly().AsReadOnlySpan();
+                    screenInstance.RenderedVersion = screenInstance.Subscription.Version;
+
                     screenInstance.Builder.Clear();
                     screenInstance.Renderer.Rerender(stdout, screenInstance.Builder, (int)(screenInstance.Screen.Canvas.renderingDisplaySize.y / screenInstance.Screen.Text.fontSize));
-
-                    screenInstance.Offset = screenInstance.Subscription.Offset;
 
                     string stdoutStr = screenInstance.Builder.ToString();
                     if (screenInstance.Screen.Text.text != stdoutStr)
@@ -123,16 +132,20 @@ partial class ProcessorScreenSystemClient : SystemBase
             }
             else
             {
-                unsafe
+                if (screenInstance.RenderedVersion != processor.ValueRO.StdOutBufferCursor)
                 {
-                    System.ReadOnlySpan<byte> stdout = new(processor.ValueRO.StdOutBuffer.GetUnsafePtr(), processor.ValueRO.StdOutBuffer.Length);
-                    screenInstance.Builder.Clear();
-                    screenInstance.Renderer.Rerender(stdout, screenInstance.Builder);
-
-                    string stdoutStr = screenInstance.Builder.ToString();
-                    if (screenInstance.Screen.Text.text != stdoutStr)
+                    screenInstance.RenderedVersion = processor.ValueRO.StdOutBufferCursor;
+                    unsafe
                     {
-                        screenInstance.Screen.Text.SetText(stdoutStr);
+                        System.ReadOnlySpan<byte> stdout = new(processor.ValueRO.StdOutBuffer.GetUnsafePtr(), processor.ValueRO.StdOutBuffer.Length);
+                        screenInstance.Builder.Clear();
+                        screenInstance.Renderer.Rerender(stdout, screenInstance.Builder);
+
+                        string stdoutStr = screenInstance.Builder.ToString();
+                        if (screenInstance.Screen.Text.text != stdoutStr)
+                        {
+                            screenInstance.Screen.Text.SetText(stdoutStr);
+                        }
                     }
                 }
             }

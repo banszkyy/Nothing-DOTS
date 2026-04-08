@@ -392,7 +392,6 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
 
     public void Setup(UIDocument ui)
     {
-        ui.gameObject.SetActive(true);
         RefreshUI();
         syncAt = 0f;
     }
@@ -400,7 +399,6 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
     public void Cleanup(UIDocument ui)
     {
         SelectedBuilding = default;
-        ui.gameObject.SetActive(false);
         if (BuildingHologram != null) Destroy(BuildingHologram);
         BuildingHologram = null;
         WirePlaceholder.gameObject.SetActive(false);

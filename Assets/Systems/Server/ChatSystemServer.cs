@@ -11,12 +11,13 @@ public partial struct ChatSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (request, command, entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<ChatMessageRequestRpc>>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
@@ -53,7 +54,7 @@ public partial struct ChatSystemServer : ISystem
                 Span<byte> cmd = message.AsSpan()[1..];
                 if (cmd.StartsWith("creative"u8))
                 {
-                    if (senderPlayer.ConnectionState is PlayerConnectionState.Local or PlayerConnectionState.Server)
+                    if (senderPlayer.ConnectionState is PlayerConnectionState.Local or PlayerConnectionState.Server || senderPlayer.IsAdmin)
                     {
                         SystemAPI.GetComponentRW<Player>(senderPlayerE).ValueRW.InCreative = true;
                         NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ChatMessageNotificationRpc()

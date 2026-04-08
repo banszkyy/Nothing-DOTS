@@ -659,6 +659,8 @@ class SaveManager : MonoBehaviour
 
                 writer.Write(player.Guid);
                 writer.Write(player.ConnectionState);
+                writer.Write(player.InCreative);
+                writer.Write(player.IsAdmin);
                 writer.Write(player.IsCoreComputerSpawned);
                 writer.Write(player.Nickname);
                 writer.Write(player.Outcome);
@@ -832,6 +834,8 @@ class SaveManager : MonoBehaviour
                 PlayerConnectionState connectionState = (PlayerConnectionState)reader.ReadByte();
                 if (connectionState == PlayerConnectionState.Connected) connectionState = PlayerConnectionState.Disconnected;
                 player.ConnectionState = connectionState;
+                player.InCreative = reader.ReadBool();
+                player.IsAdmin = reader.ReadBool();
                 player.IsCoreComputerSpawned = reader.ReadBool();
                 player.Nickname = reader.ReadFixedString32();
                 player.Outcome = (GameOutcome)reader.ReadByte();

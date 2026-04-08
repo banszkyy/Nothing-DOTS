@@ -20,7 +20,7 @@ partial struct ExtractorProcessorSystemServer : ISystem
     void ISystem.OnUpdate(ref SystemState state)
     {
         PrefabDatabase prefabDatabase = SystemAPI.GetSingleton<PrefabDatabase>();
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (processor, extractor, transform, localTransform) in
             SystemAPI.Query<RefRW<Processor>, RefRW<Extractor>, RefRO<LocalToWorld>, RefRO<LocalTransform>>())
@@ -61,6 +61,8 @@ partial struct ExtractorProcessorSystemServer : ISystem
 
                     if (!extracted)
                     {
+                        if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+
                         Entity newResource = commandBuffer.Instantiate(prefabDatabase.Resource);
                         commandBuffer.SetComponent<Resource>(newResource, new()
                         {

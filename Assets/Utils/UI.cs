@@ -34,12 +34,9 @@ public class UI : PrivateSingleton<UI>
             if (v._uiDocuments == null || Time.time - v._uiDocumentsTime > 10f)
             {
                 v._uiDocumentsTime = Time.time;
-                return (v._uiDocuments = FindObjectsByType<UIDocument?>(FindObjectsInactive.Include)).ToImmutableArray();
+                v._uiDocuments = FindObjectsByType<UIDocument?>(FindObjectsInactive.Include);
             }
-            else
-            {
-                return v._uiDocuments.ToImmutableArray();
-            }
+            return v._uiDocuments.AsImmutableArrayUnsafe();
         }
     }
 

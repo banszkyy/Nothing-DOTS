@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using LanguageCore;
 using Unity.Collections;
 using Unity.Entities;
@@ -133,7 +132,7 @@ partial class CompilerSystemClient : SystemBase
                     command.ValueRO.Message.ToString(),
                     new Position(command.ValueRO.Position, command.ValueRO.AbsolutePosition),
                     command.ValueRO.FileName.ToUri(),
-                    TakeOrphanSubdiagnostics(diagnostic.Id).Select(ToDiagnostic).ToImmutableArray()
+                    TakeOrphanSubdiagnostics(diagnostic.Id).ToImmutableArray(ToDiagnostic)
                 );
             }
 

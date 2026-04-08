@@ -72,7 +72,7 @@ public class TerminalRenderer
     TerminalColor compiledBg;
     TerminalColor compiledFg;
     TerminalMode compiledMod;
-    readonly List<List<TerminalCharacter>> compiled;
+    readonly List<(List<TerminalCharacter> Columns, bool EndsWithEOL)> compiled;
     int cursorX;
     int cursorY;
 
@@ -81,7 +81,7 @@ public class TerminalRenderer
         compiledBg = TerminalColor.Black;
         compiledFg = TerminalColor.White;
         compiledMod = TerminalMode.None;
-        compiled = new() { new() };
+        compiled = new() { (new(), false) };
         cursorX = 0;
         cursorY = 0;
     }
@@ -91,10 +91,18 @@ public class TerminalRenderer
         compiledBg = TerminalColor.Black;
         compiledFg = TerminalColor.White;
         compiledMod = TerminalMode.None;
-        compiled.Clear();
-        compiled.Add(new());
+        Clear();
         cursorX = 0;
         cursorY = 0;
+    }
+
+    void Clear()
+    {
+        for (int i = 0; i < compiled.Count; i++)
+        {
+            compiled[i].Columns.Clear();
+            compiled[i] = (compiled[i].Columns, false);
+        }
     }
 
     void Compile(ReadOnlySpan<byte> stdout)
@@ -104,12 +112,13 @@ public class TerminalRenderer
             switch (stdout[i])
             {
                 case (byte)'\b':
-                    if (cursorX > 0) compiled[cursorY].RemoveAt(--cursorX);
+                    if (cursorX > 0) compiled[cursorY].Columns.RemoveAt(--cursorX);
                     break;
                 case (byte)'\n':
+                    compiled[cursorY] = (compiled[cursorY].Columns, true);
                     cursorY++;
                     cursorX = 0;
-                    if (cursorY >= compiled.Count) compiled.Add(new());
+                    if (cursorY >= compiled.Count) compiled.Add((new(), false));
                     break;
                 case (byte)'\r':
                     cursorX = 0;
@@ -131,8 +140,7 @@ public class TerminalRenderer
                             {
                                 cursorX = 0;
                                 cursorY = 0;
-                                compiled.Clear();
-                                compiled.Add(new());
+                                Clear();
                                 break;
                             }
                             case >= ((byte)'0') and <= ((byte)'9'):
@@ -231,14 +239,14 @@ public class TerminalRenderer
                     }
                     break;
                 default:
-                    if (cursorX + 1 == compiled[cursorY].Count)
+                    if (cursorX + 1 == compiled[cursorY].Columns.Count)
                     {
-                        compiled[cursorY].Add(new((char)stdout[i], compiledMod, (TerminalColor)((byte)compiledBg << 4) | compiledFg));
+                        compiled[cursorY].Columns.Add(new((char)stdout[i], compiledMod, (TerminalColor)((byte)compiledBg << 4) | compiledFg));
                         cursorX++;
                     }
                     else
                     {
-                        compiled[cursorY].Insert(cursorX++, new((char)stdout[i], compiledMod, (TerminalColor)((byte)compiledBg << 4) | compiledFg));
+                        compiled[cursorY].Columns.Insert(cursorX++, new((char)stdout[i], compiledMod, (TerminalColor)((byte)compiledBg << 4) | compiledFg));
                     }
                     break;
             }
@@ -254,7 +262,7 @@ public class TerminalRenderer
         int start = (maxLines == -1) ? 0 : Math.Max(0, compiled.Count - maxLines);
         for (int i = start; i < compiled.Count; i++)
         {
-            foreach (TerminalCharacter c in compiled[i])
+            foreach (TerminalCharacter c in compiled[i].Columns)
             {
                 if (appliedMod != c.Mode)
                 {
@@ -274,7 +282,8 @@ public class TerminalRenderer
 
                 if (appliedFg != c.Foreground)
                 {
-                    builder.Append($"<color={c.Foreground switch
+                    builder.Append("<color=");
+                    builder.Append(c.Foreground switch
                     {
                         TerminalColor.Black => "#000",
                         TerminalColor.Blue => "#2472c8",
@@ -293,13 +302,15 @@ public class TerminalRenderer
                         TerminalColor.BrightYellow => "#f5f543",
                         TerminalColor.BrightWhite => "#ffffff",
                         _ => throw new UnreachableException(),
-                    }}>");
+                    });
+                    builder.Append('>');
                     appliedFg = c.Foreground;
                 }
 
                 if (appliedBg != c.Foreground)
                 {
-                    builder.Append($"<mark={c.Background switch
+                    builder.Append("<mark=");
+                    builder.Append(c.Background switch
                     {
                         TerminalColor.Black => "#00000000",
                         TerminalColor.Blue => "#2472c8ff",
@@ -318,13 +329,14 @@ public class TerminalRenderer
                         TerminalColor.BrightYellow => "#f5f543ff",
                         TerminalColor.BrightWhite => "#ffffffff",
                         _ => throw new UnreachableException(),
-                    }}>");
+                    });
+                    builder.Append('>');
                     appliedBg = c.Background;
                 }
 
                 builder.Append(c.Character);
             }
-            builder.AppendLine();
+            if (i + 1 < compiled.Count || compiled[i].EndsWithEOL) builder.AppendLine();
         }
     }
 
@@ -365,16 +377,18 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
     [NotNull] Button? ui_ButtonHalt = default;
     [NotNull] Button? ui_ButtonReset = default;
     [NotNull] Button? ui_ButtonContinue = default;
-    [NotNull] Label? ui_labelTerminal = default;
+    [NotNull] Label? ui_LabelTerminal = default;
+    [NotNull] Label? ui_LabelBasePath = default;
 
-    [NotNull] ScrollView? ui_scrollTerminal = default;
-    [NotNull] ScrollView? ui_scrollFiles = default;
-    [NotNull] ScrollView? ui_scrollProgresses = default;
-    [NotNull] ScrollView? ui_scrollDiagnostics = default;
-    [NotNull] TabView? ui_tabView = default;
+    [NotNull] ScrollView? ui_ScrollTerminal = default;
+    [NotNull] ScrollView? ui_ScrollFiles = default;
+    [NotNull] VisualElement? ui_FilesContainer = default;
+    [NotNull] ScrollView? ui_ScrollProgresses = default;
+    [NotNull] ScrollView? ui_ScrollDiagnostics = default;
+    [NotNull] TabView? ui_TabView = default;
 
-    [NotNull] TextField? ui_inputSourcePath = default;
-    [NotNull] ProgressBar? ui_progressCompilation = default;
+    [NotNull] TextField? ui_InputSourcePath = default;
+    [NotNull] ProgressBar? ui_ProgressCompilation = default;
 
     TerminalSubscriptionClient? terminalSubscription;
     readonly StringBuilder _terminalBuilder = new();
@@ -399,9 +413,9 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
         if (!_fulfilledTabSwitch.HasValue || _fulfilledTabSwitch.Value != _requestedTabSwitch.Target)
         {
-            if ((int)_requestedTabSwitch.Condition == ui_tabView.selectedTabIndex)
+            if ((int)_requestedTabSwitch.Condition == ui_TabView.selectedTabIndex)
             {
-                ui_tabView.selectedTabIndex = (int)_requestedTabSwitch.Target;
+                ui_TabView.selectedTabIndex = (int)_requestedTabSwitch.Target;
             }
             _fulfilledTabSwitch = _requestedTabSwitch.Target;
         }
@@ -434,30 +448,33 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         _memoryDownloadTask = null;
         _scheduledSource = null;
 
-        ui_inputSourcePath = ui.rootVisualElement.Q<TextField>("input-source-path");
+        ui_InputSourcePath = ui.rootVisualElement.Q<TextField>("input-source-path");
         ui_ButtonSelect = ui.rootVisualElement.Q<Button>("button-select");
         ui_ButtonCompile = ui.rootVisualElement.Q<Button>("button-compile");
         ui_ButtonHotReload = ui.rootVisualElement.Q<Button>("button-hotreload");
         ui_ButtonHalt = ui.rootVisualElement.Q<Button>("button-halt");
         ui_ButtonReset = ui.rootVisualElement.Q<Button>("button-reset");
         ui_ButtonContinue = ui.rootVisualElement.Q<Button>("button-continue");
-        ui_labelTerminal = ui.rootVisualElement.Q<Label>("label-terminal");
-        ui_scrollTerminal = ui.rootVisualElement.Q<ScrollView>("scroll-terminal");
-        ui_scrollFiles = ui.rootVisualElement.Q<ScrollView>("scroll-files");
-        ui_scrollProgresses = ui.rootVisualElement.Q<ScrollView>("scroll-progresses");
-        ui_scrollDiagnostics = ui.rootVisualElement.Q<ScrollView>("scroll-diagnostics");
-        ui_tabView = ui.rootVisualElement.Q<TabView>("tabs");
-        ui_progressCompilation = ui.rootVisualElement.Q<ProgressBar>("progress-compilation");
+        ui_LabelTerminal = ui.rootVisualElement.Q<Label>("label-terminal");
+        ui_ScrollTerminal = ui.rootVisualElement.Q<ScrollView>("scroll-terminal");
+        ui_ScrollFiles = ui.rootVisualElement.Q<ScrollView>("scroll-files");
+        ui_FilesContainer = ui.rootVisualElement.Q<VisualElement>("files-container");
+        ui_LabelBasePath = ui.rootVisualElement.Q<Label>("label-base-path");
+        ui_ScrollProgresses = ui.rootVisualElement.Q<ScrollView>("scroll-progresses");
+        ui_ScrollDiagnostics = ui.rootVisualElement.Q<ScrollView>("scroll-diagnostics");
+        ui_TabView = ui.rootVisualElement.Q<TabView>("tabs");
+        ui_ProgressCompilation = ui.rootVisualElement.Q<ProgressBar>("progress-compilation");
 
-        ui_labelTerminal.text = string.Empty;
-        ui_scrollFiles.Clear();
-        ui_scrollProgresses.Clear();
-        ui_scrollDiagnostics.Clear();
+        ui_LabelTerminal.text = string.Empty;
+        ui_ScrollFiles.Clear();
+        ui_ScrollProgresses.Clear();
+        ui_ScrollDiagnostics.Clear();
+        ui_LabelBasePath.text = FileChunkManagerSystem.BasePath;
 
         {
             EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
             Processor processor = entityManager.GetComponentData<Processor>(unitEntity);
-            ui_inputSourcePath.value = processor.SourceFile.Name.ToString();
+            ui_InputSourcePath.value = processor.SourceFile.Name.ToString();
         }
 
         EndFileSelection();
@@ -491,17 +508,17 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
             string file =
                 string.IsNullOrWhiteSpace(FileChunkManagerSystem.BasePath)
-                ? ui_inputSourcePath.value
-                : Path.Combine(FileChunkManagerSystem.BasePath, ui_inputSourcePath.value);
+                ? ui_InputSourcePath.value
+                : Path.Combine(FileChunkManagerSystem.BasePath, ui_InputSourcePath.value);
 
             NetcodeUtils.CreateRPC(world.Unmanaged, new SetProcessorSourceRequestRpc()
             {
-                Source = ui_inputSourcePath.value,
+                Source = ui_InputSourcePath.value,
                 Entity = world.EntityManager.GetComponentData<GhostInstance>(unitEntity),
                 IsHotReload = false,
             });
 
-            _scheduledSource = ui_inputSourcePath.value;
+            _scheduledSource = ui_InputSourcePath.value;
         });
 
         ui_ButtonHotReload.clickable = new Clickable(() =>
@@ -516,17 +533,17 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
             string file =
                 string.IsNullOrWhiteSpace(FileChunkManagerSystem.BasePath)
-                ? ui_inputSourcePath.value
-                : Path.Combine(FileChunkManagerSystem.BasePath, ui_inputSourcePath.value);
+                ? ui_InputSourcePath.value
+                : Path.Combine(FileChunkManagerSystem.BasePath, ui_InputSourcePath.value);
 
             NetcodeUtils.CreateRPC(world.Unmanaged, new SetProcessorSourceRequestRpc()
             {
-                Source = ui_inputSourcePath.value,
+                Source = ui_InputSourcePath.value,
                 Entity = world.EntityManager.GetComponentData<GhostInstance>(unitEntity),
                 IsHotReload = true,
             });
 
-            _scheduledSource = ui_inputSourcePath.value;
+            _scheduledSource = ui_InputSourcePath.value;
         });
 
         ui_ButtonHalt.clickable = new Clickable(() =>
@@ -604,7 +621,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui_ButtonHalt.SetEnabled(true);
         ui_ButtonReset.SetEnabled(true);
         ui_ButtonContinue.SetEnabled(true);
-        ui_scrollFiles.Clear();
+        ui_ScrollFiles.Clear();
     }
 
     static readonly string[] ProgressStatusClasses = new string[]
@@ -616,7 +633,9 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
     void RefreshFileList()
     {
-        ui_scrollFiles.SyncList(selectingFile, FileItem, (file, element, recycled) =>
+        ui_LabelBasePath.text = FileChunkManagerSystem.BasePath;
+
+        ui_ScrollFiles.SyncList(selectingFile, FileItem, (file, element, recycled) =>
         {
             element.userData = file;
             element.Q<Button>().text = file;
@@ -624,7 +643,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             {
                 element.Q<Button>().clicked += () =>
                 {
-                    ui_inputSourcePath.value = (string)element.userData;
+                    ui_InputSourcePath.value = (string)element.userData;
                     selectingFile = ImmutableArray<string>.Empty;
                     EndFileSelection();
                 };
@@ -742,7 +761,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         {
             foreach (string item in ProgressStatusClasses)
             {
-                ui_progressCompilation.EnableInClassList(item, item == status);
+                ui_ProgressCompilation.EnableInClassList(item, item == status);
             }
         }
 
@@ -784,14 +803,14 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         {
             if (_scheduledSource != null)
             {
-                ui_progressCompilation.title = "Scheduled ...";
-                ui_progressCompilation.value = 0f;
+                ui_ProgressCompilation.title = "Scheduled ...";
+                ui_ProgressCompilation.value = 0f;
                 SetProgressStatus(null);
             }
             else
             {
-                ui_progressCompilation.title = "No source";
-                ui_progressCompilation.value = 0f;
+                ui_ProgressCompilation.title = "No source";
+                ui_ProgressCompilation.value = 0f;
                 SetProgressStatus(null);
             }
         }
@@ -865,10 +884,10 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
             if (source != null)
             {
-                SyncDiagnosticItems(ui_scrollDiagnostics, source.Diagnostics, default);
+                SyncDiagnosticItems(ui_ScrollDiagnostics, source.Diagnostics, default);
                 if (source.Status != CompilationStatus.Done && !float.IsNaN(source.Progress))
                 {
-                    ui_scrollProgresses.SyncList(source.SubFiles.ToArray(), ProgressItem, (file, element, recycled) =>
+                    ui_ScrollProgresses.SyncList(source.SubFiles.ToArray(), ProgressItem, (file, element, recycled) =>
                     {
                         ProgressBar progressBar = element.Q<ProgressBar>();
                         progressBar.title = file.Key.Name.ToString();
@@ -882,7 +901,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                         }
                     });
 
-                    ui_progressCompilation.value = source.Progress;
+                    ui_ProgressCompilation.value = source.Progress;
 
                     _requestedTabSwitch = (Tab.Files, Tab.Progress);
                 }
@@ -892,35 +911,35 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             {
                 case CompilationStatus.Secuedued:
                 {
-                    ui_progressCompilation.title = "Secuedued ...";
-                    ui_progressCompilation.value = 0f;
+                    ui_ProgressCompilation.title = "Secuedued ...";
+                    ui_ProgressCompilation.value = 0f;
                     SetProgressStatus(null);
                     break;
                 }
                 case CompilationStatus.Compiling:
                 {
-                    ui_progressCompilation.title = "Compiling ...";
-                    ui_progressCompilation.value = 1f;
+                    ui_ProgressCompilation.title = "Compiling ...";
+                    ui_ProgressCompilation.value = 1f;
                     SetProgressStatus(null);
                     break;
                 }
                 case CompilationStatus.Uploading:
                 {
-                    ui_progressCompilation.title = "Uploading ...";
+                    ui_ProgressCompilation.title = "Uploading ...";
                     SetProgressStatus(null);
                     break;
                 }
                 case CompilationStatus.Generating:
                 {
-                    ui_progressCompilation.title = "Generating ...";
-                    ui_progressCompilation.value = 1f;
+                    ui_ProgressCompilation.title = "Generating ...";
+                    ui_ProgressCompilation.value = 1f;
                     SetProgressStatus(null);
                     break;
                 }
                 case CompilationStatus.Generated:
                 {
-                    ui_progressCompilation.title = "Generated";
-                    ui_progressCompilation.value = 1f;
+                    ui_ProgressCompilation.title = "Generated";
+                    ui_ProgressCompilation.value = 1f;
                     SetProgressStatus(null);
                     break;
                 }
@@ -931,7 +950,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                     {
                         _requestedTabSwitch = (Tab.Progress, Tab.Terminal);
 
-                        if (ui_tabView.selectedTabIndex == (int)Tab.Terminal)
+                        if (ui_TabView.selectedTabIndex == (int)Tab.Terminal)
                         {
                             foreach (char c in Input.inputString)
                             {
@@ -943,8 +962,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                         switch (processor.Signal)
                         {
                             case Signal.None:
-                                ui_progressCompilation.title = "Running";
-                                ui_progressCompilation.value = 1f;
+                                ui_ProgressCompilation.title = "Running";
+                                ui_ProgressCompilation.value = 1f;
                                 SetProgressStatus("success");
                                 _memory = null;
                                 _memoryDownloadProgress = null;
@@ -960,7 +979,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                         Data = c,
                                     });
                                 }
-                                else if (ui_labelTerminal.panel.focusController.focusedElement == ui_labelTerminal && Time.time % 1f < .5f)
+                                else if (ui_LabelTerminal.panel.focusController.focusedElement == ui_LabelTerminal && Time.time % 1f < .5f)
                                 {
                                     _terminalBuilder.Append("<mark=#ffffffff>_</mark>");
                                 }
@@ -970,8 +989,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                 }
                                 break;
                             case Signal.UserCrash:
-                                ui_progressCompilation.title = "User-crashed";
-                                ui_progressCompilation.value = 1f;
+                                ui_ProgressCompilation.title = "User-crashed";
+                                ui_ProgressCompilation.value = 1f;
                                 SetProgressStatus("error");
                                 isErrored = true;
                                 if (_memory is null)
@@ -1002,8 +1021,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                                 case FileResponseStatus.NotFound:
                                                 case FileResponseStatus.Unknown:
                                                 case FileResponseStatus.ErrorDisconnected:
-                                                    ui_progressCompilation.title = "Crashed (no memory)";
-                                                    ui_progressCompilation.value = 1f;
+                                                    ui_ProgressCompilation.title = "Crashed (no memory)";
+                                                    ui_ProgressCompilation.value = 1f;
                                                     break;
                                                 case FileResponseStatus.OK:
                                                 case FileResponseStatus.NotChanged:
@@ -1014,8 +1033,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                         }
                                         else
                                         {
-                                            ui_progressCompilation.title = "Crashed (loading memory)";
-                                            ui_progressCompilation.value = (float)_memoryDownloadProgress.Progress.Item1 / (float)_memoryDownloadProgress.Progress.Item2;
+                                            ui_ProgressCompilation.title = "Crashed (loading memory)";
+                                            ui_ProgressCompilation.value = (float)_memoryDownloadProgress.Progress.Item1 / (float)_memoryDownloadProgress.Progress.Item2;
                                         }
                                     }
                                 }
@@ -1030,25 +1049,25 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                 }
                                 break;
                             case Signal.StackOverflow:
-                                ui_progressCompilation.title = "Crashed";
-                                ui_progressCompilation.value = 1f;
+                                ui_ProgressCompilation.title = "Crashed";
+                                ui_ProgressCompilation.value = 1f;
                                 isErrored = true;
                                 SetProgressStatus("error");
                                 break;
                             case Signal.Halt:
-                                ui_progressCompilation.title = "Halted";
-                                ui_progressCompilation.value = 1f;
+                                ui_ProgressCompilation.title = "Halted";
+                                ui_ProgressCompilation.value = 1f;
                                 SetProgressStatus("warning");
                                 break;
                             case Signal.UndefinedExternalFunction:
-                                ui_progressCompilation.title = "Crashed";
-                                ui_progressCompilation.value = 1f;
+                                ui_ProgressCompilation.title = "Crashed";
+                                ui_ProgressCompilation.value = 1f;
                                 SetProgressStatus("error");
                                 isErrored = true;
                                 break;
                             case Signal.PointerOutOfRange:
-                                ui_progressCompilation.title = "Crashed";
-                                ui_progressCompilation.value = 1f;
+                                ui_ProgressCompilation.title = "Crashed";
+                                ui_ProgressCompilation.value = 1f;
                                 SetProgressStatus("error");
                                 isErrored = true;
                                 break;
@@ -1073,22 +1092,22 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                     }
                     else if (source == null)
                     {
-                        ui_progressCompilation.title = "Remote source";
-                        ui_progressCompilation.value = 1f;
+                        ui_ProgressCompilation.title = "Remote source";
+                        ui_ProgressCompilation.value = 1f;
                         SetProgressStatus(null);
                     }
                     else if (!source.IsSuccess)
                     {
-                        ui_progressCompilation.title = "Compile failed";
-                        ui_progressCompilation.value = 1f;
+                        ui_ProgressCompilation.title = "Compile failed";
+                        ui_ProgressCompilation.value = 1f;
                         SetProgressStatus("error");
 
                         _requestedTabSwitch = (Tab.Progress, Tab.Diagnostics);
                     }
                     else
                     {
-                        ui_progressCompilation.title = "Invalid source";
-                        ui_progressCompilation.value = 1f;
+                        ui_ProgressCompilation.title = "Invalid source";
+                        ui_ProgressCompilation.value = 1f;
                         SetProgressStatus("error");
 
                         _requestedTabSwitch = (Tab.Progress, Tab.Diagnostics);
@@ -1099,13 +1118,13 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             }
         }
 
-        if (ui_tabView.selectedTabIndex == (int)Tab.Terminal)
+        if (ui_TabView.selectedTabIndex == (int)Tab.Terminal)
         {
-            ui_labelTerminal.text = _terminalBuilder.ToString();
+            ui_LabelTerminal.text = _terminalBuilder.ToString();
 
             if (isBottom)
             {
-                ui_scrollTerminal.scrollOffset = ui_labelTerminal.layout.max - ui_scrollTerminal.contentViewport.layout.size;
+                ui_ScrollTerminal.scrollOffset = ui_LabelTerminal.layout.max - ui_ScrollTerminal.contentViewport.layout.size;
             }
         }
     }
@@ -1135,7 +1154,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             ui_ButtonHalt.clickable = null;
             ui_ButtonReset.clickable = null;
             ui_ButtonContinue.clickable = null;
-            ui_labelTerminal.text = string.Empty;
+            ui_LabelTerminal.text = string.Empty;
             EndFileSelection();
         }
         gameObject.SetActive(false);

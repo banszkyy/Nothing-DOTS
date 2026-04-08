@@ -19,6 +19,8 @@ public partial struct PlayerSystemClient : ISystem
     Guid PlayerGuid;
     Guid ServerGuid;
     FixedString32Bytes Nickname;
+    EntityQuery playersQ;
+    EntityQuery connectionsQ;
 
     public static ref PlayerSystemClient GetInstance(in WorldUnmanaged world) => ref world.GetSystem<PlayerSystemClient>();
 
@@ -158,15 +160,16 @@ public partial struct PlayerSystemClient : ISystem
         return false;
     }
 
-    public static bool TryGetLocalPlayer(out Player player)
+    public bool TryGetLocalPlayer(out Player player)
     {
-        using EntityQuery playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player));
+        if (playersQ == default) playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player));
+        if (connectionsQ == default) connectionsQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(NetworkId));
+
         if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
         {
             return playersQ.TryGetSingleton<Player>(out player);
         }
 
-        using EntityQuery connectionsQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(NetworkId));
         if (!connectionsQ.TryGetSingleton(out NetworkId networkId))
         {
             player = default;
@@ -185,15 +188,16 @@ public partial struct PlayerSystemClient : ISystem
         return false;
     }
 
-    public static bool TryGetLocalPlayer(out Entity player)
+    public bool TryGetLocalPlayer(out Entity player)
     {
-        using EntityQuery playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player));
+        if (playersQ == default) playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player));
+        if (connectionsQ == default) connectionsQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(NetworkId));
+
         if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
         {
             return playersQ.TryGetSingletonEntity<Player>(out player);
         }
 
-        using EntityQuery connectionsQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(NetworkId));
         if (!connectionsQ.TryGetSingleton(out NetworkId networkId))
         {
             player = default;
@@ -303,6 +307,7 @@ public partial struct PlayerSystemClient : ISystem
 
     public void OnDisconnect()
     {
-
+        if (playersQ != default) playersQ.Dispose();
+        if (connectionsQ != default) connectionsQ.Dispose();
     }
 }

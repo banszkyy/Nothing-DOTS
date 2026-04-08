@@ -463,7 +463,7 @@ public class SelectionManager : Singleton<SelectionManager>
         _unitCommandUIWorldPositionData = WorldRaycast(ray, out float distance) ? ray.GetPoint(distance) : default;
         _unitCommandUIPosition = _unitCommandUIWorldPositionData == default ? ray.GetPoint(300) : _unitCommandUIWorldPositionData;
 
-        UnitCommandsUI.gameObject.SetActive(true);
+        UnitCommandsUI.ForceSetActive(true);
 
         UnitCommandsUI.rootVisualElement.Q<ProgressBar>("progress").style.display = DisplayStyle.None;
         UnitCommandsUI.rootVisualElement.Q<ProgressBar>("progress").value = 0f;
@@ -511,12 +511,12 @@ public class SelectionManager : Singleton<SelectionManager>
             }
         }
 
-        if (container.childCount == 0) UnitCommandsUI.gameObject.SetActive(false);
+        if (container.childCount == 0) UnitCommandsUI.ForceSetActive(false);
     }
 
     void HideUnitCommandsUI()
     {
-        UnitCommandsUI.gameObject.SetActive(false);
+        UnitCommandsUI.ForceSetActive(false);
     }
 
     void HandleUnitCommandClick(int commandId)
@@ -610,7 +610,7 @@ public class SelectionManager : Singleton<SelectionManager>
         if (!ConnectionManager.ClientOrDefaultWorld.EntityManager.Exists(unit)) return false;
         if (!ConnectionManager.ClientOrDefaultWorld.EntityManager.HasComponent<UnitTeam>(unit)) return true;
         UnitTeam unitTeam = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<UnitTeam>(unit);
-        if (!PlayerSystemClient.TryGetLocalPlayer(out Player localPlayer)) return false;
+        if (!PlayerSystemClient.GetInstance(ConnectionManager.ClientOrDefaultWorld.Unmanaged).TryGetLocalPlayer(out Player localPlayer)) return false;
         return unitTeam.Team == localPlayer.Team;
     }
 

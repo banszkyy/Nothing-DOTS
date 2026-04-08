@@ -71,7 +71,6 @@ public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUI
 
         syncAt = Math.Min(syncAt, Time.time + 0.5f);
 
-        ui.gameObject.SetActive(true);
         selectedEntity = entity;
         RefreshUI(entity);
     }

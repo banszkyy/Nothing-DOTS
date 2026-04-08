@@ -5,7 +5,6 @@
 
 Label {
     color: rgb(207, 207, 207);
-    -unity-font-definition: resource("FlatSkin/Font/Roboto-Bold");
 }
 
 Label.error {
@@ -55,7 +54,6 @@ Button {
     padding-right: 3px;
     padding-top: 0;
     padding-bottom: 0;
-    -unity-font-definition: resource("FlatSkin/Font/Roboto-Medium");
     border-top-color: rgb(48, 48, 48);
 }
 

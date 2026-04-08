@@ -1,31 +1,31 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:Template name="FacilityAvaliableItem" src="project://database/Assets/UI/Facility%20Avaliable%20Item.uxml?fileID=9197481963319205126&amp;guid=3b4b851806241aa67aa59481fdafd382&amp;type=3#Facility Avaliable Item" />
-    <ui:Template name="FacilityQueueItem" src="project://database/Assets/UI/Facility%20Queue%20Item.uxml?fileID=9197481963319205126&amp;guid=74e248c65f3d65c0aba2e9e5478c2b99&amp;type=3#Facility Queue Item" />
-    <ui:Template name="Terminal" src="project://database/Assets/UI/Terminal.uxml?fileID=9197481963319205126&amp;guid=b7b1b5db4ce3d99cc983100f7025c813&amp;type=3#Terminal" />
-    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style" />
+    <ui:Template name="FacilityAvaliableItem" src="project://database/Assets/UI/Facility%20Avaliable%20Item.uxml?fileID=9197481963319205126&amp;guid=3b4b851806241aa67aa59481fdafd382&amp;type=3#Facility Avaliable Item"/>
+    <ui:Template name="FacilityQueueItem" src="project://database/Assets/UI/Facility%20Queue%20Item.uxml?fileID=9197481963319205126&amp;guid=74e248c65f3d65c0aba2e9e5478c2b99&amp;type=3#Facility Queue Item"/>
+    <ui:Template name="Terminal" src="project://database/Assets/UI/Terminal.uxml?fileID=9197481963319205126&amp;guid=b7b1b5db4ce3d99cc983100f7025c813&amp;type=3#Terminal"/>
+    <Style src="project://database/Assets/UI/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement picking-mode="Ignore" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; justify-content: center; align-items: center;">
-        <ui:GroupBox text="Facility" class="panel" style="min-height: 300px; min-width: 200px; background-color: rgb(46, 46, 46); max-height: 300px;">
+        <ui:GroupBox text="Facility" class="panel" style="min-height: 300px; min-width: 300px; width: 70%; height: 70%;">
             <ui:TabView tabindex="-1" style="flex-grow: 1;">
                 <ui:Tab label="Research" style="flex-grow: 1;">
                     <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
                         <ui:VisualElement style="flex-grow: 1; flex-basis: 50%;">
-                            <ui:Label text="Avaliable:" style="margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; margin-right: 0; margin-left: 0; font-size: 8px;" />
+                            <ui:Label text="Avaliable:" style="margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; margin-right: 0; margin-left: 0; font-size: 8px;"/>
                             <ui:ScrollView name="list-avaliable" horizontal-scroller-visibility="Hidden" style="flex-grow: 1;">
-                                <ui:Instance template="FacilityAvaliableItem" />
+                                <ui:Instance template="FacilityAvaliableItem"/>
                             </ui:ScrollView>
                         </ui:VisualElement>
                         <ui:VisualElement style="flex-grow: 1; flex-basis: 50%;">
-                            <ui:Label text="Current:" style="margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; margin-right: 0; margin-left: 0; font-size: 8px;" />
-                            <ui:ProgressBar value="0" name="progress-current" high-value="1" low-value="0" style="margin-bottom: 0; margin-top: 0;" />
-                            <ui:Label text="Queue:" style="margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; margin-right: 0; margin-left: 0; font-size: 8px;" />
+                            <ui:Label text="Current:" style="margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; margin-right: 0; margin-left: 0; font-size: 8px;"/>
+                            <ui:ProgressBar value="0" name="progress-current" high-value="1" low-value="0" style="margin-bottom: 0; margin-top: 0;"/>
+                            <ui:Label text="Queue:" style="margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; margin-right: 0; margin-left: 0; font-size: 8px;"/>
                             <ui:ScrollView name="list-queue" horizontal-scroller-visibility="Hidden" style="flex-grow: 1;">
-                                <ui:Instance template="FacilityQueueItem" />
+                                <ui:Instance template="FacilityQueueItem"/>
                             </ui:ScrollView>
                         </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:Tab>
                 <ui:Tab label="Terminal" style="flex-grow: 1;">
-                    <ui:Instance template="Terminal" style="flex-grow: 1;" />
+                    <ui:Instance template="Terminal" style="flex-grow: 1;"/>
                 </ui:Tab>
             </ui:TabView>
         </ui:GroupBox>

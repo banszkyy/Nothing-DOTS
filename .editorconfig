@@ -48,3 +48,6 @@ csharp_style_expression_bodied_operators = when_on_single_line
 
 # CA2241: Provide correct arguments to formatting methods
 dotnet_diagnostic.CA2241.severity = error
+
+# IDE0011: Add braces
+dotnet_diagnostic.IDE0011.severity = silent

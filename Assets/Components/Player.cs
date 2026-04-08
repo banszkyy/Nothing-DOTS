@@ -32,6 +32,7 @@ public struct Player : IComponentData
     [GhostField] public FixedString32Bytes Nickname;
     [GhostField] public GameOutcome Outcome;
     [GhostField] public bool InCreative;
+    [GhostField] public bool IsAdmin;
     public bool IsCoreComputerSpawned;
     public Guid Guid;
     public float3 Position;

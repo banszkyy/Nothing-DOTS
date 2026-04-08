@@ -67,7 +67,6 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
         gameObject.SetActive(true);
         this.ui = ui;
 
-        ui.gameObject.SetActive(true);
         selectedFactoryEntity = factoryEntity;
         RefreshUI(factoryEntity);
 

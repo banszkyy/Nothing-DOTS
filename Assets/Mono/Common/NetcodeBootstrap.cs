@@ -86,8 +86,9 @@ class NetcodeBootstrap : ClientServerBootstrap
         }
     }
 
-    public static IEnumerator CreateServer(NetworkEndpoint endpoint, string? savefile)
+    public static IEnumerator CreateServer(NetworkEndpoint endpoint, string? savefile, Ref<bool> success)
     {
+        Debug.Log($" -> Creating server world");
         ServerWorld = CreateServerWorld("ServerWorld");
 
         SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include);
@@ -97,8 +98,11 @@ class NetcodeBootstrap : ClientServerBootstrap
             yield return null;
         }
 
+        Debug.Log($" -> Server world created");
+
         if (subScenes != null)
         {
+            Debug.Log($" -> Loading server subscenes");
             for (int i = 0; i < subScenes.Length; i++)
             {
                 SceneSystem.LoadParameters loadParameters = new() { Flags = SceneLoadFlags.BlockOnStreamIn };
@@ -109,15 +113,28 @@ class NetcodeBootstrap : ClientServerBootstrap
                     yield return null;
                 }
             }
+            Debug.Log($" -> Server subscenes loaded");
         }
 
+        bool ok;
         using (EntityQuery driverQ = ServerWorld.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>()))
         {
-            driverQ.GetSingletonRW<NetworkStreamDriver>().ValueRW.Listen(endpoint);
+            Debug.Log($" -> Start listening on {endpoint}");
+            ok = success.Value = driverQ.GetSingletonRW<NetworkStreamDriver>().ValueRW.Listen(endpoint);
+            Debug.Log($" -> Listening: {ok}");
+        }
+
+        if (!ok)
+        {
+            ServerWorld.DestroyAllSystemsAndLogException(out _);
+            ServerWorld.Dispose();
+            ServerWorld = null;
+            yield break;
         }
 
         if (savefile is not null)
         {
+            Debug.Log($" -> Loading savefile");
             EntityCommandBuffer entityCommandBuffer = new(Unity.Collections.Allocator.Temp);
             SaveManager.Load(ServerWorld, entityCommandBuffer, savefile);
             entityCommandBuffer.Playback(ServerWorld.EntityManager);
@@ -137,11 +154,17 @@ class NetcodeBootstrap : ClientServerBootstrap
                     Team = Player.UnassignedTeam,
                 });
             }
+            else
+            {
+                Debug.LogError($"{DebugEx.ServerPrefix} Cannot create local player: Singleton {nameof(PrefabDatabase)} not found");
+            }
         }
+        Debug.Log($" -> Server created");
     }
 
-    public static IEnumerator CreateClient(NetworkEndpoint endpoint)
+    public static IEnumerator CreateClient(NetworkEndpoint endpoint, Ref<Entity> connectionEntity)
     {
+        Debug.Log($" -> Creating client world");
         ClientWorld = CreateClientWorld("ClientWorld");
 
         SubScene[] subScenes = Object.FindObjectsByType<SubScene>(FindObjectsInactive.Include);
@@ -151,8 +174,11 @@ class NetcodeBootstrap : ClientServerBootstrap
             yield return null;
         }
 
+        Debug.Log($" -> Client world created");
+
         if (subScenes != null)
         {
+            Debug.Log($" -> Loading client subscenes");
             for (int i = 0; i < subScenes.Length; i++)
             {
                 SceneSystem.LoadParameters loadParameters = new() { Flags = SceneLoadFlags.BlockOnStreamIn };
@@ -163,10 +189,13 @@ class NetcodeBootstrap : ClientServerBootstrap
                     yield return null;
                 }
             }
+            Debug.Log($" -> Client subscenes loaded");
         }
 
         using EntityQuery driverQ = ClientWorld.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
-        driverQ.GetSingletonRW<NetworkStreamDriver>().ValueRW.Connect(ClientWorld.EntityManager, endpoint);
+        Debug.Log($" -> Connecting to {endpoint}");
+        connectionEntity.Value = driverQ.GetSingletonRW<NetworkStreamDriver>().ValueRW.Connect(ClientWorld.EntityManager, endpoint);
+        Debug.Log($" -> Connected");
     }
 
     public static IEnumerator CreateStaging(string? savefile)

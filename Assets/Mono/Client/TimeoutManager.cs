@@ -35,6 +35,6 @@ class TimeoutManager : MonoBehaviour
             Time = now;
         }
 
-        UI.enabled = Snapshot != 0 && now > Time + 1;
+        UI.ForceSetActive(Snapshot != 0 && now > Time + 1);
     }
 }

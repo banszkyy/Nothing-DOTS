@@ -34,7 +34,7 @@ public class HUDManager : Singleton<HUDManager>
         _labelFps.text = float.IsInfinity(fps) || float.IsNaN(fps) ? "N/A" : MathF.Round(1f / _maxDeltaTime).ToString();
         _maxDeltaTime = 0f;
 
-        if (PlayerSystemClient.TryGetLocalPlayer(out Player localPlayer))
+        if (PlayerSystemClient.GetInstance(ConnectionManager.ClientOrDefaultWorld.Unmanaged).TryGetLocalPlayer(out Player localPlayer))
         {
             _labelResources.text = localPlayer.Resources.ToString();
             _labelTeam.text = localPlayer.Team.ToString();

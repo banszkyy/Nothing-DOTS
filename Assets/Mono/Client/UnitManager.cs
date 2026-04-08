@@ -292,15 +292,15 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
 
     public void Setup(UIDocument ui)
     {
-        ui.gameObject.SetActive(true);
+        gameObject.SetActive(true);
         RefreshUI();
         syncAt = 0f;
     }
 
     public void Cleanup(UIDocument ui)
     {
+        gameObject.SetActive(false);
         SelectedUnit = default;
-        ui.gameObject.SetActive(false);
         if (UnitHologram != null) Destroy(UnitHologram);
         UnitHologram = null;
     }

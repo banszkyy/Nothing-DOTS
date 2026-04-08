@@ -18,29 +18,37 @@ public class UIManager : Singleton<UIManager>
             _manager = manager;
         }
 
-        public UISetup Setup<TUI, TContext>(TUI ui, TContext context)
-            where TUI : IUISetup<TContext>, IUICleanup
+        public UISetup Setup<TManager, TContext>(TManager manager, TContext context)
+            where TManager : IUISetup<TContext>, IUICleanup
         {
-            ui.Setup(_ui, context);
+            manager.Setup(_ui, context);
             _manager.OpenedUIs.TryAdd(_ui, new List<IUICleanup>());
-            _manager.OpenedUIs[_ui].Add(ui);
+            _manager.OpenedUIs[_ui].Add(manager);
             return this;
         }
 
-        public UISetup Setup<TUI>(TUI ui)
-            where TUI : IUISetup, IUICleanup
+        public UISetup Setup<TManager>(TManager manager)
+            where TManager : IUISetup, IUICleanup
         {
-            ui.Setup(_ui);
+            manager.Setup(_ui);
             _manager.OpenedUIs.TryAdd(_ui, new List<IUICleanup>());
-            _manager.OpenedUIs[_ui].Add(ui);
+            _manager.OpenedUIs[_ui].Add(manager);
             return this;
         }
+
+        public UISetup Setup<TManager>()
+            where TManager : Singleton<TManager>, IUISetup, IUICleanup
+            => Setup(Singleton<TManager>.Instance);
+
+        public UISetup Setup<TManager, TContext>(TContext context)
+            where TManager : Singleton<TManager>, IUISetup<TContext>, IUICleanup
+            => Setup(Singleton<TManager>.Instance, context);
     }
 
     [Header("Documents")]
 
-    [SerializeField, NotNull] public UIDocument? Network = default;
-
+    [SerializeField, NotNull] public UIDocument? MainMenu = default;
+    [SerializeField, NotNull] public UIDocument? NetworkStatus = default;
     [SerializeField, NotNull] public UIDocument? Unit = default;
     [SerializeField, NotNull] public UIDocument? Factory = default;
     [SerializeField, NotNull] public UIDocument? Facility = default;
@@ -52,7 +60,8 @@ public class UIManager : Singleton<UIManager>
     ImmutableArray<UIDocument>? _uis = default;
 
     public ImmutableArray<UIDocument> UIs => _uis ?? (_uis = ImmutableArray.Create(
-        Network,
+        MainMenu,
+        NetworkStatus,
         Unit,
         Factory,
         Facility,
@@ -123,13 +132,14 @@ public class UIManager : Singleton<UIManager>
 
     public void CloseUI(UIDocument ui)
     {
+        Tooltips.Instance.OnDocumentHidden(ui);
         if (OpenedUIs.TryGetValue(ui, out List<IUICleanup>? cleanup))
         {
             foreach (IUICleanup item in cleanup) item.Cleanup(ui);
             OpenedUIs.Remove(ui);
         }
         ui.rootVisualElement?.focusController.focusedElement?.Blur();
-        ui.gameObject.SetActive(false);
+        ui.ForceSetActive(false);
     }
 
     public void CloseUI(IUICleanup ui)
@@ -144,7 +154,7 @@ public class UIManager : Singleton<UIManager>
     public UISetup OpenUI(UIDocument ui)
     {
         CloseAllUI();
-        ui.gameObject.SetActive(true);
+        ui.ForceSetActive(true);
         return new UISetup(ui, this);
     }
 }

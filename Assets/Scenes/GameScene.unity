@@ -303,11 +303,11 @@ MonoBehaviour:
       type: 3}
     Script: unit-6.bbc
     Team: 0
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: -2.08148
       y: 0.26084647
-  SpawnRandomUnits_: 1
+  SpawnRandomUnits_: 0
   RandomUnits:
   - Prefab: {fileID: 1287691938842737703, guid: b686aecd0774a0eb98551c108a20bb36,
       type: 3}
@@ -921,7 +921,6 @@ Transform:
   - {fileID: 1115681834}
   - {fileID: 1000078655}
   - {fileID: 1085858980}
-  - {fileID: 1306935733}
   m_Father: {fileID: 1001118307}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &534305673
@@ -1214,12 +1213,12 @@ GameObject:
   - component: {fileID: 757861203}
   - component: {fileID: 757861202}
   m_Layer: 5
-  m_Name: Network
+  m_Name: NetworkStatus
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &757861201
 Transform:
   m_ObjectHideFlags: 0
@@ -1254,7 +1253,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 757861200}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: 
@@ -1468,8 +1467,8 @@ MonoBehaviour:
   DebugNickname: bruh
   DebugSavefile: save.bin
   DebugPort: 7777
-  AutoHost: 1
-  Singleplayer: 1
+  AutoHost: 0
+  Singleplayer: 0
   NoClient: 0
 --- !u!1 &904933344
 GameObject:
@@ -2112,53 +2111,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c31296253f786e3b4c64f8f4ee20b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &1306935732
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1306935733}
-  - component: {fileID: 1306935734}
-  m_Layer: 0
-  m_Name: UIManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1306935733
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1306935732}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 513005738}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1306935734
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1306935732}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1583b83e2a4c6480dac8567a843cf06d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UI
-  _uiDocuments: []
-  _focusedDocument: {fileID: 0}
-  _isUiFocused: 0
 --- !u!1 &1315858034
 GameObject:
   m_ObjectHideFlags: 0
@@ -2169,6 +2121,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1315858035}
   - component: {fileID: 1315858036}
+  - component: {fileID: 1315858037}
   m_Layer: 0
   m_Name: UIManager
   m_TagString: Untagged
@@ -2203,7 +2156,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77c63f7b9f3d5e901b48fb4b3e7e8e71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Network: {fileID: 1516148612}
+  MainMenu: {fileID: 1516148612}
+  NetworkStatus: {fileID: 757861203}
   Unit: {fileID: 185226096}
   Factory: {fileID: 209967864}
   Facility: {fileID: 687260567}
@@ -2213,6 +2167,21 @@ MonoBehaviour:
   DiskDrive: {fileID: 1566381203}
   _escPressed: 0
   _escGrabbed: 0
+--- !u!114 &1315858037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1315858034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1583b83e2a4c6480dac8567a843cf06d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UI
+  _uiDocuments: []
+  _focusedDocument: {fileID: 0}
+  _isUiFocused: 0
 --- !u!1 &1323827595
 GameObject:
   m_ObjectHideFlags: 0
@@ -2648,13 +2617,14 @@ GameObject:
   - component: {fileID: 1516148611}
   - component: {fileID: 1516148612}
   - component: {fileID: 1516148613}
+  - component: {fileID: 1516148614}
   m_Layer: 5
   m_Name: MainMenu
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1516148611
 Transform:
   m_ObjectHideFlags: 0
@@ -2706,6 +2676,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c31296253f786e3b4c64f8f4ee20b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1516148614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1516148610}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8343c5f8976f857dd9284ae0a708bb58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MainMenuManager
 --- !u!1 &1551354252
 GameObject:
   m_ObjectHideFlags: 0

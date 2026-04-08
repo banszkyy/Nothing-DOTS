@@ -37,17 +37,20 @@ public static class UIExtensions
         this VisualElement container,
         NativeArray<T> collection,
         VisualTreeAsset itemAsset,
-        Action<T, VisualElement, bool> updater)
+        Action<T, VisualElement, bool> updater,
+        Predicate<T>? predicate = null)
         where T : unmanaged
     {
         VisualElement[] childrenElement = container.Children().ToArray();
-        int i;
+        int n = 0;
 
-        for (i = 0; i < collection.Length; i++)
+        for (int i = 0; i < collection.Length; i++)
         {
-            if (i < childrenElement.Length)
+            if (predicate is not null && !predicate(collection[i])) continue;
+
+            if (n < childrenElement.Length)
             {
-                VisualElement element = childrenElement[i];
+                VisualElement element = childrenElement[n];
                 updater.Invoke(collection[i], element, true);
             }
             else
@@ -56,9 +59,11 @@ public static class UIExtensions
                 container.Add(element);
                 updater.Invoke(collection[i], element, false);
             }
+
+            n++;
         }
 
-        for (; i < childrenElement.Length; i++)
+        for (int i = n; i < childrenElement.Length; i++)
         {
             container.Remove(childrenElement[i]);
         }
@@ -86,6 +91,38 @@ public static class UIExtensions
                 container.Add(element);
                 updater.Invoke(collection[i], element, false);
             }
+        }
+
+        for (; i < childrenElement.Length; i++)
+        {
+            container.Remove(childrenElement[i]);
+        }
+    }
+
+    public static void SyncList<T>(
+        this VisualElement container,
+        IEnumerable<T> collection,
+        VisualTreeAsset itemAsset,
+        Action<T, VisualElement, bool> updater)
+    {
+        VisualElement[] childrenElement = container.Children().ToArray();
+        int i = 0;
+
+        foreach (T item in collection)
+        {
+            if (i < childrenElement.Length)
+            {
+                VisualElement element = childrenElement[i];
+                updater.Invoke(item, element, true);
+            }
+            else
+            {
+                VisualElement element = itemAsset.Instantiate();
+                container.Add(element);
+                updater.Invoke(item, element, false);
+            }
+
+            i++;
         }
 
         for (; i < childrenElement.Length; i++)

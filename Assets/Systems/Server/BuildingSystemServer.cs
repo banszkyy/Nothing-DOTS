@@ -10,12 +10,13 @@ public partial struct BuildingSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
 
         foreach (var (request, command, entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<PlaceBuildingRequestRpc>>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
@@ -118,6 +119,7 @@ public partial struct BuildingSystemServer : ISystem
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<PlaceWireRequestRpc>>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
@@ -207,28 +209,29 @@ public partial struct BuildingSystemServer : ISystem
             SystemAPI.Query<RefRW<BuildingPlaceholder>, RefRO<LocalToWorld>, RefRO<GhostOwner>, RefRO<UnitTeam>>()
             .WithEntityAccess())
         {
-            if (placeholder.ValueRO.CurrentProgress >= placeholder.ValueRO.TotalProgress)
-            {
-                Entity newEntity = commandBuffer.Instantiate(placeholder.ValueRO.BuildingPrefab);
-                commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPositionRotation(transform.ValueRO.Position, transform.ValueRO.Rotation));
-                commandBuffer.SetComponent<GhostOwner>(newEntity, new()
-                {
-                    NetworkId = owner.ValueRO.NetworkId,
-                });
-                commandBuffer.SetComponent<UnitTeam>(newEntity, new()
-                {
-                    Team = unitTeam.ValueRO.Team,
-                });
+            if (placeholder.ValueRO.CurrentProgress < placeholder.ValueRO.TotalProgress) continue;
 
-                commandBuffer.DestroyEntity(entity);
-                continue;
-            }
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+
+            Entity newEntity = commandBuffer.Instantiate(placeholder.ValueRO.BuildingPrefab);
+            commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPositionRotation(transform.ValueRO.Position, transform.ValueRO.Rotation));
+            commandBuffer.SetComponent<GhostOwner>(newEntity, new()
+            {
+                NetworkId = owner.ValueRO.NetworkId,
+            });
+            commandBuffer.SetComponent<UnitTeam>(newEntity, new()
+            {
+                Team = unitTeam.ValueRO.Team,
+            });
+
+            commandBuffer.DestroyEntity(entity);
         }
 
         foreach (var (request, command, entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<BuildingsRequestRpc>>()
             .WithEntityAccess())
         {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 

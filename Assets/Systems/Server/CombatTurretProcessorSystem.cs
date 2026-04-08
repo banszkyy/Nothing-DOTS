@@ -19,7 +19,7 @@ partial struct CombatTurretProcessorSystem : ISystem
     void ISystem.OnUpdate(ref SystemState state)
     {
         DynamicBuffer<BufferedProjectile> projectiles = SystemAPI.GetSingletonBuffer<BufferedProjectile>(true);
-        EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+        EntityCommandBuffer commandBuffer = default;
         Unity.Mathematics.Random random;
         unsafe
         {
@@ -92,6 +92,8 @@ partial struct CombatTurretProcessorSystem : ISystem
                 RefRO<LocalToWorld> shootPosition = SystemAPI.GetComponentRO<LocalToWorld>(turret.ValueRO.ShootPosition);
 
                 float3 velocity = math.normalize((random.NextFloat3Direction() * turret.ValueRO.Spread) + shootPosition.ValueRO.Forward) * projectiles[projectileIndex].Speed;
+
+                if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
 
                 Entity instance = commandBuffer.Instantiate(projectiles[turret.ValueRO.Projectile].Prefab);
                 commandBuffer.SetComponent(instance, LocalTransform.FromPosition(SystemAPI.GetComponent<LocalToWorld>(turret.ValueRO.ShootPosition).Position));

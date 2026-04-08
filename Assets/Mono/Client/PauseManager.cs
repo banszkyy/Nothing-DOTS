@@ -47,7 +47,6 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
         this.ui = ui;
         refreshAt = 0f;
 
-        ui.gameObject.SetActive(true);
         ui.rootVisualElement.Q<Button>("button-exit").clicked += OnButtonExit;
         ui.rootVisualElement.Q<Button>("button-save").clicked += OnButtonSave;
     }
@@ -74,33 +73,41 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
     {
         if (ui == null || !ui.gameObject.activeSelf || ConnectionManager.ClientOrDefaultWorld == null) return;
 
-        ui.rootVisualElement.Q<Button>("button-save").visible = ConnectionManager.ServerWorld != null;
-
-        ScrollView connectionsList = ui.rootVisualElement.Q<ScrollView>("list-connections");
-
-        connectionsList.Clear();
+        ui.rootVisualElement.Q<Button>("button-save").style.display = ConnectionManager.ServerWorld != null ? DisplayStyle.Flex : DisplayStyle.None;
 
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
         using EntityQuery playersQ = entityManager.CreateEntityQuery(typeof(Player));
         using NativeArray<Player> players = playersQ.ToComponentDataArray<Player>(Allocator.Temp);
 
-        for (int i = 0; i < players.Length; i++)
-        {
-            Player player = players[i];
-            if (player.ConnectionState == PlayerConnectionState.Disconnected) continue;
-            TemplateContainer newItem = UI_ConnectionItem.Instantiate();
-            newItem.Q<Label>().text = $"{player.Nickname} ({player.Team}) ({player.ConnectionId}) ({Math.Ceiling(TimeSpan.FromTicks(player.Ping).TotalMilliseconds)} ms)";
-            newItem.Q<Button>("button-kick").clicked += () =>
+        if (!PlayerSystemClient.GetInstance(ConnectionManager.ClientOrDefaultWorld.Unmanaged).TryGetLocalPlayer(out Player localPlayer)) localPlayer = default;
+
+        ui.rootVisualElement.Q<ScrollView>("list-connections").SyncList(
+            players,
+            UI_ConnectionItem,
+            (player, element, recycled) =>
             {
-                ConnectionManager.KickClient(player.ConnectionId);
-                RefreshUI();
-            };
-            newItem.Q<Button>("button-kick").SetEnabled(
-                ConnectionManager.ServerWorld != null &&
-                player.ConnectionId != 0
-            );
-            connectionsList.Add(newItem);
-        }
+                double ping = TimeSpan.FromTicks(player.Ping).TotalMilliseconds;
+
+                element.userData = player.ConnectionId;
+                element.Q<Label>("label-nickname").text = player.Nickname.ToString();
+                element.Q<Label>("label-team").text = player.Team.ToString();
+                element.Q<Label>("label-ping").text = $"{Math.Ceiling(ping)} ms";
+                element.Q<Label>("label-ping").style.color = ping switch
+                {
+                    <= 0 => new StyleColor(StyleKeyword.Null),
+                    <= 30 => new StyleColor(Color.green),
+                    <= 100 => new StyleColor(Color.yellow),
+                    _ => new StyleColor(Color.red),
+                };
+                element.Q<VisualElement>("icon-admin").style.display = player.IsAdmin ? DisplayStyle.Flex : DisplayStyle.None;
+                if (!recycled) element.Q<Button>("button-kick").clicked += () =>
+                {
+                    ConnectionManager.KickClient((int)element.userData);
+                    RefreshUI();
+                };
+                element.Q<Button>("button-kick").style.display = (ConnectionManager.ServerWorld != null && player.ConnectionId != 0 && player.ConnectionId != localPlayer.ConnectionId) ? DisplayStyle.Flex : DisplayStyle.None;
+            },
+            player => player.ConnectionState is not PlayerConnectionState.Disconnected and not PlayerConnectionState.Server);
     }
 
     public void Cleanup(UIDocument ui)

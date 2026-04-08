@@ -11,6 +11,7 @@ class TerminalSubscriptionClient : IDisposable
     public readonly Entity Entity;
     public readonly NativeList<byte> Data;
     public ulong Offset;
+    public ulong Version;
     public int References;
 
     public TerminalSubscriptionClient(SpawnedGhost ghost, Entity entity, Allocator allocator)
@@ -20,6 +21,7 @@ class TerminalSubscriptionClient : IDisposable
         Data = new(allocator);
         Offset = 0;
         References = 0;
+        Version = 0;
     }
 
     public void Dispose()
@@ -74,6 +76,7 @@ partial class TerminalSystemClient : SystemBase
         if (Subscriptions.TryGetValue(ghost, out TerminalSubscriptionClient subscription))
         {
             if (--subscription.References > 0) return;
+            Subscriptions.Remove(ghost);
         }
         Debug.Log($"{DebugEx.ClientPrefix} Unsubscribing from terminal of entity {ghost}");
         NetcodeUtils.CreateRPC(in commandBuffer, World.Unmanaged, new UnsubscribeTerminalRpc()
@@ -87,6 +90,7 @@ partial class TerminalSystemClient : SystemBase
         if (Subscriptions.TryGetValue(ghost, out TerminalSubscriptionClient subscription))
         {
             if (--subscription.References > 0) return;
+            Subscriptions.Remove(ghost);
         }
         Debug.Log($"{DebugEx.ClientPrefix} Unsubscribing from terminal of entity {ghost}");
         NetcodeUtils.CreateRPC(World.Unmanaged, new UnsubscribeTerminalRpc()
@@ -106,17 +110,17 @@ partial class TerminalSystemClient : SystemBase
         {
             commandBuffer.DestroyEntity(entity);
 
-            if (Subscriptions.TryGetValue(command.ValueRO.Entity, out TerminalSubscriptionClient subscription))
+            if (!Subscriptions.TryGetValue(command.ValueRO.Entity, out TerminalSubscriptionClient subscription)) continue;
+
+            if (subscription.Offset > command.ValueRO.Offset)
             {
-                if (subscription.Offset > command.ValueRO.Offset)
-                {
-                    subscription.Data.Clear();
-                }
-                int dispose = subscription.Data.Length + command.ValueRO.Data.Length - TerminalSubscriptionClient.MaxLength;
-                if (dispose > 0) subscription.Data.RemoveRange(0, dispose);
-                subscription.Data.AddRange(command.ValueRO.Data.GetUnsafePtr(), command.ValueRO.Data.Length);
-                subscription.Offset = command.ValueRO.Offset + (ulong)command.ValueRO.Data.Length;
+                subscription.Data.Clear();
             }
+            int dispose = subscription.Data.Length + command.ValueRO.Data.Length - TerminalSubscriptionClient.MaxLength;
+            if (dispose > 0) subscription.Data.RemoveRange(0, dispose);
+            subscription.Data.AddRange(command.ValueRO.Data.GetUnsafePtr(), command.ValueRO.Data.Length);
+            subscription.Offset = command.ValueRO.Offset + (ulong)command.ValueRO.Data.Length;
+            subscription.Version++;
         }
 
         foreach (var item in Subscriptions)

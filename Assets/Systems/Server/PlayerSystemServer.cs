@@ -177,6 +177,8 @@ public partial struct PlayerSystemServer : ISystem
             }
         }
 
+        bool isAdminAssigned = false;
+
         foreach (var player in
             SystemAPI.Query<RefRW<Player>>())
         {
@@ -251,6 +253,24 @@ public partial struct PlayerSystemServer : ISystem
                     player.ValueRW.IsCoreComputerSpawned = true;
                     player.ValueRW.Resources = 30;
                 }
+
+                if (player.ValueRO.IsAdmin)
+                {
+                    isAdminAssigned = true;
+                }
+            }
+        }
+
+        if (!isAdminAssigned)
+        {
+            foreach (var player in
+                SystemAPI.Query<RefRW<Player>>())
+            {
+                if (player.ValueRO.ConnectionState is not PlayerConnectionState.Connected and not PlayerConnectionState.Local) continue;
+
+                Debug.Log(string.Format($"{DebugEx.ServerPrefix} Admin assigned to player {{0}} (connection: {{1}} nickname: `{{2}}`)", player.ValueRO.Guid, player.ValueRO.ConnectionId, player.ValueRO.Nickname));
+                player.ValueRW.IsAdmin = true;
+                break;
             }
         }
     }

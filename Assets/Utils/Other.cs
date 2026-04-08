@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -123,4 +124,12 @@ public static partial class Utils
         t = invDet * math.dot(edge2, sCrossE1);
         return t > float.Epsilon;
     }
+
+    public static void ForceSetActive(this Behaviour component, bool active)
+    {
+        component.enabled = active;
+        component.gameObject.SetActive(active);
+    }
+
+    public static ImmutableArray<T> AsImmutableArrayUnsafe<T>(this T[]? array) => System.Runtime.InteropServices.ImmutableCollectionsMarshal.AsImmutableArray(array);
 }

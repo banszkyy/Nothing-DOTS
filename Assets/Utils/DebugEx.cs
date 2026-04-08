@@ -9,12 +9,21 @@ using UnityEngine;
 
 public static partial class DebugEx
 {
+#if UNITY_EDITOR
     public const string EditorPrefix = "<color=#bf748b>[Editor]</color>";
     public const string BakingPrefix = "<color=#bf748b>[Baking]</color>";
     public const string AnyPrefix = "<color=#969696>[Any]</color>";
     public const string LocalPrefix = "<color=#71daf7>[Local]</color>";
     public const string ClientPrefix = "<color=#6899f9>[Client]</color>";
     public const string ServerPrefix = "<color=#c787f2>[Server]</color>";
+#else
+    public const string EditorPrefix = "\x1b[37m[Editor]\x1b[0m";
+    public const string BakingPrefix = "\x1b[37m[Baking]\x1b[0m";
+    public const string AnyPrefix = "\x1b[90m[Any]\x1b[0m";
+    public const string LocalPrefix = "\x1b[36m[Local]\x1b[0m";
+    public const string ClientPrefix = "\x1b[34m[Client]\x1b[0m";
+    public const string ServerPrefix = "\x1b[35m[Server]\x1b[0m";
+#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static FixedString64Bytes Prefix(WorldUnmanaged world) =>

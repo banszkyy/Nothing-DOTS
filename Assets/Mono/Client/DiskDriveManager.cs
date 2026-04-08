@@ -27,7 +27,6 @@ public class DiskDriveManager : Singleton<DiskDriveManager>, IUISetup<Entity>, I
     {
         gameObject.SetActive(true);
         this.ui = ui;
-        ui.gameObject.SetActive(true);
         RefreshUI(entity);
     }
 

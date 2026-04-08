@@ -7,6 +7,7 @@ public class Tooltips : Singleton<Tooltips>
 {
     [NotNull] UIDocument? ui = null;
     [NotNull] Label? label = null;
+    VisualElement? targetVisualElement = null;
     bool visible;
 
     void OnEnable()
@@ -74,21 +75,38 @@ public class Tooltips : Singleton<Tooltips>
         }
     }
 
-    void SetTooltip(string? tooltip)
+    void SetTooltip(string? tooltip, VisualElement? visualElement)
     {
         visible = !string.IsNullOrWhiteSpace(tooltip);
         label.text = tooltip;
+        targetVisualElement = visualElement;
+    }
+
+    public void OnDocumentHidden(UIDocument uiDocument)
+    {
+        if (!visible) return;
+        if (targetVisualElement is null) return;
+        VisualElement e = targetVisualElement;
+        while (e is not null)
+        {
+            if (e == uiDocument.rootVisualElement)
+            {
+                SetTooltip(null, targetVisualElement);
+                break;
+            }
+            e = e.hierarchy.parent;
+        }
     }
 
     void OnElementMouseEnter(MouseEnterEvent e)
     {
-        if (e.currentTarget is not VisualElement t) return;
-        SetTooltip(t.tooltip);
+        if (e.currentTarget is not VisualElement visualElement) return;
+        SetTooltip(visualElement.tooltip, visualElement);
     }
 
     void OnElementMouseLeave(MouseLeaveEvent e)
     {
-        if (e.currentTarget is not VisualElement) return;
-        SetTooltip(null);
+        if (e.currentTarget is not VisualElement visualElement) return;
+        SetTooltip(null, visualElement);
     }
 }

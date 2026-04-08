@@ -11,7 +11,7 @@
             <ui:Button text="\uf04b" name="button-continue" parse-escape-sequences="true" tooltip="Continue Processor" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 20px; height: 20px;"/>
         </ui:VisualElement>
         <ui:TabView name="tabs" style="height: 120px; flex-grow: 1;">
-            <ui:Tab label="Terminal" style="flex-grow: 1;">
+            <ui:Tab label="Terminal" enabled="true" style="flex-grow: 1;">
                 <ui:ScrollView name="scroll-terminal" vertical-scroller-visibility="AlwaysVisible" horizontal-scroller-visibility="Hidden" mode="Vertical" class="terminal" style="white-space: normal;">
                     <ui:Label name="label-terminal" focusable="true" selectable="true" enable-rich-text="true" emoji-fallback-support="false" tabindex="0" text="┌─┬┐  ╔═╦╗  ╓─╥╖  ╒═╤╕&#10;│ ││  ║ ║║  ║ ║║  │ ││&#10;├─┼┤  ╠═╬╣  ╟─╫╢  ╞═╪╡&#10;└─┴┘  ╚═╩╝  ╙─╨╜  ╘═╧╛&#10;┌───────────────────┐&#10;│  ╔═══╗ Some Text  │▒&#10;│  ╚═╦═╝ in the box │▒&#10;╞═╤══╩══╤═══════════╡▒&#10;│ ├──┬──┤           │▒&#10;│ └──┴──┘           │▒&#10;└───────────────────┘▒&#10; ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒&#10;" class="terminal" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/NotoSansMono-VariableFont_wdth,wght.ttf?fileID=12800000&amp;guid=712786169bbdbed48a42ec0f34e99fc9&amp;type=3#NotoSansMono-VariableFont_wdth,wght&quot;); font-size: 12px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; border-top-left-radius: 0; border-left-width: 0; border-top-width: 0; border-bottom-width: 0; border-right-width: 0; flex-basis: auto; width: 336px; -unity-paragraph-spacing: -24px; white-space: normal;"/>
                 </ui:ScrollView>
@@ -33,9 +33,12 @@
                     <ui:Button text="\uf06d" name="button-hotreload" parse-escape-sequences="true" tooltip="Hot-reload" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
                     <ui:Button text="\uf6e3" name="button-compile" parse-escape-sequences="true" tooltip="Compile" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
                 </ui:VisualElement>
-                <ui:ScrollView name="scroll-files" style="flex-grow: 1;">
-                    <ui:Instance template="TerminalFileItem"/>
-                </ui:ScrollView>
+                <ui:VisualElement name="files-container" style="flex-grow: 1;">
+                    <ui:Label text="Label" name="label-base-path" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; color: rgb(164, 164, 164); font-size: 8px;"/>
+                    <ui:ScrollView name="scroll-files" style="flex-grow: 1;">
+                        <ui:Instance template="TerminalFileItem"/>
+                    </ui:ScrollView>
+                </ui:VisualElement>
             </ui:Tab>
         </ui:TabView>
     </ui:VisualElement>
