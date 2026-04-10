@@ -53,8 +53,8 @@ export const u8 WHITE = (u8)0b111;
 [External("wreceive")] export i32 wreceive(any* buffer, i32 length, float3* direction);
 [External("wsend")] export void wsend(any* buffer, i32 length, float3* direction, f32 angle);
 
-[External("receive")] export i32 receive(any* buffer, i32 length);
-[External("send")] export void send(any* buffer, i32 length);
+[External("receive")] export i32 receive(any* buffer, i32 length, u8 port = 0);
+[External("send")] export void send(any* buffer, i32 length, u8 port = 0);
 
 export inline void wsend(any* buffer, i32 length, float3 direction, f32 angle)
 {

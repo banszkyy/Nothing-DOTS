@@ -62,6 +62,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -83,9 +85,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &2642253095955864265
 MonoBehaviour:
@@ -361,7 +365,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cdadf232598de044a57ab2496aa483b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConnectorPosition: {fileID: 7692218783675751826}
+  PortPositions:
+  - {fileID: 7692218783675751826}
 --- !u!114 &6313998410875668265
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -27,15 +27,16 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
     [SerializeField, SaintsField.ReadOnly] bool IsValidPosition = false;
 
     [SerializeField, NotNull] LineRenderer? WirePlaceholder = default;
-    [SerializeField, SaintsField.ReadOnly] SpawnedGhost SelectedConnector;
-    [SerializeField, SaintsField.ReadOnly] float3 SelectedConnectorPosition;
+    [SerializeField, NotNull] RectTransform? WireConnectorBlob = default;
+    [SerializeField, SaintsField.ReadOnly] (SpawnedGhost Entity, int Connector) SelectedPort;
+    [SerializeField, SaintsField.ReadOnly] float3 SelectedPortPosition;
 
     [SerializeField] Color ValidHologramColor = Color.white;
     [SerializeField] Color InvalidHologramColor = Color.red;
     [SerializeField, Range(-10f, 10f)] float HologramEmission = 1.1f;
 
     public bool IsBuilding => SelectedBuilding.Prefab != default || IsWireConnecting;
-    public bool IsWireConnecting => !SelectedConnector.Equals(default);
+    public bool IsWireConnecting => !SelectedPort.Equals(default);
 
     [Header("UI")]
 
@@ -116,11 +117,12 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
         if (Input.GetKeyDown(KeyCode.B) && (!UI.IsUIFocused || BuildingUI.gameObject.activeSelf))
         {
             SelectedBuilding = default;
-            SelectedConnector = default;
-            SelectedConnectorPosition = default;
+            SelectedPort = default;
+            SelectedPortPosition = default;
             if (BuildingHologram != null) Destroy(BuildingHologram);
             BuildingHologram = null;
             WirePlaceholder.gameObject.SetActive(false);
+            WireConnectorBlob.gameObject.SetActive(false);
 
             if (BuildingUI.gameObject.activeSelf)
             {
@@ -144,6 +146,7 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
             BuildingHologram = null;
             IsValidPosition = false;
             WirePlaceholder.gameObject.SetActive(false);
+            WireConnectorBlob.gameObject.SetActive(false);
             return;
         }
 
@@ -152,14 +155,15 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
             (IsBuilding || BuildingUI.gameObject.activeSelf) &&
             !CameraControl.Instance.IsDragging)
         {
-            if (SelectedBuilding.Prefab != Entity.Null || !SelectedConnector.Equals(default))
+            if (SelectedBuilding.Prefab != Entity.Null || !SelectedPort.Equals(default))
             {
                 SelectedBuilding = default;
                 if (BuildingHologram != null) Destroy(BuildingHologram);
                 BuildingHologram = null;
-                SelectedConnector = default;
-                SelectedConnectorPosition = default;
+                SelectedPort = default;
+                SelectedPortPosition = default;
                 WirePlaceholder.gameObject.SetActive(false);
+                WireConnectorBlob.gameObject.SetActive(false);
             }
             else
             {
@@ -191,12 +195,14 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
             BuildingHologram = null;
             IsValidPosition = false;
             WirePlaceholder.gameObject.SetActive(false);
+            WireConnectorBlob.gameObject.SetActive(false);
             return;
         }
 
         if (SelectedBuilding.Prefab != Entity.Null)
         {
             HandleBuildingPlacement();
+            WireConnectorBlob.gameObject.SetActive(false);
             return;
         }
         else if (BuildingHologram != null)
@@ -210,31 +216,90 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
 
     void HandleWirePlacement()
     {
+        UnityEngine.Ray ray = MainCamera.Camera.ScreenPointToRay(Input.mousePosition);
+
+        if (!UI.IsMouseHandled
+            && SelectionManager.RayCast(ray, Layers.BuildingOrUnit, out Hit hit)
+            && SelectionManager.IsMine(hit.Entity.Entity)
+            && ConnectionManager.ClientOrDefaultWorld.EntityManager.HasComponent<Connector>(hit.Entity.Entity))
+        {
+            Connector connector = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Connector>(hit.Entity.Entity);
+            LocalTransform connectorTransform = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<LocalTransform>(hit.Entity.Entity);
+            Vector3 hitPoint = ray.GetPoint(hit.Distance);
+
+            float3 hitPort = default;
+            float hitPortDistance = float.MaxValue;
+            for (int i = 0; i < connector.PortPositions.Length; i++)
+            {
+                float3 q = connectorTransform.TransformPoint(connector.PortPositions[i]);
+                float d = math.distance(q, hitPoint);
+                if (d < hitPortDistance)
+                {
+                    hitPortDistance = d;
+                    hitPort = q;
+                }
+            }
+
+            if (!hitPort.Equals(default))
+            {
+                WireConnectorBlob.gameObject.SetActive(true);
+                WireConnectorBlob.anchoredPosition = MainCamera.Camera.WorldToScreenPoint(hitPort);
+                goto k;
+            }
+        }
+
+        WireConnectorBlob.gameObject.SetActive(false);
+    k:
+
         if (Mouse.current.leftButton.wasPressedThisFrame && !UI.IsMouseHandled)
         {
-            if (!SelectionManager.RayCast(MainCamera.Camera.ScreenPointToRay(Input.mousePosition), Layers.BuildingOrUnit, out Hit hit)) return;
+            if (!SelectionManager.RayCast(ray, Layers.BuildingOrUnit, out hit)) return;
 
-            Entity connector = hit.Entity.Entity;
-            if (!SelectionManager.IsMine(connector))
+            Entity hitEntity = hit.Entity.Entity;
+            if (!SelectionManager.IsMine(hitEntity))
             {
                 Debug.Log($"{DebugEx.ClientPrefix} Entity isn't mine");
                 return;
             }
 
-            if (!ConnectionManager.ClientOrDefaultWorld.EntityManager.HasComponent<Connector>(connector))
+            if (!ConnectionManager.ClientOrDefaultWorld.EntityManager.HasComponent<Connector>(hitEntity))
             {
                 Debug.Log($"{DebugEx.ClientPrefix} Entity isn't a connector");
                 return;
             }
 
-            if (SelectedConnector.Equals(default))
+            Connector connector = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Connector>(hitEntity);
+            LocalTransform connectorTransform = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<LocalTransform>(hitEntity);
+            GhostInstance connectorGhost = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<GhostInstance>(hitEntity);
+            Vector3 hitPoint = ray.GetPoint(hit.Distance);
+
+            int hitPort = -1;
+            float hitPortDistance = float.MaxValue;
+            for (int i = 0; i < connector.PortPositions.Length; i++)
             {
-                SelectedConnector = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<GhostInstance>(connector);
-                SelectedConnectorPosition = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<LocalTransform>(connector).TransformPoint(ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Connector>(connector).ConnectorPosition);
+                float3 q = connectorTransform.TransformPoint(connector.PortPositions[i]);
+                float d = math.distance(q, hitPoint);
+                if (i == -1 || d < hitPortDistance)
+                {
+                    hitPortDistance = d;
+                    hitPort = i;
+                }
+            }
+
+            if (hitPort == -1)
+            {
+                Debug.LogWarning($"{DebugEx.ClientPrefix} It seems like this entity doesn't have any ports");
+                return;
+            }
+
+            if (SelectedPort.Equals(default))
+            {
+                SelectedPort = (connectorGhost, hitPort);
+                SelectedPortPosition = connectorTransform.TransformPoint(connector.PortPositions[hitPort]);
             }
             else
             {
-                SpawnedGhost otherSelectedConnector = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<GhostInstance>(connector);
+                SpawnedGhost otherSelectedConnector = connectorGhost;
 
                 if (ConnectionManager.ClientOrDefaultWorld.IsServer())
                 {
@@ -244,49 +309,69 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
                 {
                     NetcodeUtils.CreateRPC(ConnectionManager.ClientOrDefaultWorld.Unmanaged, new PlaceWireRequestRpc()
                     {
-                        A = SelectedConnector,
-                        B = otherSelectedConnector,
+                        EntityA = SelectedPort.Entity,
+                        PortA = (byte)SelectedPort.Connector,
+                        EntityB = otherSelectedConnector,
+                        PortB = (byte)hitPort,
                         IsRemove = false,
                     });
                 }
 
-                SelectedConnector = default;
-                SelectedConnectorPosition = default;
+                SelectedPort = default;
+                SelectedPortPosition = default;
                 WirePlaceholder.gameObject.SetActive(false);
             }
         }
         else
         {
-            if (SelectedConnector.Equals(default))
+            if (SelectedPort.Equals(default))
             {
                 WirePlaceholder.gameObject.SetActive(false);
             }
             else
             {
                 WirePlaceholder.gameObject.SetActive(true);
-                bool isValid;
-                float3 endPosition;
+                bool isValid = false;
+                float3 endPosition = default;
 
-                if (SelectionManager.RayCast(MainCamera.Camera.ScreenPointToRay(Input.mousePosition), Layers.BuildingOrUnit, out Hit hit)
+                if (SelectionManager.RayCast(ray, Layers.BuildingOrUnit, out hit)
                     && SelectionManager.IsMine(hit.Entity.Entity)
                     && ConnectionManager.ClientOrDefaultWorld.EntityManager.HasComponent<Connector>(hit.Entity.Entity))
                 {
-                    isValid = true;
-                    endPosition = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<LocalTransform>(hit.Entity.Entity).TransformPoint(ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Connector>(hit.Entity.Entity).ConnectorPosition);
-                }
-                else
-                {
-                    isValid = false;
+                    Connector connector = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Connector>(hit.Entity.Entity);
+                    LocalTransform connectorTransform = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<LocalTransform>(hit.Entity.Entity);
+                    Vector3 hitPoint = ray.GetPoint(hit.Distance);
 
-                    float d = math.distance(MainCamera.Camera.transform.position, SelectedConnectorPosition);
-                    UnityEngine.Ray ray = MainCamera.Camera.ScreenPointToRay(Input.mousePosition);
+                    int hitPort = -1;
+                    float hitPortDistance = float.MaxValue;
+                    for (int i = 0; i < connector.PortPositions.Length; i++)
+                    {
+                        float3 q = connectorTransform.TransformPoint(connector.PortPositions[i]);
+                        float d = math.distance(q, hitPoint);
+                        if (i == -1 || d < hitPortDistance)
+                        {
+                            hitPortDistance = d;
+                            hitPort = i;
+                        }
+                    }
+
+                    if (hitPort != -1)
+                    {
+                        isValid = true;
+                        endPosition = connectorTransform.TransformPoint(connector.PortPositions[hitPort]);
+                    }
+                }
+
+                if (!isValid)
+                {
+                    float d = math.distance(MainCamera.Camera.transform.position, SelectedPortPosition);
                     endPosition = SelectionManager.WorldRaycast(ray, out float distance) && distance < d ? ray.GetPoint(distance) : ray.GetPoint(d);
                 }
 
                 WirePlaceholder.material.color = isValid ? ValidHologramColor : InvalidHologramColor;
                 WirePlaceholder.material.SetEmissionColor(isValid ? ValidHologramColor : InvalidHologramColor, HologramEmission);
 
-                Vector3[] points = WireRendererSystemClient.GenerateWire(SelectedConnectorPosition, endPosition);
+                Vector3[] points = WireRendererSystemClient.GenerateWire(SelectedPortPosition, endPosition);
                 WirePlaceholder.positionCount = points.Length;
                 WirePlaceholder.SetPositions(points);
             }
@@ -402,5 +487,6 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
         if (BuildingHologram != null) Destroy(BuildingHologram);
         BuildingHologram = null;
         WirePlaceholder.gameObject.SetActive(false);
+        WireConnectorBlob.gameObject.SetActive(false);
     }
 }

@@ -33,7 +33,7 @@ void Receive()
         i32 receivedLength = wreceive(&v, MaxPacketLength, &direction);
         if (!receivedLength) { break; }
 
-        if (v[0] == (u8)REQUEST_HEADER &&
+        if (v[0] == (u8)PacketHeader.request &&
             receivedLength == sizeof(VerificationRequestPacket))
         {
             VerificationRequestPacket* packet = &v as VerificationRequestPacket*;
@@ -49,30 +49,30 @@ void Receive()
             {
                 if (Logs) printline(" M");
                 VerificationResponsePacket responsePacket = new VerificationResponsePacket;
-                responsePacket.header = (u8)RESPONSE_HEADER;
+                responsePacket.header = PacketHeader.response;
                 responsePacket.position = GPS.position;
                 if (Debug) debug(packet.position, CYAN);
                 wsend(&responsePacket as u8[]*, sizeof(VerificationResponsePacket), &direction);
             }
             else
             {
-                for (int i = 0; i < (&allies).length(); i++)
+                for (int i = 0; i < allies.length(); i++)
                 {
-                    f32 distanceSqr = distancesqr((&allies).raw()[i].position, packet.position);
+                    f32 distanceSqr = distancesqr(allies[i].position, packet.position);
                     if (distanceSqr < DistanceThresholdSq)
                     {
                         if (Logs) printline(" K");
                         IndirectVerificationResponsePacket indirectResponsePacket = new IndirectVerificationResponsePacket;
-                        indirectResponsePacket.header = (u8)INDIRECT_RESPONSE_HEADER;
-                        indirectResponsePacket.position = (&allies).raw()[i].position;
-                        indirectResponsePacket.expires = (&allies).raw()[i].expires;
+                        indirectResponsePacket.header = PacketHeader.indirect_response;
+                        indirectResponsePacket.position = allies[i].position;
+                        indirectResponsePacket.expires = allies[i].expires;
                         wsend(&indirectResponsePacket as u8[]*, sizeof(IndirectVerificationResponsePacket), &direction);
                         return;
                     }
                 }
             }
         }
-        else if (v[0] == (u8)RESPONSE_HEADER &&
+        else if (v[0] == (u8)PacketHeader.response &&
                  receivedLength == sizeof(VerificationResponsePacket))
         {
             VerificationResponsePacket* packet = &v as VerificationResponsePacket*;
@@ -93,7 +93,7 @@ void Receive()
             remove_unit_at(&enemies, unit.position);
             update_unit(&allies, unit);
         }
-        else if (v[0] == (u8)ENEMY_HEADER &&
+        else if (v[0] == (u8)PacketHeader.enemy &&
                  receivedLength == sizeof(EnemyNotificationPacket))
         {
             EnemyNotificationPacket* packet = &v as EnemyNotificationPacket*;
@@ -112,7 +112,7 @@ void Receive()
             }
             update_unit(&enemies, unit);
         }
-        else if (v[0] == (u8)INDIRECT_RESPONSE_HEADER &&
+        else if (v[0] == (u8)PacketHeader.indirect_response &&
                  receivedLength == sizeof(IndirectVerificationResponsePacket))
         {
             IndirectVerificationResponsePacket* packet = &v as IndirectVerificationResponsePacket*;
@@ -142,6 +142,51 @@ void Receive()
     }
 }
 
+void PerformRadar()
+{
+    radarProgress = (radarProgress + 0.05f) % TAU;
+    Radar.direction = radarProgress;
+    float3 radarPoint = radar();
+    if (!empty(radarPoint))
+    {
+        toglobal(&radarPoint);
+
+        if (Logs)
+        {
+            print('?');
+            print(radarPoint);
+            printline();
+        }
+
+        if (unit_index_at(&allies, radarPoint) != -1)
+        {
+            if (Logs)
+            {
+                print('.');
+                print(radarPoint);
+                printline();
+            }
+        }
+        else
+        {
+            if (Logs)
+            {
+                print('!');
+                print(radarPoint);
+                printline();
+            }
+
+            Unit enemy;
+            enemy.recorded = time() + 2f;
+            enemy.expires = time() + 12f;
+            enemy.position = radarPoint;
+            enemy.position_records = 1;
+            send_verification_request(&enemy);
+            update_unit(&enemies, enemy);
+        }
+    }
+}
+
 float3 targetedPosition = new float3;
 float3 currentTarget = new float3;
 float3 currentUserTarget = new float3;
@@ -150,26 +195,28 @@ List<Unit> allies = new List<Unit>(MaxUnits);
 float2 currentDestination = new float2;
 u8 shouldShoot = false;
 f32 turretLastUseTime = 0f;
+f32 radarProgress = 0f;
 
 printline("Started ...");
 
 while (1)
 {
+    //PerformRadar();
     Receive();
 
     currentTarget = new float3;
     shouldShoot = false;
 
-    for (int i = (&enemies).length() - 1; i >= 0; i--)
+    for (int i = enemies.length() - 1; i >= 0; i--)
     {
-        if (time() >= (&enemies).raw()[i].expires)
+        if (time() >= enemies[i].expires)
         {
             if (Logs) printline("#E-OLD");
-            (&enemies).swapback(i);
+            enemies.swapback(i);
         }
-        else
+        else if (time() >= enemies[i].recorded + 2f)
         {
-            float3 p = (&enemies).raw()[i].position;
+            float3 p = enemies[i].position;
             tolocal(&p);
 
             float3 norm = p;
@@ -201,7 +248,7 @@ while (1)
                     printline(Radar.direction);
                     //printline(norm);
                 }
-                (&enemies).swapback(i);
+                enemies.swapback(i);
             }
             else
             {
@@ -211,18 +258,25 @@ while (1)
                 shouldShoot = true;
             }
         }
-    }
-
-    for (int i = (&allies).length() - 1; i >= 0; i--)
-    {
-        if (time() >= (&allies).raw()[i].expires)
-        {
-            (&allies).swapback(i);
-        }
         else
         {
-            float3 p = (&allies).raw()[i].position;
-            debug(p, GREEN);
+            float3 p = enemies[i].position;
+            debug(p, YELLOW);
+        }
+    }
+
+    for (int i = allies.length() - 1; i >= 0; i--)
+    {
+        debug(allies[i].position, GREEN);
+       
+        if (time() >= allies[i].expires - 3f)
+        {
+            try_send_verification_request(&allies.raw()[i]);
+        }
+
+        if (time() >= allies[i].expires)
+        {
+            allies.swapback(i);
         }
     }
 

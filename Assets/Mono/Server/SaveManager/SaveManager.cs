@@ -545,16 +545,22 @@ class SaveManager : MonoBehaviour
                     if (!serializedEntities.ContainsKey(v.EntityB)) Debug.LogError($"Referenced entity `{v.EntityB}` not serialized");
                     writer.Write(v.EntityA);
                     writer.Write(v.EntityB);
+                    writer.Write(v.PortA);
+                    writer.Write(v.PortB);
                 },
                 (reader) =>
                 {
                     Entity ea = reader.ReadEntity(serializedEntities);
                     Entity eb = reader.ReadEntity(serializedEntities);
+                    byte pa = reader.ReadByte();
+                    byte pb = reader.ReadByte();
 
                     return new BufferedWire()
                     {
                         EntityA = ea,
                         EntityB = eb,
+                        PortA = pa,
+                        PortB = pb,
                         GhostA = ea == Entity.Null ? default : entityManager.GetComponentData<GhostInstance>(ea),
                         GhostB = eb == Entity.Null ? default : entityManager.GetComponentData<GhostInstance>(eb),
                     };

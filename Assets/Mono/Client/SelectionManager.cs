@@ -431,11 +431,17 @@ public class SelectionManager : Singleton<SelectionManager>
             return false;
         }
 
+        FileId sourceId = entityManager.GetComponentData<Processor>(selected).SourceFile;
+        if (sourceId == default)
+        {
+            return false;
+        }
+
         if (ConnectionManager.ClientOrDefaultWorld.IsClient())
         {
-            if (!ConnectionManager.ClientOrDefaultWorld.GetExistingSystemManaged<CompilerSystemClient>().TryGetSource(entityManager.GetComponentData<Processor>(selected).SourceFile, out CompiledSourceClient? source, ConnectionManager.ClientOrDefaultWorld.Unmanaged))
+            if (!ConnectionManager.ClientOrDefaultWorld.GetExistingSystemManaged<CompilerSystemClient>().TryGetSource(sourceId, out CompiledSourceClient? source, ConnectionManager.ClientOrDefaultWorld.Unmanaged))
             {
-                Debug.Log($"{DebugEx.ClientPrefix} Cannot get unit commands for `{selected}`: Source \"{entityManager.GetComponentData<Processor>(selected).SourceFile}\" does not exists");
+                Debug.Log($"{DebugEx.ClientPrefix} Cannot get unit commands for `{selected}`: Source \"{sourceId}\" does not exists");
                 return false;
             }
 
@@ -444,9 +450,9 @@ public class SelectionManager : Singleton<SelectionManager>
         }
         else
         {
-            if (!ConnectionManager.ClientOrDefaultWorld.GetExistingSystemManaged<CompilerSystemServer>().CompiledSources.TryGetValue(entityManager.GetComponentData<Processor>(selected).SourceFile, out CompiledSourceServer? source))
+            if (!ConnectionManager.ClientOrDefaultWorld.GetExistingSystemManaged<CompilerSystemServer>().CompiledSources.TryGetValue(sourceId, out CompiledSourceServer? source))
             {
-                Debug.Log($"{DebugEx.ClientPrefix} Cannot get unit commands for `{selected}`: Source \"{entityManager.GetComponentData<Processor>(selected).SourceFile}\" does not exists");
+                Debug.Log($"{DebugEx.ClientPrefix} Cannot get unit commands for `{selected}`: Source \"{sourceId}\" does not exists");
                 return false;
             }
 

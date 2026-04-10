@@ -112,42 +112,36 @@ partial class ProcessorScreenSystemClient : SystemBase
 
             screenInstance.Screen.Object.transform.SetPositionAndRotation(transform.ValueRO.Position, transform.ValueRO.Rotation);
 
+            string stdoutStr;
             if (World.IsClient())
             {
                 // The subscription will never be null on client side
-                if (screenInstance.RenderedVersion != screenInstance.Subscription!.Version)
-                {
-                    System.ReadOnlySpan<byte> stdout = screenInstance.Subscription.Data.AsReadOnly().AsReadOnlySpan();
-                    screenInstance.RenderedVersion = screenInstance.Subscription.Version;
+                if (screenInstance.RenderedVersion == screenInstance.Subscription!.Version) continue;
 
-                    screenInstance.Builder.Clear();
-                    screenInstance.Renderer.Rerender(stdout, screenInstance.Builder, (int)(screenInstance.Screen.Canvas.renderingDisplaySize.y / screenInstance.Screen.Text.fontSize));
+                System.ReadOnlySpan<byte> stdout = screenInstance.Subscription.Data.AsReadOnly().AsReadOnlySpan();
+                screenInstance.RenderedVersion = screenInstance.Subscription.Version;
 
-                    string stdoutStr = screenInstance.Builder.ToString();
-                    if (screenInstance.Screen.Text.text != stdoutStr)
-                    {
-                        screenInstance.Screen.Text.SetText(stdoutStr);
-                    }
-                }
+                screenInstance.Builder.Clear();
+                screenInstance.Renderer.Rerender(stdout, screenInstance.Builder, (int)(screenInstance.Screen.Canvas.renderingDisplaySize.y / screenInstance.Screen.Text.fontSize));
             }
             else
             {
-                if (screenInstance.RenderedVersion != processor.ValueRO.StdOutBufferCursor)
-                {
-                    screenInstance.RenderedVersion = processor.ValueRO.StdOutBufferCursor;
-                    unsafe
-                    {
-                        System.ReadOnlySpan<byte> stdout = new(processor.ValueRO.StdOutBuffer.GetUnsafePtr(), processor.ValueRO.StdOutBuffer.Length);
-                        screenInstance.Builder.Clear();
-                        screenInstance.Renderer.Rerender(stdout, screenInstance.Builder);
+                if (screenInstance.RenderedVersion == processor.ValueRO.StdOutBufferCursor) continue;
 
-                        string stdoutStr = screenInstance.Builder.ToString();
-                        if (screenInstance.Screen.Text.text != stdoutStr)
-                        {
-                            screenInstance.Screen.Text.SetText(stdoutStr);
-                        }
-                    }
+                screenInstance.RenderedVersion = processor.ValueRO.StdOutBufferCursor;
+                screenInstance.Builder.Clear();
+
+                unsafe
+                {
+                    System.ReadOnlySpan<byte> stdout = new(processor.ValueRO.StdOutBuffer.GetUnsafePtr(), processor.ValueRO.StdOutBuffer.Length);
+                    screenInstance.Renderer.Rerender(stdout, screenInstance.Builder, (int)(screenInstance.Screen.Canvas.renderingDisplaySize.y / screenInstance.Screen.Text.fontSize));
                 }
+            }
+
+            stdoutStr = screenInstance.Builder.ToString();
+            if (screenInstance.Screen.Text.text != stdoutStr)
+            {
+                screenInstance.Screen.Text.SetText(stdoutStr);
             }
         }
 

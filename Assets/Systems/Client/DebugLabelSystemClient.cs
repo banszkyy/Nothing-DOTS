@@ -4,8 +4,10 @@ using Unity.NetCode;
 using UnityEngine;
 
 [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.LocalSimulation)]
-public partial class WorldLabelSystemClientSystem : SystemBase
+public partial class DebugLabelSystemClient : SystemBase
 {
+    public const float Lifetime = 0.5f;
+
     Transform? _canvas;
     readonly List<WorldLabel> _instances = new();
 
@@ -24,28 +26,37 @@ public partial class WorldLabelSystemClientSystem : SystemBase
             }
         }
 
-        if (!SystemAPI.TryGetSingleton(out NetworkId networkId)) return;
         if (!SystemAPI.ManagedAPI.TryGetSingleton(out WorldLabelSettings config)) return;
 
         EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
 
-        foreach (var (player, labels) in
-            SystemAPI.Query<RefRO<Player>, DynamicBuffer<BufferedWorldLabel>>())
+        foreach (var (request, command, entity) in
+            SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<DebugLabelRpc>>()
+            .WithEntityAccess())
         {
-            if (player.ValueRO.ConnectionId != networkId.Value) continue;
+            NetcodeEndPoint ep = new(request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
+            commandBuffer.DestroyEntity(entity);
 
-            foreach (var (_, command, entity) in
-                SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<DebugLabelRpc>>()
-                .WithEntityAccess())
+            foreach (var (player, labels) in
+                SystemAPI.Query<RefRO<Player>, DynamicBuffer<BufferedWorldLabel>>())
             {
-                commandBuffer.DestroyEntity(entity);
+                if (player.ValueRO.ConnectionId != ep.ConnectionId.Value) continue;
                 labels.Add(new BufferedWorldLabel()
                 {
                     Position = command.ValueRO.Position,
                     Color = command.ValueRO.Color,
                     Text = command.ValueRO.Text,
-                    DieAt = (float)SystemAPI.Time.ElapsedTime + 0.5f,
+                    DieAt = (float)SystemAPI.Time.ElapsedTime + Lifetime,
                 });
+            }
+        }
+
+        foreach (var labels in
+            SystemAPI.Query<DynamicBuffer<BufferedWorldLabel>>())
+        {
+            for (int i = 0; i < labels.Length; i++)
+            {
+                if (labels[i].DieAt >= SystemAPI.Time.ElapsedTime) labels.RemoveAtSwapBack(i--);
             }
 
             for (int i = System.Math.Min(labels.Length, _instances.Count) - 1; i >= 0; i--)
@@ -78,11 +89,8 @@ public partial class WorldLabelSystemClientSystem : SystemBase
                 GameObject o = Object.Instantiate(config.Prefab, Vector3.zero, Quaternion.identity, _canvas);
                 _instances.Add(o.GetComponent<WorldLabel>());
             }
-
-            break;
         }
     }
-
 
     public void OnDisconnect()
     {

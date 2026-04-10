@@ -28,7 +28,7 @@ public struct OutgoingWirelessUnitTransmissionMetadata
 [BurstCompile]
 public struct OutgoingWiredUnitTransmissionMetadata
 {
-
+    public byte Port;
 }
 
 [BurstCompile]

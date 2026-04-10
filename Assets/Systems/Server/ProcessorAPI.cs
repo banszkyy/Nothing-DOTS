@@ -36,8 +36,8 @@ static unsafe class ProcessorAPI
 
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WirelessTransmission.Send).Value, WirelessTransmission.Prefix + 1, ExternalFunctionGenerator.SizeOf<int, int, float, float>(), 0, default));
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WirelessTransmission.Receive).Value, WirelessTransmission.Prefix + 2, ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>(), default));
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WiredTransmission.Send).Value, WirelessTransmission.Prefix + 3, ExternalFunctionGenerator.SizeOf<int, int>(), 0, default));
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WiredTransmission.Receive).Value, WirelessTransmission.Prefix + 4, ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<int>(), default));
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WiredTransmission.Send).Value, WirelessTransmission.Prefix + 3, ExternalFunctionGenerator.SizeOf<int, int, byte>(), 0, default));
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WiredTransmission.Receive).Value, WirelessTransmission.Prefix + 4, ExternalFunctionGenerator.SizeOf<int, int, byte>(), ExternalFunctionGenerator.SizeOf<int>(), default));
 
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Sensors.Radar).Value, Sensors.Prefix + 1, 0, 0, default));
 
@@ -66,55 +66,52 @@ static unsafe class ProcessorAPI
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Attributes.QueryAttribute).Value, Attributes.Prefix + 1, ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>(), default));
     }
 
-    public static IExternalFunction[] GenerateManagedExternalFunctions()
+    public static IExternalFunction[] GenerateManagedExternalFunctions() => new IExternalFunction[]
     {
-        return new IExternalFunction[]
-        {
-            new ExternalFunctionStub(IO.Prefix + 1,                "stdout", ExternalFunctionGenerator.SizeOf<char>(), 0),
-            new ExternalFunctionStub(IO.Prefix + 2,                "stdin", 0, ExternalFunctionGenerator.SizeOf<char>()),
+        new ExternalFunctionStub(IO.Prefix + 1,                "stdout", ExternalFunctionGenerator.SizeOf<char>(), 0),
+        new ExternalFunctionStub(IO.Prefix + 2,                "stdin", 0, ExternalFunctionGenerator.SizeOf<char>()),
 
-            ExternalFunctionSync.Create<float, float>(Math.Prefix + 1, "sqrt", MathF.Sqrt),
-            ExternalFunctionSync.Create<float, float, float>(Math.Prefix + 2, "atan2", MathF.Atan2),
-            ExternalFunctionSync.Create<float, float>(Math.Prefix + 3, "sin", MathF.Sin),
-            ExternalFunctionSync.Create<float, float>(Math.Prefix + 4, "cos", MathF.Cos),
-            ExternalFunctionSync.Create<float, float>(Math.Prefix + 5, "tan", MathF.Tan),
-            ExternalFunctionSync.Create<float, float>(Math.Prefix + 6, "asin", MathF.Asin),
-            ExternalFunctionSync.Create<float, float>(Math.Prefix + 7, "acos", MathF.Acos),
-            ExternalFunctionSync.Create<float, float>(Math.Prefix + 8, "atan", MathF.Atan),
-            ExternalFunctionSync.Create<int>(Math.Prefix + 9,      "random", Math.SharedRandom.NextInt),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 1,        "sqrt", MathF.Sqrt),
+        ExternalFunctionSync.Create<float, float, float>(Math.Prefix + 2, "atan2", MathF.Atan2),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 3,         "sin", MathF.Sin),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 4,         "cos", MathF.Cos),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 5,         "tan", MathF.Tan),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 6,         "asin", MathF.Asin),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 7,         "acos", MathF.Acos),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 8,         "atan", MathF.Atan),
+        ExternalFunctionSync.Create<int>(Math.Prefix + 9,                  "random", Math.SharedRandom.NextInt),
 
-            new ExternalFunctionStub(WirelessTransmission.Prefix + 1,      "wsend", ExternalFunctionGenerator.SizeOf<int, int, float, float>(), 0),
-            new ExternalFunctionStub(WirelessTransmission.Prefix + 2,      "wreceive", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
-            new ExternalFunctionStub(WirelessTransmission.Prefix + 3,      "send", ExternalFunctionGenerator.SizeOf<int, int>(), 0),
-            new ExternalFunctionStub(WirelessTransmission.Prefix + 4,      "receive", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 1,      "wsend", ExternalFunctionGenerator.SizeOf<int, int, float, float>(), 0),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 2,      "wreceive", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 3,      "send", ExternalFunctionGenerator.SizeOf<int, int, byte>(), 0),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 4,      "receive", ExternalFunctionGenerator.SizeOf<int, int, byte>(), ExternalFunctionGenerator.SizeOf<int>()),
 
-            new ExternalFunctionStub(Sensors.Prefix + 1,           "radar", 0, 0),
+        new ExternalFunctionStub(Sensors.Prefix + 1,           "radar", 0, 0),
 
-            new ExternalFunctionStub(Environment.Prefix + 1,       "toglobal", ExternalFunctionGenerator.SizeOf<int>(), 0),
-            new ExternalFunctionStub(Environment.Prefix + 2,       "tolocal", ExternalFunctionGenerator.SizeOf<int>(), 0),
-            new ExternalFunctionStub(Environment.Prefix + 3,       "toglobald", ExternalFunctionGenerator.SizeOf<int>(), 0),
-            new ExternalFunctionStub(Environment.Prefix + 4,       "tolocald", ExternalFunctionGenerator.SizeOf<int>(), 0),
-            new ExternalFunctionStub(Environment.Prefix + 5,       "time", 0, ExternalFunctionGenerator.SizeOf<float>()),
+        new ExternalFunctionStub(Environment.Prefix + 1,       "toglobal", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(Environment.Prefix + 2,       "tolocal", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(Environment.Prefix + 3,       "toglobald", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(Environment.Prefix + 4,       "tolocald", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(Environment.Prefix + 5,       "time", 0, ExternalFunctionGenerator.SizeOf<float>()),
 
-            new ExternalFunctionStub(Debug.Prefix + 1,             "debug", ExternalFunctionGenerator.SizeOf<float3, byte>(), 0),
-            new ExternalFunctionStub(Debug.Prefix + 2,             "ldebug", ExternalFunctionGenerator.SizeOf<float3, byte>(), 0),
-            new ExternalFunctionStub(Debug.Prefix + 3,             "debug_label", ExternalFunctionGenerator.SizeOf<float3, int>(), 0),
-            new ExternalFunctionStub(Debug.Prefix + 4,             "ldebug_label", ExternalFunctionGenerator.SizeOf<float3, int>(), 0),
+        new ExternalFunctionStub(Debug.Prefix + 1,             "debug", ExternalFunctionGenerator.SizeOf<float3, byte>(), 0),
+        new ExternalFunctionStub(Debug.Prefix + 2,             "ldebug", ExternalFunctionGenerator.SizeOf<float3, byte>(), 0),
+        new ExternalFunctionStub(Debug.Prefix + 3,             "debug_label", ExternalFunctionGenerator.SizeOf<float3, int>(), 0),
+        new ExternalFunctionStub(Debug.Prefix + 4,             "ldebug_label", ExternalFunctionGenerator.SizeOf<float3, int>(), 0),
 
-            new ExternalFunctionStub(Commands.Prefix + 1,          "dequeue_command", ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(Commands.Prefix + 1,          "dequeue_command", ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<int>()),
 
-            new ExternalFunctionStub(GUI.Prefix + 1,               "gui_create", ExternalFunctionGenerator.SizeOf<int>(), 0),
-            new ExternalFunctionStub(GUI.Prefix + 2,               "gui_destroy", ExternalFunctionGenerator.SizeOf<int>(), 0),
-            new ExternalFunctionStub(GUI.Prefix + 3,               "gui_update", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(GUI.Prefix + 1,               "gui_create", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(GUI.Prefix + 2,               "gui_destroy", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(GUI.Prefix + 3,               "gui_update", ExternalFunctionGenerator.SizeOf<int>(), 0),
 
-            new ExternalFunctionStub(Pendrive.Prefix + 1,          "pendrive_plug", 0, 0),
-            new ExternalFunctionStub(Pendrive.Prefix + 2,          "pendrive_unplug", 0, 0),
-            new ExternalFunctionStub(Pendrive.Prefix + 3,          "pendrive_read", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
-            new ExternalFunctionStub(Pendrive.Prefix + 4,          "pendrive_write", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(Pendrive.Prefix + 1,          "pendrive_plug", 0, 0),
+        new ExternalFunctionStub(Pendrive.Prefix + 2,          "pendrive_unplug", 0, 0),
+        new ExternalFunctionStub(Pendrive.Prefix + 3,          "pendrive_read", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(Pendrive.Prefix + 4,          "pendrive_write", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
 
-            new ExternalFunctionStub(Attributes.Prefix + 1,        "attributes_query", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
-        };
-    }
+        new ExternalFunctionStub(Attributes.Prefix + 1,        "attributes_query", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+    };
 
     public const int GlobalPrefix = unchecked((int)0xFFFF0000);
 
@@ -260,12 +257,24 @@ static unsafe class ProcessorAPI
             using ProfilerMarker.AutoScope marker = MarkerSend.Auto();
 #endif
 
+            (int bufferPtr, int length, int directionPtr, float angle) = ExternalFunctionGenerator.TakeParameters<int, int, int, float>(arguments);
+            if (bufferPtr == 0 || length == 0) return;
+
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            (int bufferPtr, int length, int directionPtr, float angle) = ExternalFunctionGenerator.TakeParameters<int, int, int, float>(arguments);
-            if (length <= 0 || length >= 30) throw new Exception("Passed buffer length must be in range [0,30] inclusive");
-            if (bufferPtr == 0) throw new Exception($"Passed buffer pointer is null");
-            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize) throw new Exception($"Passed buffer pointer is invalid");
+            if (length < 0 || length >= 30)
+            {
+                // Passed buffer length must be in range [0,30] inclusive
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
+
+            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize)
+            {
+                // Passed buffer pointer is invalid
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
 
             Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
             float3 direction = angle != 0f && directionPtr > 0 && directionPtr < memory.Length ? memory.Get<float3>(directionPtr) : default;
@@ -305,38 +314,48 @@ static unsafe class ProcessorAPI
 
             (int bufferPtr, int length, int directionPtr) = ExternalFunctionGenerator.TakeParameters<int, int, int>(arguments);
             if (bufferPtr == 0 || length <= 0) return;
-            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize) throw new Exception($"Passed buffer pointer is invalid");
 
             FunctionScope* scope = (FunctionScope*)_scope;
+
+            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize)
+            {
+                // Passed buffer pointer is invalid
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
 
             ref FixedList128Bytes<BufferedUnitTransmission> received = ref scope->EntityRef.Processor->IncomingTransmissions; // scope->EntityManager.GetBuffer<BufferedUnitTransmission>(scope->SourceEntity);
             if (received.Length == 0) return;
 
-            BufferedUnitTransmission first = received[0];
-            if (!first.Metadata.IsWireless) return;
-
-            int copyLength = math.min(first.Data.Length, length);
-
-            Buffer.MemoryCopy(((byte*)&first.Data) + 2, (byte*)scope->ProcessorRef.Memory + bufferPtr, copyLength, copyLength);
-
-            if (directionPtr > 0)
+            for (int i = 0; i < received.Length; i++)
             {
-                float3 transformed = math.normalize(scope->EntityRef.LocalTransform.InverseTransformPoint(first.Metadata.Wireless.Source));
-                Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
-                memory.Set(directionPtr, transformed);
-            }
+                BufferedUnitTransmission item = received[i];
+                if (!item.Metadata.IsWireless) continue;
 
-            if (copyLength >= first.Data.Length)
-            {
-                received.RemoveAt(0);
-            }
-            else
-            {
-                first.Data.RemoveRange(0, copyLength);
-                received[0] = first;
-            }
+                int copyLength = math.min(item.Data.Length, length);
 
-            returnValue.Set(copyLength);
+                Buffer.MemoryCopy(((byte*)&item.Data) + 2, (byte*)scope->ProcessorRef.Memory + bufferPtr, copyLength, copyLength);
+
+                if (directionPtr > 0)
+                {
+                    float3 transformed = math.normalize(scope->EntityRef.LocalTransform.InverseTransformPoint(item.Metadata.Wireless.Source));
+                    Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
+                    memory.Set(directionPtr, transformed);
+                }
+
+                if (copyLength >= item.Data.Length)
+                {
+                    received.RemoveAt(i);
+                }
+                else
+                {
+                    item.Data.RemoveRange(0, copyLength);
+                    received[i] = item;
+                }
+
+                returnValue.Set(copyLength);
+                break;
+            }
         }
     }
 
@@ -358,10 +377,22 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            (int bufferPtr, int length) = ExternalFunctionGenerator.TakeParameters<int, int>(arguments);
-            if (length <= 0 || length >= 30) throw new Exception("Passed buffer length must be in range [0,30] inclusive");
-            if (bufferPtr == 0) throw new Exception($"Passed buffer pointer is null");
-            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize) throw new Exception($"Passed buffer pointer is invalid");
+            (int bufferPtr, int length, byte port) = ExternalFunctionGenerator.TakeParameters<int, int, byte>(arguments);
+            if (bufferPtr == 0 || length == 0) return;
+
+            if (length < 0 || length >= 30)
+            {
+                // Passed buffer length must be in range [0,30] inclusive
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
+
+            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize)
+            {
+                // Passed buffer pointer is invalid
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
 
             Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
 
@@ -376,7 +407,10 @@ static unsafe class ProcessorAPI
                 Metadata = new OutgoingUnitTransmissionMetadata()
                 {
                     IsWireless = false,
-                    Wired = new(),
+                    Wired = new()
+                    {
+                        Port = port
+                    },
                 },
             });
         }
@@ -391,33 +425,44 @@ static unsafe class ProcessorAPI
 
             returnValue.Set(0);
 
-            (int bufferPtr, int length) = ExternalFunctionGenerator.TakeParameters<int, int>(arguments);
+            (int bufferPtr, int length, byte port) = ExternalFunctionGenerator.TakeParameters<int, int, byte>(arguments);
             if (bufferPtr == 0 || length <= 0) return;
-            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize) throw new Exception($"Passed buffer pointer is invalid");
 
             FunctionScope* scope = (FunctionScope*)_scope;
+
+            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize)
+            {
+                // Passed buffer pointer is invalid
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
 
             ref FixedList128Bytes<BufferedUnitTransmission> received = ref scope->EntityRef.Processor->IncomingTransmissions; // scope->EntityManager.GetBuffer<BufferedUnitTransmission>(scope->SourceEntity);
             if (received.Length == 0) return;
 
-            BufferedUnitTransmission first = received[0];
-            if (first.Metadata.IsWireless) return;
-
-            int copyLength = math.min(first.Data.Length, length);
-
-            Buffer.MemoryCopy(((byte*)&first.Data) + 2, (byte*)scope->ProcessorRef.Memory + bufferPtr, copyLength, copyLength);
-
-            if (copyLength >= first.Data.Length)
+            for (int i = 0; i < received.Length; i++)
             {
-                received.RemoveAt(0);
-            }
-            else
-            {
-                first.Data.RemoveRange(0, copyLength);
-                received[0] = first;
-            }
+                BufferedUnitTransmission item = received[i];
+                if (item.Metadata.IsWireless) continue;
+                if (item.Metadata.Wired.Port != port) continue;
 
-            returnValue.Set(copyLength);
+                int copyLength = math.min(item.Data.Length, length);
+
+                Buffer.MemoryCopy(((byte*)&item.Data) + 2, (byte*)scope->ProcessorRef.Memory + bufferPtr, copyLength, copyLength);
+
+                if (copyLength >= item.Data.Length)
+                {
+                    received.RemoveAt(i);
+                }
+                else
+                {
+                    item.Data.RemoveRange(0, copyLength);
+                    received[i] = item;
+                }
+
+                returnValue.Set(copyLength);
+                break;
+            }
         }
     }
 
@@ -434,9 +479,15 @@ static unsafe class ProcessorAPI
 
             int dataPtr = ExternalFunctionGenerator.TakeParameters<int>(arguments);
             if (dataPtr == 0) return;
-            if (dataPtr < 0 || dataPtr >= Processor.UserMemorySize) throw new Exception($"Passed data pointer is invalid");
 
             FunctionScope* scope = (FunctionScope*)_scope;
+
+            if (dataPtr < 0 || dataPtr >= Processor.UserMemorySize)
+            {
+                // Passed buffer pointer is invalid
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
 
             ref FixedList128Bytes<UnitCommandRequest> queue = ref scope->EntityRef.Processor->CommandQueue; // scope->EntityManager.GetBuffer<BufferedUnitTransmission>(scope->SourceEntity);
             if (queue.Length == 0) return;
@@ -476,10 +527,10 @@ static unsafe class ProcessorAPI
                 new BufferedLine(new float3x2(
                     scope->EntityRef.WorldTransform.Position,
                     position
-                ), color, MonoTime.Now + DebugLineDuration)
+                ), color, default)
             ));
 
-#if DEBUG_LINES
+#if DEBUG_LINES_
             DebugEx.DrawLine(
                 scope->EntityRef.WorldTransform.Position,
                 position,
@@ -488,7 +539,7 @@ static unsafe class ProcessorAPI
                     (color & 0b010) != 0 ? 1f : 0f,
                     (color & 0b001) != 0 ? 1f : 0f
                 ),
-                DebugLineDuration,
+                DebugLinesClientSystem.Lifetime,
                 false);
 #endif
         }
@@ -512,10 +563,10 @@ static unsafe class ProcessorAPI
                 new BufferedLine(new float3x2(
                     scope->EntityRef.WorldTransform.Position,
                     transformed
-                ), color, MonoTime.Now + DebugLineDuration)
+                ), color, default)
             ));
 
-#if DEBUG_LINES
+#if DEBUG_LINES_
             DebugEx.DrawLine(
                 scope->EntityRef.WorldTransform.Position,
                 transformed,
@@ -524,7 +575,7 @@ static unsafe class ProcessorAPI
                     (color & 0b010) != 0 ? 1f : 0f,
                     (color & 0b001) != 0 ? 1f : 0f
                 ),
-                DebugLineDuration,
+                DebugLinesClientSystem.Lifetime,
                 false);
 #endif
         }
@@ -551,7 +602,7 @@ static unsafe class ProcessorAPI
 
             if (scope->WorldLabels.ListData->Length + 1 < scope->WorldLabels.ListData->Capacity) scope->WorldLabels.AddNoResize(new(
                 scope->EntityRef.Team.Team,
-                new BufferedWorldLabel(position, 0b111, text, MonoTime.Now + DebugLineDuration)
+                new BufferedWorldLabel(position, 0b111, text, default)
             ));
         }
 
@@ -579,7 +630,7 @@ static unsafe class ProcessorAPI
 
             if (scope->WorldLabels.ListData->Length + 1 < scope->WorldLabels.ListData->Capacity) scope->WorldLabels.AddNoResize(new(
                 scope->EntityRef.Team.Team,
-                new BufferedWorldLabel(transformed, 0b111, text, MonoTime.Now + DebugLineDuration)
+                new BufferedWorldLabel(transformed, 0b111, text, default)
             ));
         }
     }

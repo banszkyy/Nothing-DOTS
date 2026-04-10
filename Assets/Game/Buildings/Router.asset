@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c5059b74c5d5a06ca2840c66ed1fda0, type: 3}
+  m_Name: Router
+  m_EditorClassIdentifier: 
+  Prefab: {fileID: 1440773521679765917, guid: b2c99c52e725c77998d5576f3c8cfd5d, type: 3}
+  PlaceholderPrefab: {fileID: 1289979656329170851, guid: 1d6c56b14b2bcc05db291bd6a40620b1,
+    type: 3}
+  HologramPrefab: {fileID: 1289979656329170851, guid: 93eba80d10b50526192c98c506a5cf61,
+    type: 3}
+  ConstructionTime: 1
+  RequiredResources: 1
+  RequiredResearch: {fileID: 0}

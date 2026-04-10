@@ -136,23 +136,24 @@ public partial struct BuildingSystemServer : ISystem
 
             if (requestPlayer.Entity == Entity.Null)
             {
-                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Failed to place wire: requested by `{{0}}` but aint have a team", networkId));
+                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Failed to place wire: requested by `{{0}}` but doesn't have a team", networkId));
                 continue;
             }
 
-            Entity connectorA = default;
-            Entity connectorB = default;
+            EntityPortIdentifier connectorA = default;
+            EntityPortIdentifier connectorB = default;
 
             foreach (var (connectorGhost, connectorEntity) in SystemAPI.Query<RefRO<GhostInstance>>().WithAll<Connector>().WithEntityAccess())
             {
-                if (command.ValueRO.A.Equals(connectorGhost.ValueRO))
+                if (command.ValueRO.EntityA.Equals(connectorGhost.ValueRO))
                 {
-                    connectorA = connectorEntity;
+                    connectorA = new EntityPortIdentifier(connectorEntity, command.ValueRO.PortA);
                     if (!connectorB.Equals(default)) break;
                 }
-                else if (command.ValueRO.B.Equals(connectorGhost.ValueRO))
+
+                if (command.ValueRO.EntityB.Equals(connectorGhost.ValueRO))
                 {
-                    connectorB = connectorEntity;
+                    connectorB = new EntityPortIdentifier(connectorEntity, command.ValueRO.PortB);
                     if (!connectorA.Equals(default)) break;
                 }
             }
@@ -163,18 +164,19 @@ public partial struct BuildingSystemServer : ISystem
                 continue;
             }
 
-            if (connectorA == default)
+            if (connectorA == connectorB)
             {
-                Debug.Log($"{DebugEx.ServerPrefix} Failed to place wire: two connectors are the same");
+                Debug.Log($"{DebugEx.ServerPrefix} Failed to place wire: the ports are the same");
                 continue;
             }
 
-            DynamicBuffer<BufferedWire> wiresA = SystemAPI.GetBuffer<BufferedWire>(connectorA);
-            DynamicBuffer<BufferedWire> wiresB = SystemAPI.GetBuffer<BufferedWire>(connectorB);
+            DynamicBuffer<BufferedWire> wiresA = SystemAPI.GetBuffer<BufferedWire>(connectorA.Entity);
+            DynamicBuffer<BufferedWire> wiresB = SystemAPI.GetBuffer<BufferedWire>(connectorB.Entity);
 
             foreach (BufferedWire item in wiresA)
             {
-                if ((item.EntityA == connectorA && item.EntityB == connectorB) || (item.EntityA == connectorB && item.EntityB == connectorA))
+                if ((item.PortIdentifierA == connectorA && item.PortIdentifierB == connectorB) ||
+                    (item.PortIdentifierA == connectorB && item.PortIdentifierB == connectorA))
                 {
                     goto alreadyExists;
                 }
@@ -182,7 +184,8 @@ public partial struct BuildingSystemServer : ISystem
 
             foreach (BufferedWire item in wiresB)
             {
-                if ((item.EntityA == connectorA && item.EntityB == connectorB) || (item.EntityA == connectorB && item.EntityB == connectorA))
+                if ((item.PortIdentifierA == connectorA && item.PortIdentifierB == connectorB) ||
+                    (item.PortIdentifierA == connectorB && item.PortIdentifierB == connectorA))
                 {
                     goto alreadyExists;
                 }
@@ -190,10 +193,12 @@ public partial struct BuildingSystemServer : ISystem
 
             BufferedWire wire = new()
             {
-                EntityA = connectorA,
-                EntityB = connectorB,
-                GhostA = command.ValueRO.A,
-                GhostB = command.ValueRO.B,
+                EntityA = connectorA.Entity,
+                EntityB = connectorB.Entity,
+                PortA = connectorA.Port,
+                PortB = connectorB.Port,
+                GhostA = command.ValueRO.EntityA,
+                GhostB = command.ValueRO.EntityB,
             };
 
             wiresA.Add(wire);

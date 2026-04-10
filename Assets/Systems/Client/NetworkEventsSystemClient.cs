@@ -31,7 +31,7 @@ partial struct NetworkEventsSystemClient : ISystem
                 Debug.Log($"{DebugEx.ClientPrefix} Clearing system states ...");
 
                 state.WorldUnmanaged.GetSystem<BuildingsSystemClient>().OnDisconnect();
-                state.WorldUnmanaged.GetSystem<DebugLinesClientSystem>().OnDisconnect();
+                state.WorldUnmanaged.GetSystem<DebugLinesSystemClient>().OnDisconnect();
                 state.WorldUnmanaged.GetSystem<PlayerPositionSystemClient>().OnDisconnect();
                 state.WorldUnmanaged.GetSystem<PlayerSystemClient>().OnDisconnect();
                 state.WorldUnmanaged.GetSystem<ProjectileSystemClient>().OnDisconnect();
@@ -44,7 +44,7 @@ partial struct NetworkEventsSystemClient : ISystem
                 state.World.GetSystem<EntityInfoUISystemClient>().OnDisconnect();
                 state.World.GetSystem<VisualEffectSystemClient>().OnDisconnect();
                 state.World.GetSystem<WireRendererSystemClient>().OnDisconnect();
-                state.World.GetSystem<WorldLabelSystemClientSystem>().OnDisconnect();
+                state.World.GetSystem<DebugLabelSystemClient>().OnDisconnect();
             }
         }
     }

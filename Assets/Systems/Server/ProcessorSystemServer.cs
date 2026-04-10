@@ -109,6 +109,12 @@ unsafe partial struct ProcessorSystemServer : ISystem
             ((nint)Memory).Set(Registers->StackPointer, data);
         }
 
+        public void DoCrash()
+        {
+            *Crash = 0;
+            *Signal = LanguageCore.Runtime.Signal.UserCrash;
+        }
+
         [BurstCompile]
         public void DoCrash(in FixedString32Bytes message)
         {
@@ -201,56 +207,94 @@ unsafe partial struct ProcessorSystemServer : ISystem
                 for (int i = 0; i < debugLines.Length; i++)
                 {
                     if (debugLines[i].Owner != player.ValueRO.Team) continue;
+                    if (Utils.Distance(player.ValueRO.Position, debugLines[i].Value.Position) >= 50f) continue;
 
-                    if (Utils.Distance(player.ValueRO.Position, debugLines[i].Value.Value) < 50f)
+                    NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new DebugLineRpc()
                     {
-                        NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new DebugLineRpc()
-                        {
-                            Position = debugLines[i].Value.Value,
-                            Color = debugLines[i].Value.Color,
-                        }, connection);
-                    }
+                        Position = debugLines[i].Value.Position,
+                        Color = debugLines[i].Value.Color,
+                    }, connection);
+                }
 
-                    // for (int j = 0; j < lines.Length; j++)
-                    // {
-                    //     if (debugLines[i].Value.Value.Equals(lines[j].Value))
-                    //     {
-                    //         lines.Set(j, debugLines[i].Value);
-                    //         goto next;
-                    //     }
-                    // }
-                    // lines.Add(debugLines[i].Value);
-                    // next:;
+                for (int i = 0; i < worldLabels.Length; i++)
+                {
+                    if (worldLabels[i].Owner != player.ValueRO.Team) continue;
+                    if (math.distancesq(player.ValueRO.Position, worldLabels[i].Value.Position) >= 50f * 50f) continue;
+
+                    NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new DebugLabelRpc()
+                    {
+                        Text = worldLabels[i].Value.Text,
+                        Position = worldLabels[i].Value.Position,
+                        Color = worldLabels[i].Value.Color,
+                    }, connection);
+                }
+
+                for (int i = 0; i < uiElements.Length; i++)
+                {
+                    if (uiElements[i].Owner != player.ValueRO.Team) continue;
+                    if (!uiElements[i].Value.IsDirty && uiElements[i].Value.Id != 0) continue;
+
+                    if (uiElements[i].Value.Id == 0)
+                    {
+                        // Debug.Log($"{DebugEx.ServerPrefix} {uiElements[i]} destroyed");
+
+                        NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new UIElementDestroyRpc()
+                        {
+                            Id = uiElements[i].Value.Id,
+                        }, connection);
+                        uiElements.RemoveAt(i--);
+                    }
+                    else
+                    {
+                        // Debug.Log($"{DebugEx.ServerPrefix} {uiElements[i]} updated, {uiElements[i].Value.Label.Text.AsString()}");
+
+                        NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new UIElementUpdateRpc()
+                        {
+                            UIElement = uiElements[i].Value,
+                        }, connection);
+                        uiElements.AsArray().AsSpan()[i].Value.IsDirty = false;
+                    }
+                }
+            }
+            else if (state.WorldUnmanaged.IsLocal())
+            {
+                for (int i = 0; i < debugLines.Length; i++)
+                {
+                    if (debugLines[i].Owner != player.ValueRO.Team) continue;
+
+                    for (int j = 0; j < lines.Length; j++)
+                    {
+                        if (!debugLines[i].Value.Position.Equals(lines[j].Position)) continue;
+                        lines.Set(j, debugLines[i].Value with
+                        {
+                            DieAt = (float)SystemAPI.Time.ElapsedTime + DebugLinesSystemClient.Lifetime
+                        });
+                        goto next;
+                    }
+                    lines.Add(debugLines[i].Value with
+                    {
+                        DieAt = (float)SystemAPI.Time.ElapsedTime + DebugLinesSystemClient.Lifetime
+                    });
+                next:;
                 }
 
                 for (int i = 0; i < worldLabels.Length; i++)
                 {
                     if (worldLabels[i].Owner != player.ValueRO.Team) continue;
 
-                    //if (math.distancesq(player.ValueRO.Position, worldLabels[i].Value.Position) < 50f * 50f)
-                    //{
-                    //    Entity rpc = commandBuffer.CreateEntity(debugLabelRpcArchetype);
-                    //    commandBuffer.SetComponent<SendRpcCommandRequest>(rpc, new()
-                    //    {
-                    //        TargetConnection = connection,
-                    //    });
-                    //    commandBuffer.SetComponent<DebugLabelRpc>(rpc, new()
-                    //    {
-                    //        Text = worldLabels[i].Value.Text,
-                    //        Position = worldLabels[i].Value.Position,
-                    //        Color = worldLabels[i].Value.Color,
-                    //    });
-                    //}
-
                     for (int j = 0; j < labels.Length; j++)
                     {
-                        if (math.distancesq(worldLabels[i].Value.Position, labels[j].Position) < 1f)
+                        if (math.distancesq(worldLabels[i].Value.Position, labels[j].Position) >= 1f) continue;
+                        labels.Set(j, worldLabels[i].Value with
                         {
-                            labels.Set(j, worldLabels[i].Value);
-                            goto next;
-                        }
+                            DieAt = (float)SystemAPI.Time.ElapsedTime + DebugLabelSystemClient.Lifetime
+                        });
+                        goto next;
                     }
-                    labels.Add(worldLabels[i].Value);
+                    labels.Add(worldLabels[i].Value with
+                    {
+                        DieAt = (float)SystemAPI.Time.ElapsedTime + DebugLabelSystemClient.Lifetime
+                    });
                 next:;
                 }
             }
@@ -272,35 +316,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
             next:;
             }
             */
-
-            for (int i = 0; i < uiElements.Length; i++)
-            {
-                if (uiElements[i].Owner != player.ValueRO.Team) continue;
-                if (!uiElements[i].Value.IsDirty && uiElements[i].Value.Id != 0) continue;
-
-                if (connection == Entity.Null) continue;
-
-                if (uiElements[i].Value.Id == 0)
-                {
-                    // Debug.Log($"{DebugEx.ServerPrefix} {uiElements[i]} destroyed");
-
-                    NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new UIElementDestroyRpc()
-                    {
-                        Id = uiElements[i].Value.Id,
-                    }, connection);
-                    uiElements.RemoveAt(i--);
-                }
-                else
-                {
-                    // Debug.Log($"{DebugEx.ServerPrefix} {uiElements[i]} updated, {uiElements[i].Value.Label.Text.AsString()}");
-
-                    NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new UIElementUpdateRpc()
-                    {
-                        UIElement = uiElements[i].Value,
-                    }, connection);
-                    uiElements.AsArray().AsSpan()[i].Value.IsDirty = false;
-                }
-            }
         }
 
         foreach (var (request, command, entity) in
@@ -509,19 +524,18 @@ partial struct ProcessorJob : IJobEntity
                         switch (processorState.Signal)
                         {
                             case Signal.UserCrash:
-                                Debug.LogError(string.Format($"{DebugEx.ServerPrefix} Crashed ({{0}})", processorState.Crash));
+                                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Crashed ({{0}})", processorState.Crash));
                                 break;
                             case Signal.StackOverflow:
-                                Debug.LogError($"{DebugEx.ServerPrefix} Stack Overflow");
+                                Debug.LogWarning($"{DebugEx.ServerPrefix} Stack Overflow");
                                 break;
                             case Signal.Halt:
-                                // Debug.LogError($"{DebugEx.ServerPrefix} Halted");
                                 break;
                             case Signal.UndefinedExternalFunction:
-                                Debug.LogError(string.Format($"{DebugEx.ServerPrefix} Undefined external function {{0}}", processorState.Crash));
+                                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Undefined external function {{0}}", processorState.Crash));
                                 break;
                             case Signal.PointerOutOfRange:
-                                Debug.LogError($"{DebugEx.ServerPrefix} Pointer out of Range");
+                                Debug.LogWarning($"{DebugEx.ServerPrefix} Pointer out of Range");
                                 break;
                             case Signal.None:
                                 break;

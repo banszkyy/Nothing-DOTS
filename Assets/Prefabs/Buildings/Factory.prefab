@@ -246,7 +246,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cdadf232598de044a57ab2496aa483b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConnectorPosition: {fileID: 4010709259121684147}
+  PortPositions:
+  - {fileID: 4010709259121684147}
 --- !u!114 &-1191735710831297487
 MonoBehaviour:
   m_ObjectHideFlags: 0

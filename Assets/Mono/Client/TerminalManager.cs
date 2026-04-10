@@ -75,6 +75,7 @@ public class TerminalRenderer
     readonly List<(List<TerminalCharacter> Columns, bool EndsWithEOL)> compiled;
     int cursorX;
     int cursorY;
+    int compiledLines;
 
     public TerminalRenderer()
     {
@@ -84,6 +85,7 @@ public class TerminalRenderer
         compiled = new() { (new(), false) };
         cursorX = 0;
         cursorY = 0;
+        compiledLines = 0;
     }
 
     public void Reset()
@@ -94,6 +96,7 @@ public class TerminalRenderer
         Clear();
         cursorX = 0;
         cursorY = 0;
+        compiledLines = 0;
     }
 
     void Clear()
@@ -103,6 +106,7 @@ public class TerminalRenderer
             compiled[i].Columns.Clear();
             compiled[i] = (compiled[i].Columns, false);
         }
+        compiledLines = 0;
     }
 
     void Compile(ReadOnlySpan<byte> stdout)
@@ -119,6 +123,7 @@ public class TerminalRenderer
                     cursorY++;
                     cursorX = 0;
                     if (cursorY >= compiled.Count) compiled.Add((new(), false));
+                    compiledLines = Math.Max(compiledLines, cursorY);
                     break;
                 case (byte)'\r':
                     cursorX = 0;
@@ -259,8 +264,8 @@ public class TerminalRenderer
         TerminalColor appliedFg = TerminalColor.White;
         TerminalMode appliedMod = TerminalMode.None;
 
-        int start = (maxLines == -1) ? 0 : Math.Max(0, compiled.Count - maxLines);
-        for (int i = start; i < compiled.Count; i++)
+        int start = (maxLines == -1) ? 0 : Math.Max(0, compiledLines - maxLines);
+        for (int i = start; i < compiledLines; i++)
         {
             foreach (TerminalCharacter c in compiled[i].Columns)
             {
@@ -336,7 +341,7 @@ public class TerminalRenderer
 
                 builder.Append(c.Character);
             }
-            if (i + 1 < compiled.Count || compiled[i].EndsWithEOL) builder.AppendLine();
+            if (i + 1 < compiledLines || compiled[i].EndsWithEOL) builder.AppendLine();
         }
     }
 
@@ -885,9 +890,13 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                     });
             }
 
-            if (source != null)
+            if (source != null && source.Status == CompilationStatus.Done)
             {
                 SyncDiagnosticItems(ui_ScrollDiagnostics, source.Diagnostics, default);
+            }
+            else
+            {
+                ui_ScrollDiagnostics.Clear();
             }
 
             if (source != null && source.Status != CompilationStatus.Done && !float.IsNaN(source.Progress))

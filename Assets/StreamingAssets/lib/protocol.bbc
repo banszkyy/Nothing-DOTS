@@ -1,10 +1,16 @@
-export const int MaxPacketLength = 16 + 1;
-export const u8 REQUEST_HEADER           = 0b_11110000;
-export const u8 RESPONSE_HEADER          = 0b_01111000;
-export const u8 ENEMY_HEADER             = 0b_00111100;
-export const u8 INDIRECT_RESPONSE_HEADER = 0b_00011110;
-export const u8 RADAR_POINT              = 0b_00001111;
-export const u8 PCAD                     = 0b_10000111;
+using "api";
+
+export const int MaxPacketLength = 17 + 1;
+
+export enum PacketHeader : u8
+{
+    request           = 0b_11110000,
+    response          = 0b_01111000,
+    enemy             = 0b_00111100,
+    indirect_response = 0b_00011110,
+    radar_point       = 0b_00001111,
+    pc_ad             = 0b_10000111,
+}
 
 export const f32 DistanceThreshold = 2f;
 export const f32 DistanceThresholdSq = DistanceThreshold * DistanceThreshold;
@@ -13,44 +19,48 @@ export const f32 DistanceThresholdLarge = 5f;
 export const f32 DistanceThresholdLargeSq = DistanceThresholdLarge * DistanceThresholdLarge;
 
 export const bool Debug = false;
-export const bool Logs = true;
+export const bool Logs = false;
 
 export const int MaxUnits = 8;
 
 export struct VerificationRequestPacket
 {
-    byte header;
+    PacketHeader header;
     float3 position;
 }
 
 export struct VerificationResponsePacket
 {
-    byte header;
+    PacketHeader header;
     float3 position;
 }
 
 export struct IndirectVerificationResponsePacket
 {
-    byte header;
+    PacketHeader header;
     float3 position;
     float expires;
 }
 
 export struct EnemyNotificationPacket
 {
-    byte header;
+    PacketHeader header;
     float3 position;
 }
 
 export struct RadarPointPacket
 {
-    byte header;
+    PacketHeader header;
     float3 position;
+    u8 speedSignal;
+    u8 clutter;
+    u8 fingerprint;
+    u8 meta;
 }
 
 export struct PcAdPacket
 {
-    byte header;
+    PacketHeader header;
     float3 position;
 }
 
@@ -77,7 +87,7 @@ export void send_verification_request(Unit* unit)
     float3 point = unit.position;
 
     VerificationRequestPacket packet = new VerificationRequestPacket;
-    packet.header = (u8)REQUEST_HEADER;
+    packet.header = PacketHeader.request;
     packet.position = point;
 
     if (true)
@@ -122,7 +132,7 @@ export int unit_index_at(List<Unit>* units, float3 position)
 {
     for (int i = 0; i < units.length(); i++)
     {
-        if (distancesqr(units.raw()[i].position, position) < DistanceThresholdSq)
+        if (distancesqr(units[i].position, position) < DistanceThresholdSq)
         { return i; }
     }
     return -1;
@@ -132,7 +142,7 @@ export int unit_index_at(List<Unit>* units, float3 position, float* distanceSqr)
 {
     for (int i = 0; i < units.length(); i++)
     {
-        *distanceSqr = distancesqr(units.raw()[i].position, position);
+        *distanceSqr = distancesqr(units[i].position, position);
         if ((*distanceSqr) < DistanceThresholdSq)
         { return i; }
     }
@@ -157,7 +167,7 @@ export int update_unit(List<Unit>* units, Unit unit)
     }
     else if (distanceSqr < 2f * 2f)
     {
-        Unit* existingUnit = &units.raw()[existing];
+        Unit& existingUnit = units[existing];
         if (existingUnit.position_records >= 255)
         {
             existingUnit.position_records = 0;
@@ -186,7 +196,7 @@ export int set_unit(List<Unit>* units, Unit unit)
         if (units.length() >= MaxUnits)
         {
             printline("Too many units");
-            units.raw()[0] = unit;
+            units[0] = unit;
             existing = 0;
         }
         else
@@ -207,7 +217,7 @@ export void remove_unit_at(List<Unit>* units, float3 unit)
     u8 isNotDone = true;
     for (int i = 0; isNotDone && i < units.length(); i++)
     {
-        f32 distanceSqr = distancesqr(units.raw()[i].position, unit);
+        f32 distanceSqr = distancesqr(units[i].position, unit);
         if (distanceSqr < DistanceThresholdSq)
         {
             isNotDone = false;

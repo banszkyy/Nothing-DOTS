@@ -74,21 +74,28 @@ public partial class WireRendererSystemClient : SystemBase
 
     readonly struct WireId : IEquatable<WireId>
     {
-        public readonly SpawnedGhost A;
-        public readonly SpawnedGhost B;
+        public readonly SpawnedGhost EntityA;
+        public readonly SpawnedGhost EntityB;
+        public readonly int ConnectorA;
+        public readonly int ConnectorB;
 
         public WireId(BufferedWire v)
         {
-            A = v.GhostA;
-            B = v.GhostB;
+            EntityA = v.GhostA;
+            EntityB = v.GhostB;
+            ConnectorA = v.PortA;
+            ConnectorB = v.PortB;
         }
-
 
         public static implicit operator WireId(BufferedWire v) => new(v);
 
-        public bool Equals(WireId other) => A.Equals(other.A) && B.Equals(other.B);
+        public bool Equals(WireId other) =>
+            EntityA.Equals(other.EntityA)
+            && EntityB.Equals(other.EntityB)
+            && ConnectorA == other.ConnectorA
+            && ConnectorB == other.ConnectorB;
         public override bool Equals(object? obj) => obj is WireId other && Equals(other);
-        public override int GetHashCode() => HashCode.Combine(A, B);
+        public override int GetHashCode() => HashCode.Combine(EntityA, EntityB);
     }
 
     [NotNull] WiresSettings? Settings = null;
@@ -186,12 +193,12 @@ public partial class WireRendererSystemClient : SystemBase
 
             foreach (RefRO<GhostInstance> ghost in SystemAPI.Query<RefRO<GhostInstance>>())
             {
-                if (line.Key.A.Equals(ghost.ValueRO))
+                if (line.Key.EntityA.Equals(ghost.ValueRO))
                 {
                     a = true;
                     if (b) break;
                 }
-                else if (line.Key.B.Equals(ghost.ValueRO))
+                else if (line.Key.EntityB.Equals(ghost.ValueRO))
                 {
                     b = true;
                     if (a) break;
@@ -206,21 +213,23 @@ public partial class WireRendererSystemClient : SystemBase
             }
         }
 
-        foreach (var (connector, connectorPos1, wires, ghost, entity) in SystemAPI.Query<RefRO<Connector>, RefRO<LocalTransform>, DynamicBuffer<BufferedWire>, RefRO<GhostInstance>>().WithEntityAccess())
+        foreach (var (connectorA, connectorPosA, wires, ghostA, entity) in SystemAPI.Query<RefRO<Connector>, RefRO<LocalTransform>, DynamicBuffer<BufferedWire>, RefRO<GhostInstance>>().WithEntityAccess())
         {
             foreach (BufferedWire wire in wires)
             {
-                if (!wire.GhostA.Equals(ghost.ValueRO)) continue;
+                if (!wire.GhostA.Equals(ghostA.ValueRO)) continue;
 
-                float3 connectorPos2 = default;
-                foreach (var (_connector2, _connectorPos2, ghost2) in SystemAPI.Query<RefRO<Connector>, RefRO<LocalTransform>, RefRO<GhostInstance>>())
+                float3 startPosition = connectorPosA.ValueRO.TransformPoint(connectorA.ValueRO.PortPositions[wire.PortA]);
+                float3 endPosition = default;
+
+                foreach (var (connectorB, connectorPosB, ghostB) in SystemAPI.Query<RefRO<Connector>, RefRO<LocalTransform>, RefRO<GhostInstance>>())
                 {
-                    if (!wire.GhostB.Equals(ghost2.ValueRO)) continue;
-                    connectorPos2 = _connectorPos2.ValueRO.TransformPoint(_connector2.ValueRO.ConnectorPosition);
+                    if (!wire.GhostB.Equals(ghostB.ValueRO)) continue;
+                    endPosition = connectorPosB.ValueRO.TransformPoint(connectorB.ValueRO.PortPositions[wire.PortB]);
                     break;
                 }
 
-                if (connectorPos2.Equals(default)) continue;
+                if (endPosition.Equals(default)) continue;
 
                 WireId wireId = wire;
 
@@ -228,9 +237,6 @@ public partial class WireRendererSystemClient : SystemBase
                 {
                     line = Lines[wireId] = LinesPool.Get();
                 }
-
-                float3 startPosition = connectorPos1.ValueRO.TransformPoint(connector.ValueRO.ConnectorPosition);
-                float3 endPosition = connectorPos2;
 
                 Vector3[] points = GenerateWire(startPosition, endPosition);
                 line.positionCount = points.Length;

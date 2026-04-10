@@ -11,7 +11,7 @@ void Receive()
         i32 receivedLength = wreceive(&v, MaxPacketLength, &direction);
         if (!receivedLength) { break; }
 
-        if (v[0] == (u8)REQUEST_HEADER &&
+        if (v[0] == (u8)PacketHeader.request &&
             receivedLength == sizeof(VerificationRequestPacket))
         {
             VerificationRequestPacket* packet = &v as VerificationRequestPacket*;
@@ -27,7 +27,7 @@ void Receive()
             {
                 if (Logs) print(" M");
                 VerificationResponsePacket responsePacket = new VerificationResponsePacket;
-                responsePacket.header = (u8)RESPONSE_HEADER;
+                responsePacket.header = PacketHeader.response;
                 responsePacket.position = GPS.position;
                 if (Debug) debug(packet.position, CYAN);
                 wsend(&responsePacket as u8[]*, sizeof(VerificationResponsePacket), &direction);
@@ -40,7 +40,7 @@ void Receive()
         i32 receivedLength = receive(&v, MaxPacketLength);
         if (!receivedLength) { break; }
 
-        if (v[0] == (u8)REQUEST_HEADER &&
+        if (v[0] == (u8)PacketHeader.request &&
             receivedLength == sizeof(VerificationRequestPacket))
         {
             VerificationRequestPacket* packet = &v as VerificationRequestPacket*;
@@ -56,7 +56,7 @@ void Receive()
             {
                 if (Logs) print(" M");
                 VerificationResponsePacket responsePacket = new VerificationResponsePacket;
-                responsePacket.header = (u8)RESPONSE_HEADER;
+                responsePacket.header = PacketHeader.response;
                 responsePacket.position = GPS.position;
                 if (Debug) debug(packet.position, CYAN);
                 send(&responsePacket as u8[]*, sizeof(VerificationResponsePacket));
@@ -74,11 +74,15 @@ void PerformRadar()
         toglobal(&radarPoint);
 
         RadarPointPacket radarPointPacket;
-        radarPointPacket.header = RADAR_POINT;
+        radarPointPacket.header = PacketHeader.radar_point;
         radarPointPacket.position = radarPoint;
+        radarPointPacket.speedSignal = Radar.response.speedSignal;
+        radarPointPacket.clutter = Radar.response.clutter;
+        radarPointPacket.fingerprint = Radar.response.fingerprint;
+        radarPointPacket.meta = Radar.response.meta;
         send(&radarPointPacket as u8[]*, sizeof(RadarPointPacket));
     }
-    Radar.direction = (Radar.direction + 0.05f) % TAU;
+    Radar.direction = (Radar.direction + 0.03f) % TAU;
 }
 
 printline("Started ...");
