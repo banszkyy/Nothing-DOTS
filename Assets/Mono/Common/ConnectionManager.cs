@@ -149,7 +149,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         UIManager.Instance.CloseUI(MainMenuUI);
 
 #if UNITY_EDITOR && EDITOR_DEBUG
-        if (SetupManager.Instance.isActiveAndEnabled)
+        if (SetupManager.Instance.isActiveAndEnabled && savefile is null)
         {
             Debug.Log($" -> SetupManager.Instance.Setup()");
             SetupManager.Instance.Setup();
@@ -206,7 +206,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         yield return new WaitForEndOfFrame();
 
 #if UNITY_EDITOR && EDITOR_DEBUG
-        if (SetupManager.Instance.isActiveAndEnabled && savefile == null)
+        if (SetupManager.Instance.isActiveAndEnabled && savefile is null)
         {
             Debug.Log($" -> SetupManager.Instance.Setup()");
             SetupManager.Instance.Setup();
@@ -280,7 +280,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         UIManager.Instance.CloseUI(MainMenuUI);
 
 #if UNITY_EDITOR && EDITOR_DEBUG
-        if (SetupManager.Instance.isActiveAndEnabled && savefile == null)
+        if (SetupManager.Instance.isActiveAndEnabled && savefile is null)
         {
             Debug.Log($" -> SetupManager.Instance.Setup()");
             SetupManager.Instance.Setup();
@@ -320,7 +320,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
         UIManager.Instance.CloseUI(MainMenuUI);
 
 #if UNITY_EDITOR && EDITOR_DEBUG
-        if (SetupManager.Instance.isActiveAndEnabled)
+        if (SetupManager.Instance.isActiveAndEnabled && savefile is null)
         {
             Debug.Log($" -> SetupManager.Instance.Setup()");
             SetupManager.Instance.Setup();

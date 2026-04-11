@@ -146,7 +146,7 @@ partial class ProcessorSourceSystemServer : SystemBase
                 }
                 processor.ValueRW.CompiledSourceVersion = source.CompiledVersion;
                 processor.ValueRW.Source.Code = source.Code.Value.AsUnsafe().AsReadOnly();
-                processor.ValueRW.Source.GeneratedFunctions = source.GeneratedFunction?.AsUnsafe() ?? default;
+                processor.ValueRW.Source.GeneratedFunctions = source.GeneratedFunctions?.AsUnsafe() ?? default;
                 processor.ValueRW.Source.UnitCommandDefinitions = source.UnitCommandDefinitions?.AsUnsafe().AsReadOnly() ?? default;
 
                 continue;

@@ -478,8 +478,8 @@ public partial class CompilerSystemServer : SystemBase
                 source.DebugInformation = new CompiledDebugInformation(null);
                 source.Code?.Dispose();
                 source.Code = default;
-                source.GeneratedFunction?.Dispose();
-                source.GeneratedFunction = default;
+                source.GeneratedFunctions?.Dispose();
+                source.GeneratedFunctions = default;
                 source.UnitCommandDefinitions?.Dispose();
                 source.UnitCommandDefinitions = default;
 
@@ -495,8 +495,8 @@ public partial class CompilerSystemServer : SystemBase
                 source.DebugInformation = new CompiledDebugInformation(generated.DebugInfo);
                 source.Code?.Dispose();
                 source.Code = new NativeArray<Instruction>(generated.Code.ToArray(), Allocator.Persistent);
-                source.GeneratedFunction?.Dispose();
-                source.GeneratedFunction = new NativeArray<ExternalFunctionScopedSync>(generated.GeneratedUnmanagedFunctions.ToArray(), Allocator.Persistent);
+                source.GeneratedFunctions?.Dispose();
+                source.GeneratedFunctions = new NativeArray<ExternalFunctionScopedSync>(generated.GeneratedUnmanagedFunctions.ToArray(), Allocator.Persistent);
                 source.UnitCommandDefinitions?.Dispose();
                 List<UnitCommandDefinition> commandDefinitions = new();
                 foreach (CompiledStruct @struct in source.Compiled.Structs)

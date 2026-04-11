@@ -21,7 +21,7 @@ public class CompiledSourceServer : ICompiledSource
     public bool IsSuccess;
 
     public NativeArray<Instruction>? Code;
-    public NativeArray<ExternalFunctionScopedSync>? GeneratedFunction;
+    public NativeArray<ExternalFunctionScopedSync>? GeneratedFunctions;
     public NativeArray<UnitCommandDefinition>? UnitCommandDefinitions;
     public CompiledDebugInformation DebugInformation;
     public DiagnosticsCollection Diagnostics;

@@ -64,13 +64,13 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
 
     void OnButtonSave()
     {
-        if (ConnectionManager.ServerWorld is null)
+        if ((ConnectionManager.ServerWorld ?? ConnectionManager.LocalWorld) is null)
         {
-            Debug.LogWarning($"{DebugEx.ClientPrefix} Cannot save: server world is null");
+            Debug.LogWarning($"{DebugEx.ClientPrefix} Cannot save on client side");
         }
         else
         {
-            SaveManager.Save(ConnectionManager.ServerWorld, "save.bin");
+            SaveManager.Save((ConnectionManager.ServerWorld ?? ConnectionManager.LocalWorld)!, "save.bin");
         }
     }
 
@@ -78,7 +78,7 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
     {
         if (ui == null || !ui.gameObject.activeSelf || ConnectionManager.ClientOrDefaultWorld == null) return;
 
-        ui.rootVisualElement.Q<Button>("button-save").style.display = ConnectionManager.ServerWorld != null ? DisplayStyle.Flex : DisplayStyle.None;
+        ui.rootVisualElement.Q<Button>("button-save").style.display = (ConnectionManager.ServerWorld ?? ConnectionManager.LocalWorld) != null ? DisplayStyle.Flex : DisplayStyle.None;
 
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
         using EntityQuery playersQ = entityManager.CreateEntityQuery(typeof(Player));
