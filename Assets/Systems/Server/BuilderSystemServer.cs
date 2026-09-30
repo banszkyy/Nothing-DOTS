@@ -20,6 +20,7 @@ public partial struct BuilderSystemServer : ISystem
         {
             if (!turret.ValueRO.ShootRequested) continue;
             turret.ValueRW.ShootRequested = false;
+            turret.ValueRW.TargetState = 0;
 
             RefRW<LocalToWorld> turretTransform = SystemAPI.GetComponentRW<LocalToWorld>(turret.ValueRO.Turret);
 
@@ -40,10 +41,10 @@ public partial struct BuilderSystemServer : ISystem
             {
                 RefRW<BuildingPlaceholder> building = SystemAPI.GetComponentRW<BuildingPlaceholder>(hit.Entity.Entity);
                 building.ValueRW.CurrentProgress += Builder.BuildSpeed * SystemAPI.Time.DeltaTime;
+                turret.ValueRW.TargetState = 2;
 #if DEBUG_LINES
                 DebugEx.DrawPoint(ray.GetPoint(hit.Distance), 1f, Color.green, 0.2f, false);
 #endif
-                continue;
             }
         }
     }

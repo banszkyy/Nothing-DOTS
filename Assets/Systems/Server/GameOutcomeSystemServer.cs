@@ -16,10 +16,11 @@ partial struct GameOutcomeSystemServer : ISystem
 
         int nonlosers = 0;
         int losers = 0;
-        foreach (var player in
-            SystemAPI.Query<RefRW<Player>>())
+        foreach (var (player, playerE) in
+            SystemAPI.Query<RefRW<Player>>()
+            .WithEntityAccess())
         {
-            if (player.ValueRO.ConnectionState == PlayerConnectionState.Server) continue;
+            if (SystemAPI.TryGetComponent(playerE, out RealPlayer playerR) && playerR.ConnectionState == PlayerConnectionState.Server) continue;
 
             bool ok = false;
             foreach (var team in

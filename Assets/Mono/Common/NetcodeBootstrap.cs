@@ -84,9 +84,12 @@ class NetcodeBootstrap : ClientServerBootstrap
                 Entity newPlayer = LocalWorld.EntityManager.Instantiate(prefabs.Player);
                 LocalWorld.EntityManager.SetComponentData<Player>(newPlayer, new()
                 {
+                    Team = Player.UnassignedTeam,
+                });
+                LocalWorld.EntityManager.SetComponentData<RealPlayer>(newPlayer, new()
+                {
                     ConnectionId = 0,
                     ConnectionState = PlayerConnectionState.Local,
-                    Team = Player.UnassignedTeam,
                 });
             }
         }
@@ -160,9 +163,12 @@ class NetcodeBootstrap : ClientServerBootstrap
                 Entity newPlayer = ServerWorld.EntityManager.Instantiate(prefabs.Player);
                 ServerWorld.EntityManager.SetComponentData<Player>(newPlayer, new()
                 {
+                    Team = 0,
+                });
+                ServerWorld.EntityManager.SetComponentData<RealPlayer>(newPlayer, new()
+                {
                     ConnectionId = 0,
                     ConnectionState = PlayerConnectionState.Server,
-                    Team = 0,
                 });
             }
             else
@@ -256,9 +262,12 @@ class NetcodeBootstrap : ClientServerBootstrap
                 Entity newPlayer = StagingWorld.EntityManager.Instantiate(prefabs.Player);
                 StagingWorld.EntityManager.SetComponentData<Player>(newPlayer, new()
                 {
+                    Team = Player.UnassignedTeam,
+                });
+                LocalWorld.EntityManager.SetComponentData<RealPlayer>(newPlayer, new()
+                {
                     ConnectionId = 0,
                     ConnectionState = PlayerConnectionState.Local,
-                    Team = Player.UnassignedTeam,
                 });
             }
         }

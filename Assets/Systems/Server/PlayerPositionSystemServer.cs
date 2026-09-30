@@ -18,7 +18,7 @@ public partial struct PlayerPositionSystemServer : ISystem
             commandBuffer.DestroyEntity(entity);
             RefRO<NetworkId> networkId = SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection);
 
-            foreach (var player in SystemAPI.Query<RefRW<Player>>())
+            foreach (var player in SystemAPI.Query<RefRW<RealPlayer>>())
             {
                 if (player.ValueRO.ConnectionId != networkId.ValueRO.Value) continue;
                 player.ValueRW.Position = command.ValueRO.Position;

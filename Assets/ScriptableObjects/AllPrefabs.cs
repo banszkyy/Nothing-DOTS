@@ -5,6 +5,7 @@ using UnityEngine;
 class AllPrefabs : ScriptableObject
 {
     [SerializeField, NotNull] public GameObject? PlayerPrefab = default;
+    [SerializeField, NotNull] public GameObject? VirtualPlayerPrefab = default;
     [SerializeField, NotNull] public GameObject? CoreComputerPrefab = default;
     [SerializeField, NotNull] public GameObject? Resource = default;
     [SerializeField, NotNull] public UnitPrefab? Builder = default;

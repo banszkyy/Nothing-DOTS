@@ -2,16 +2,7 @@ using System;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.NetCode;
-
-public enum PlayerConnectionState : byte
-{
-    Connected,
-    Local,
-    Server,
-    Disconnected,
-}
 
 public enum GameOutcome : byte
 {
@@ -24,10 +15,6 @@ public enum GameOutcome : byte
 public struct Player : IComponentData
 {
     public const int UnassignedTeam = -1;
-
-    public Entity Connection;
-    [GhostField] public int ConnectionId;
-    [GhostField] public PlayerConnectionState ConnectionState;
     [GhostField] public int Team;
     [GhostField] public float Resources;
     [GhostField] public FixedString32Bytes Nickname;
@@ -36,8 +23,4 @@ public struct Player : IComponentData
     [GhostField] public bool IsAdmin;
     public bool IsCoreComputerSpawned;
     public Guid Guid;
-    public float3 Position;
-    public long PingRequested;
-    public long PingResponded;
-    public int Ping;
 }

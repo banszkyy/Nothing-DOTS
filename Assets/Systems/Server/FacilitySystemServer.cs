@@ -26,13 +26,27 @@ public partial struct FacilitySystemServer : ISystem
 
             Entity requestPlayer = default;
 
-            foreach (var (player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                requestPlayer = _entity;
-                break;
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
             }
 
             if (requestPlayer == Entity.Null)
@@ -199,22 +213,25 @@ public partial struct FacilitySystemServer : ISystem
             }
 
             Entity playerConnection = default;
-            foreach (var (networkId, _entity) in
-                SystemAPI.Query<RefRO<NetworkId>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(playerEntity, out RealPlayer realPlayer))
             {
-                if (networkId.ValueRO.Value != player.ConnectionId) continue;
-                playerConnection = _entity;
-                break;
-            }
-
-            if (playerConnection != Entity.Null)
-            {
-                if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
-                NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ResearchDoneRpc()
+                foreach (var (networkId, _entity) in
+                                SystemAPI.Query<RefRO<NetworkId>>()
+                                .WithEntityAccess())
                 {
-                    Name = finishedResearch.Name,
-                }, playerConnection);
+                    if (networkId.ValueRO.Value != realPlayer.ConnectionId) continue;
+                    playerConnection = _entity;
+                    break;
+                }
+
+                if (playerConnection != Entity.Null)
+                {
+                    if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+                    NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ResearchDoneRpc()
+                    {
+                        Name = finishedResearch.Name,
+                    }, playerConnection);
+                }
             }
 
             SystemAPI.GetBuffer<BufferedAcquiredResearch>(playerEntity)

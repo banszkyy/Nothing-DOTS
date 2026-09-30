@@ -185,7 +185,7 @@ partial struct WirelessTransmissionSystemServer : ISystem
                                 },
                             });
 
-                            foreach (var player in SystemAPI.Query<RefRO<Player>>())
+                            foreach (var player in SystemAPI.Query<RefRO<RealPlayer>>())
                             {
                                 if (math.distance(player.ValueRO.Position, transform.ValueRO.Position) < 50f ||
                                     math.distance(player.ValueRO.Position, cell[i].Position) < 50f)

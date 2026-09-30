@@ -18,11 +18,11 @@ partial struct BuilderProcessorSystem : ISystem
         {
             ref MappedMemory mapped = ref processor.ValueRW.Memory.MappedMemory;
 
-            if (mapped.CombatTurret.InputShoot != 0)
+            if (mapped.CombatTurret.InputShoot is not 0 and not 2)
             {
                 builderTurret.ValueRW.ShootRequested = true;
-                mapped.CombatTurret.InputShoot = 0;
             }
+            mapped.CombatTurret.InputShoot = builderTurret.ValueRO.TargetState;
 
             RefRW<LocalTransform> turretTransform = SystemAPI.GetComponentRW<LocalTransform>(builderTurret.ValueRO.Turret);
 

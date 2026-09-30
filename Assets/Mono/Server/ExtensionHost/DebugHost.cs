@@ -129,13 +129,14 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                 }
                 else
                 {
-                    using EntityQuery playerQ = ConnectionManager.ServerOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player));
+                    using EntityQuery playerQ = ConnectionManager.ServerOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
                     using NativeArray<Entity> playerEntities = playerQ.ToEntityArray(Allocator.Temp);
 
                     for (int i = 0; i < playerEntities.Length; i++)
                     {
-                        Player player = ConnectionManager.ServerOrDefaultWorld.EntityManager.GetComponentData<Player>(playerEntities[i]);
-                        if (player.ConnectionId == fileId.Source.ConnectionId.Value)
+                        var player = ConnectionManager.ServerOrDefaultWorld.EntityManager.GetComponentData<Player>(playerEntities[i]);
+                        var playerR = ConnectionManager.ServerOrDefaultWorld.EntityManager.GetComponentData<RealPlayer>(playerEntities[i]);
+                        if (playerR.ConnectionId == fileId.Source.ConnectionId.Value)
                         {
                             if (player.Guid == playerGuid)
                             {

@@ -59,7 +59,7 @@ public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUI
 
         if (selected.Current.Name.IsEmpty) return;
 
-        selected.CurrentProgress += Time.deltaTime * Factory.ProductionSpeed;
+        selected.CurrentProgress += Time.deltaTime * Facility.ResearchSpeed;
         ui.ProgressCurrent.value = selected.CurrentProgress / selected.Current.ResearchTime;
         ui.ProgressCurrent.title = selected.Current.Name.ToString();
     }

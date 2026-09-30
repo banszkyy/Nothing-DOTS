@@ -24,6 +24,7 @@ public partial struct PlayerSystemServer : ISystem
     void ISystem.OnUpdate(ref SystemState state)
     {
         if (!SystemAPI.TryGetSingletonBuffer(out DynamicBuffer<BufferedSpawn> spawns, false)) return;
+        if (!SystemAPI.TryGetSingletonBuffer(out DynamicBuffer<BufferedVirtualPlayerSettings> virtualPlayerSettings, false)) return;
 
         EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
         PrefabDatabase prefabs = SystemAPI.GetSingleton<PrefabDatabase>();
@@ -73,24 +74,29 @@ public partial struct PlayerSystemServer : ISystem
 
             Debug.Log($"{DebugEx.ServerPrefix} Received register request from client `{source}`\n  Nickname: \"{command.ValueRO.Nickname}\"");
 
-            (bool, Player) exists = default;
+            RealPlayer requestedPlayerR = default;
+            Player requestedPlayer = default;
+            Entity requestedPlayerE = default;
 
-            foreach (var player in
-                SystemAPI.Query<RefRO<Player>>())
+            foreach (var (player, playerR, playerE) in
+                SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>>()
+                .WithEntityAccess())
             {
-                if (player.ValueRO.ConnectionId == source.Value)
+                if (playerR.ValueRO.ConnectionId == source.Value)
                 {
-                    exists = (true, player.ValueRO);
+                    requestedPlayerE = playerE;
+                    requestedPlayerR = playerR.ValueRO;
+                    requestedPlayer = player.ValueRO;
                 }
             }
 
-            if (exists.Item1)
+            if (requestedPlayerE != default)
             {
                 Debug.LogWarning($"{DebugEx.ServerPrefix} Already logged in");
                 NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new SessionResponseRpc()
                 {
                     StatusCode = SessionStatusCode.AlreadyLoggedIn,
-                    Nickname = exists.Item2.Nickname,
+                    Nickname = requestedPlayer.Nickname,
                     Guid = default,
                 }, request.ValueRO.SourceConnection);
             }
@@ -109,13 +115,16 @@ public partial struct PlayerSystemServer : ISystem
                 Entity newPlayer = commandBuffer.Instantiate(prefabs.Player);
                 commandBuffer.SetComponent<Player>(newPlayer, new()
                 {
-                    Connection = request.ValueRO.SourceConnection,
-                    ConnectionId = source.Value,
-                    ConnectionState = PlayerConnectionState.Connected,
                     Team = Player.UnassignedTeam,
                     IsCoreComputerSpawned = false,
                     Guid = guid,
                     Nickname = command.ValueRO.Nickname,
+                });
+                commandBuffer.SetComponent<RealPlayer>(newPlayer, new()
+                {
+                    Connection = request.ValueRO.SourceConnection,
+                    ConnectionId = source.Value,
+                    ConnectionState = PlayerConnectionState.Connected,
                 });
 
                 Debug.Log($"{DebugEx.ServerPrefix} Player created\n  Nickname: \"{command.ValueRO.Nickname}\"\n  Guid: {guid}\n  ConnectionId: {source.Value}");
@@ -142,18 +151,18 @@ public partial struct PlayerSystemServer : ISystem
             Debug.Log($"{DebugEx.ServerPrefix} Received login request from client `{source}`\n  Guid: {Marshal.As<FixedBytes16, Guid>(guid)}");
 
             bool exists = false;
-            foreach (var player in
-                SystemAPI.Query<RefRW<Player>>())
+            foreach (var (player, playerR) in
+                SystemAPI.Query<RefRO<Player>, RefRW<RealPlayer>>())
             {
                 if (player.ValueRO.Guid != Marshal.As<FixedBytes16, Guid>(guid)) continue;
 
                 exists = true;
-                bool loggedIn = player.ValueRO.ConnectionId != -1;
+                bool loggedIn = playerR.ValueRO.ConnectionId != -1;
                 if (!loggedIn)
                 {
-                    player.ValueRW.Connection = request.ValueRO.SourceConnection;
-                    player.ValueRW.ConnectionId = source.Value;
-                    player.ValueRW.ConnectionState = PlayerConnectionState.Connected;
+                    playerR.ValueRW.Connection = request.ValueRO.SourceConnection;
+                    playerR.ValueRW.ConnectionId = source.Value;
+                    playerR.ValueRW.ConnectionState = PlayerConnectionState.Connected;
                     ChatSystemServer.SendChatMessage(commandBuffer, state.WorldUnmanaged, $"Player {player.ValueRO.Nickname} reconnected", MonoTime.UnixSeconds);
                 }
 
@@ -181,26 +190,26 @@ public partial struct PlayerSystemServer : ISystem
 
         bool isAdminAssigned = false;
 
-        foreach (var player in
-            SystemAPI.Query<RefRW<Player>>())
+        foreach (var (player, playerR) in
+            SystemAPI.Query<RefRW<Player>, RefRW<RealPlayer>>())
         {
             if (player.ValueRO.Team == Player.UnassignedTeam)
             {
                 player.ValueRW.Team = TeamCounter++;
-                Debug.Log($"{DebugEx.ServerPrefix} Assigning team {player.ValueRO.Team} to player \"{player.ValueRO.Nickname}\" ({player.ValueRO.ConnectionState} {player.ValueRO.ConnectionId})");
+                Debug.Log($"{DebugEx.ServerPrefix} Assigning team {player.ValueRO.Team} to player \"{player.ValueRO.Nickname}\" ({playerR.ValueRO.ConnectionState} {playerR.ValueRO.ConnectionId})");
             }
 
-            if (player.ValueRO.ConnectionState is not PlayerConnectionState.Connected and not PlayerConnectionState.Local) continue;
+            if (playerR.ValueRO.ConnectionState is not PlayerConnectionState.Connected and not PlayerConnectionState.Local) continue;
 
             bool found = false;
 
-            if (player.ValueRO.ConnectionState == PlayerConnectionState.Connected)
+            if (playerR.ValueRO.ConnectionState == PlayerConnectionState.Connected)
             {
                 foreach (var id in
                     SystemAPI.Query<RefRO<NetworkId>>()
                     .WithAll<InitializedClient>())
                 {
-                    if (id.ValueRO.Value == player.ValueRO.ConnectionId)
+                    if (id.ValueRO.Value == playerR.ValueRO.ConnectionId)
                     {
                         found = true;
                         break;
@@ -214,18 +223,18 @@ public partial struct PlayerSystemServer : ISystem
 
             if (!found)
             {
-                Debug.Log($"{DebugEx.ServerPrefix} Client {player.ValueRO.ConnectionId} disconnected");
+                Debug.Log($"{DebugEx.ServerPrefix} Client {playerR.ValueRO.ConnectionId} disconnected");
                 ChatSystemServer.SendChatMessage(commandBuffer, state.WorldUnmanaged, $"Player {player.ValueRO.Nickname} disconnected", MonoTime.UnixSeconds);
 
-                player.ValueRW.Connection = Entity.Null;
-                player.ValueRW.ConnectionId = -1;
-                player.ValueRW.ConnectionState = PlayerConnectionState.Disconnected;
+                playerR.ValueRW.Connection = Entity.Null;
+                playerR.ValueRW.ConnectionId = -1;
+                playerR.ValueRW.ConnectionState = PlayerConnectionState.Disconnected;
             }
             else
             {
                 if (!player.ValueRO.IsCoreComputerSpawned)
                 {
-                    Debug.Log($"{DebugEx.ServerPrefix} Spawning core computer for player \"{player.ValueRO.Nickname}\" ({player.ValueRO.ConnectionState} {player.ValueRO.ConnectionId})");
+                    Debug.Log($"{DebugEx.ServerPrefix} Spawning core computer for player \"{player.ValueRO.Nickname}\" ({playerR.ValueRO.ConnectionState} {playerR.ValueRO.ConnectionId})");
 
                     for (int i = 0; i < spawns.Length; i++)
                     {
@@ -240,7 +249,7 @@ public partial struct PlayerSystemServer : ISystem
                         commandBuffer.SetComponent<LocalTransform>(coreComputer, LocalTransform.FromPosition(spawns[i].Position));
                         commandBuffer.SetComponent<GhostOwner>(coreComputer, new()
                         {
-                            NetworkId = player.ValueRO.ConnectionId,
+                            NetworkId = playerR.ValueRO.ConnectionId,
                         });
 
                         Entity builder = commandBuffer.Instantiate(prefabs.Builder);
@@ -251,13 +260,13 @@ public partial struct PlayerSystemServer : ISystem
                         commandBuffer.SetComponent<LocalTransform>(builder, LocalTransform.FromPosition(spawns[i].Position + new Unity.Mathematics.float3(2f, 0f, 2f)));
                         commandBuffer.SetComponent<GhostOwner>(builder, new()
                         {
-                            NetworkId = player.ValueRO.ConnectionId,
+                            NetworkId = playerR.ValueRO.ConnectionId,
                         });
 
                         goto spawned;
                     }
 
-                    Debug.LogError($"{DebugEx.ServerPrefix} Cannot spawn core computer for player \"{player.ValueRO.Nickname}\" ({player.ValueRO.ConnectionState} {player.ValueRO.ConnectionId})");
+                    Debug.LogError($"{DebugEx.ServerPrefix} Cannot spawn core computer for player \"{player.ValueRO.Nickname}\" ({playerR.ValueRO.ConnectionState} {playerR.ValueRO.ConnectionId})");
 
                 spawned:
                     player.ValueRW.IsCoreComputerSpawned = true;
@@ -271,14 +280,98 @@ public partial struct PlayerSystemServer : ISystem
             }
         }
 
+        foreach (var (player, playerV) in
+            SystemAPI.Query<RefRW<Player>, RefRW<VirtualPlayer>>())
+        {
+            if (player.ValueRO.Team == Player.UnassignedTeam)
+            {
+                player.ValueRW.Team = TeamCounter++;
+                Debug.Log($"{DebugEx.ServerPrefix} Assigning team {player.ValueRO.Team} to virtual player \"{player.ValueRO.Nickname}\"");
+            }
+
+            if (!player.ValueRO.IsCoreComputerSpawned)
+            {
+                Debug.Log($"{DebugEx.ServerPrefix} Spawning core computer for virtual player \"{player.ValueRO.Nickname}\"");
+
+                for (int i = 0; i < spawns.Length; i++)
+                {
+                    if (spawns[i].IsOccupied) continue;
+                    spawns[i] = spawns[i] with { IsOccupied = true };
+
+                    Entity coreComputer = commandBuffer.Instantiate(prefabs.CoreComputer);
+                    commandBuffer.SetComponent<UnitTeam>(coreComputer, new()
+                    {
+                        Team = player.ValueRO.Team
+                    });
+                    commandBuffer.SetComponent<LocalTransform>(coreComputer, LocalTransform.FromPosition(spawns[i].Position));
+
+                    Entity builder = commandBuffer.Instantiate(prefabs.Builder);
+                    commandBuffer.SetComponent<UnitTeam>(builder, new()
+                    {
+                        Team = player.ValueRO.Team
+                    });
+                    commandBuffer.SetComponent<LocalTransform>(builder, LocalTransform.FromPosition(spawns[i].Position + new Unity.Mathematics.float3(2f, 0f, 2f)));
+
+                    goto spawned;
+                }
+
+                Debug.LogError($"{DebugEx.ServerPrefix} Cannot spawn core computer for virtual player \"{player.ValueRO.Nickname}\"");
+
+            spawned:
+                player.ValueRW.IsCoreComputerSpawned = true;
+                player.ValueRW.Resources = 30;
+            }
+        }
+
+        for (int i = 0; i < virtualPlayerSettings.Length; i++)
+        {
+            var settings = virtualPlayerSettings[i];
+
+            bool exists = false;
+            foreach (var player in
+                SystemAPI.Query<RefRW<VirtualPlayer>>())
+            {
+                if (player.ValueRO.Index != i) continue;
+                exists = true;
+                break;
+            }
+            if (exists) continue;
+
+            Guid guid;
+            unsafe
+            {
+                byte* ptr = (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(bytes));
+                *(int*)(ptr + 0) = i; // 4
+                *(double*)(ptr + 4) = SystemAPI.Time.ElapsedTime; // 8
+                *(uint*)(ptr + 12) = 0x69420; // 4
+                guid = new Guid(bytes);
+            }
+
+            Entity newPlayer = commandBuffer.Instantiate(prefabs.VirtualPlayer);
+            commandBuffer.SetComponent<Player>(newPlayer, new()
+            {
+                Team = Player.UnassignedTeam,
+                IsCoreComputerSpawned = false,
+                Guid = guid,
+                Nickname = settings.Nickname,
+            });
+            commandBuffer.SetComponent<VirtualPlayer>(newPlayer, new()
+            {
+                Index = i,
+            });
+
+            Debug.Log($"{DebugEx.ServerPrefix} Virtual player created\n  Nickname: \"{settings.Nickname}\"\n  Guid: {guid}");
+            ChatSystemServer.SendChatMessage(commandBuffer, state.WorldUnmanaged, $"Player {settings.Nickname} connected", MonoTime.UnixSeconds);
+        }
+
         if (!isAdminAssigned)
         {
-            foreach (var player in
-                SystemAPI.Query<RefRW<Player>>())
+            foreach (var (player, playerR) in
+                SystemAPI.Query<RefRW<Player>, RefRO<RealPlayer>>())
             {
-                if (player.ValueRO.ConnectionState is not PlayerConnectionState.Connected and not PlayerConnectionState.Local) continue;
+                if (playerR.ValueRO.ConnectionState is not PlayerConnectionState.Connected and not PlayerConnectionState.Local) continue;
 
-                Debug.Log(string.Format($"{DebugEx.ServerPrefix} Assigning admin to player {{0}} (connection: {{1}} nickname: `{{2}}`)", player.ValueRO.Guid, player.ValueRO.ConnectionId, player.ValueRO.Nickname));
+                Debug.Log(string.Format($"{DebugEx.ServerPrefix} Assigning admin to player {{0}} (connection: {{1}} nickname: `{{2}}`)", player.ValueRO.Guid, playerR.ValueRO.ConnectionId, player.ValueRO.Nickname));
                 player.ValueRW.IsAdmin = true;
                 break;
             }

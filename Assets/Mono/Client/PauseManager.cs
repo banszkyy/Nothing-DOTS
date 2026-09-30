@@ -77,25 +77,28 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
 
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
         using EntityQuery playersQ = entityManager.CreateEntityQuery(typeof(Player));
-        using NativeArray<Player> players = playersQ.ToComponentDataArray<Player>(Allocator.Temp);
+        using NativeArray<Entity> players = playersQ.ToEntityArray(Allocator.Temp);
 
-        if (!PlayerSystemClient.GetInstance(ConnectionManager.ClientOrDefaultWorld.Unmanaged).TryGetLocalPlayer(out Player localPlayer)) localPlayer = default;
+        if (!PlayerSystemClient.GetInstance(ConnectionManager.ClientOrDefaultWorld.Unmanaged).TryGetLocalPlayer(out RealPlayer localPlayer)) localPlayer = default;
 
-        ui.ListConnections.SyncList<Player, ConnectionItemSchema>(
+        ui.ListConnections.SyncList<Entity, ConnectionItemSchema>(
             players,
             UI_ConnectionItem,
-            (player, element, recycled) =>
+            (playerE, element, recycled) =>
             {
-                element.Root.userData = player.ConnectionId;
+                var player = entityManager.GetComponentData<Player>(playerE);
+
+                element.Root.userData = playerE;
                 element.LabelNickname.text = player.Nickname.ToString();
                 element.LabelTeam.text = player.Team.ToString();
-                if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
+                if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal()
+                    || !entityManager.TryGetComponentData<RealPlayer>(playerE, out var playerR))
                 {
                     element.LabelPing.style.display = DisplayStyle.None;
                 }
                 else
                 {
-                    double ping = TimeSpan.FromTicks(player.Ping).TotalMilliseconds;
+                    double ping = TimeSpan.FromTicks(playerR.Ping).TotalMilliseconds;
                     element.LabelPing.text = $"{Math.Ceiling(ping)} ms";
                     element.LabelPing.style.color = ping switch
                     {
@@ -111,9 +114,9 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
                     ConnectionManager.KickClient((int)element.Root.userData);
                     RefreshUI();
                 };
-                element.ButtonKick.style.display = (ConnectionManager.ServerWorld != null && player.ConnectionId != 0 && player.ConnectionId != localPlayer.ConnectionId) ? DisplayStyle.Flex : DisplayStyle.None;
+                element.ButtonKick.style.display = entityManager.TryGetComponentData<RealPlayer>(playerE, out playerR) ? (ConnectionManager.ServerWorld != null && playerR.ConnectionId != 0 && playerR.ConnectionId != localPlayer.ConnectionId) ? DisplayStyle.Flex : DisplayStyle.None : DisplayStyle.Flex;
             },
-            player => player.ConnectionState is not PlayerConnectionState.Disconnected and not PlayerConnectionState.Server);
+            playerE => !entityManager.TryGetComponentData<RealPlayer>(playerE, out var playerR) || playerR.ConnectionState is not PlayerConnectionState.Disconnected and not PlayerConnectionState.Server);
     }
 
     public void Cleanup(UIElementReference ui)

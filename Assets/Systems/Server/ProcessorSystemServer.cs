@@ -223,25 +223,25 @@ unsafe partial struct ProcessorSystemServer : ISystem
     {
         EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
 
-        foreach (var (player, lines, labels) in
-            SystemAPI.Query<RefRO<Player>, DynamicBuffer<BufferedLine>, DynamicBuffer<BufferedWorldLabel>>())
+        foreach (var (player, realPlayer, lines, labels) in
+            SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>, DynamicBuffer<BufferedLine>, DynamicBuffer<BufferedWorldLabel>>())
         {
             Entity connection = Entity.Null;
             foreach (var (_connection, _connectionEntity) in
                 SystemAPI.Query<RefRO<NetworkId>>()
                 .WithEntityAccess())
             {
-                if (_connection.ValueRO.Value != player.ValueRO.ConnectionId) continue;
+                if (_connection.ValueRO.Value != realPlayer.ValueRO.ConnectionId) continue;
                 connection = _connectionEntity;
                 break;
             }
 
-            if (connection != Entity.Null && player.ValueRO.ConnectionState == PlayerConnectionState.Connected)
+            if (connection != Entity.Null && realPlayer.ValueRO.ConnectionState == PlayerConnectionState.Connected)
             {
                 for (int i = 0; i < debugLines.Length; i++)
                 {
                     if (debugLines[i].Owner != player.ValueRO.Team) continue;
-                    if (Utils.Distance(player.ValueRO.Position, debugLines[i].Value.Position) >= 50f) continue;
+                    if (Utils.Distance(realPlayer.ValueRO.Position, debugLines[i].Value.Position) >= 50f) continue;
 
                     NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new DebugLineRpc()
                     {
@@ -253,7 +253,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
                 for (int i = 0; i < worldLabels.Length; i++)
                 {
                     if (worldLabels[i].Owner != player.ValueRO.Team) continue;
-                    if (math.distancesq(player.ValueRO.Position, worldLabels[i].Value.Position) >= 50f * 50f) continue;
+                    if (math.distancesq(realPlayer.ValueRO.Position, worldLabels[i].Value.Position) >= 50f * 50f) continue;
 
                     NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new DebugLabelRpc()
                     {

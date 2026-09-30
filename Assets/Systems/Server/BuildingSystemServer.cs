@@ -1,4 +1,5 @@
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
@@ -21,116 +22,38 @@ public partial struct BuildingSystemServer : ISystem
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
-            (Entity Entity, Player Player) requestPlayer = default;
+            Entity requestPlayer = default;
 
-            foreach (var (player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                requestPlayer = (_entity, player.ValueRO);
-                break;
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
             }
 
-            if (requestPlayer.Entity == Entity.Null)
+            if (requestPlayer == Entity.Null)
             {
                 Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Failed to place building: requested by `{{0}}` but doesn't have a team", networkId));
                 continue;
             }
 
-            DynamicBuffer<BufferedBuilding> buildings = SystemAPI.GetBuffer<BufferedBuilding>(SystemAPI.GetSingletonEntity<BuildingDatabase>());
-
-            BufferedBuilding building = default;
-
-            for (int i = 0; i < buildings.Length; i++)
-            {
-                if (buildings[i].Name == command.ValueRO.BuildingName)
-                {
-                    building = buildings[i];
-                    break;
-                }
-            }
-
-            if (building.Prefab == Entity.Null)
-            {
-                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Building \"{{0}}\" not found in the database", command.ValueRO.BuildingName));
-                continue;
-            }
-
-            Entity newEntity;
-            if (requestPlayer.Player.InCreative)
-            {
-                newEntity = commandBuffer.Instantiate(building.Prefab);
-                commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(command.ValueRO.Position));
-            }
-            else
-            {
-                if (!building.RequiredResearch.IsEmpty)
-                {
-                    DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayer.Entity);
-                    bool can = false;
-                    foreach (var research in acquiredResearches)
-                    {
-                        if (research.Name != building.RequiredResearch) continue;
-                        can = true;
-                        break;
-                    }
-
-                    if (!can)
-                    {
-                        Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not researched", building.Name));
-                        continue;
-                    }
-                }
-
-                if (requestPlayer.Player.Resources < building.RequiredResources)
-                {
-                    Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not enought resources ({{1}} < {{2}})", building.Name, requestPlayer.Player.Resources, building.RequiredResources));
-                    continue;
-                }
-
-                if (SystemAPI.HasComponent<Extractor>(building.Prefab))
-                {
-                    foreach (var resource in
-                        SystemAPI.Query<RefRO<LocalTransform>>()
-                        .WithAll<ResourceNode>())
-                    {
-                        if (math.distance(resource.ValueRO.Position, command.ValueRO.Position) < 5f)
-                        {
-                            goto ok;
-                        }
-                    }
-
-                    Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": needs a resource node in 5 radius", building.Name));
-                    continue;
-                ok:;
-                }
-
-                foreach (var _player in
-                    SystemAPI.Query<RefRW<Player>>())
-                {
-                    if (_player.ValueRO.ConnectionId != networkId.Value) continue;
-                    _player.ValueRW.Resources -= building.RequiredResources;
-                    break;
-                }
-
-                newEntity = commandBuffer.Instantiate(building.PlaceholderPrefab);
-                commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(command.ValueRO.Position));
-                commandBuffer.SetComponent<BuildingPlaceholder>(newEntity, new()
-                {
-                    BuildingPrefab = building.Prefab,
-                    CurrentProgress = 0f,
-                    TotalProgress = building.ConstructionTime,
-                });
-            }
-            commandBuffer.SetComponent<UnitTeam>(newEntity, new()
-            {
-                Team = requestPlayer.Player.Team,
-            });
-            commandBuffer.SetComponent<GhostOwner>(newEntity, new()
-            {
-                NetworkId = networkId.Value,
-            });
+            TryPlaceBuilding(command.ValueRO.BuildingName, command.ValueRO.Position, commandBuffer, networkId, requestPlayer, ref state);
         }
 
         foreach (var (request, command, entity) in
@@ -141,18 +64,32 @@ public partial struct BuildingSystemServer : ISystem
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
-            (Entity Entity, Player Player) requestPlayer = default;
+            Entity requestPlayer = default;
 
-            foreach (var (player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                requestPlayer = (_entity, player.ValueRO);
-                break;
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
             }
 
-            if (requestPlayer.Entity == Entity.Null)
+            if (requestPlayer == Entity.Null)
             {
                 Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Failed to destroy building: requested by `{{0}}` but doesn't have a team", networkId));
                 continue;
@@ -160,7 +97,7 @@ public partial struct BuildingSystemServer : ISystem
 
             foreach (var (buildingGhost, buildingEntity) in SystemAPI.Query<RefRO<GhostInstance>>().WithAll<Building>().WithEntityAccess())
             {
-                if (command.ValueRO.Entity.Equals(buildingGhost.ValueRO))
+                if (command.ValueRO.Entity.Equals(buildingGhost.ValueRO)) // FIXME: team check
                 {
                     if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
                     commandBuffer.DestroyEntity(buildingEntity);
@@ -176,18 +113,32 @@ public partial struct BuildingSystemServer : ISystem
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
-            (Entity Entity, Player Player) requestPlayer = default;
+            Entity requestPlayer = default;
 
-            foreach (var (player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                requestPlayer = (_entity, player.ValueRO);
-                break;
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
             }
 
-            if (requestPlayer.Entity == Entity.Null)
+            if (requestPlayer == Entity.Null)
             {
                 Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Failed to place wire: requested by `{{0}}` but doesn't have a team", networkId));
                 continue;
@@ -196,7 +147,7 @@ public partial struct BuildingSystemServer : ISystem
             EntityPortIdentifier connectorA = default;
             EntityPortIdentifier connectorB = default;
 
-            foreach (var (connectorGhost, connectorEntity) in SystemAPI.Query<RefRO<GhostInstance>>().WithAll<Connector>().WithEntityAccess())
+            foreach (var (connectorGhost, connectorEntity) in SystemAPI.Query<RefRO<GhostInstance>>().WithAll<Connector>().WithEntityAccess()) // FIXME: team check
             {
                 if (command.ValueRO.EntityA.Equals(connectorGhost.ValueRO))
                 {
@@ -300,13 +251,27 @@ public partial struct BuildingSystemServer : ISystem
 
             Entity requestPlayer = default;
 
-            foreach (var (player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                requestPlayer = _entity;
-                break;
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
             }
 
             if (requestPlayer == Entity.Null)
@@ -337,5 +302,125 @@ public partial struct BuildingSystemServer : ISystem
             _:;
             }
         }
+    }
+
+    bool TryPlaceBuilding(FixedString32Bytes buildingName, float3 position, EntityCommandBuffer commandBuffer, NetworkId networkId, Entity player, ref SystemState state)
+    {
+        Player _player = SystemAPI.GetComponent<Player>(player);
+
+        DynamicBuffer<BufferedBuilding> buildings = SystemAPI.GetBuffer<BufferedBuilding>(SystemAPI.GetSingletonEntity<BuildingDatabase>());
+
+        BufferedBuilding building = default;
+
+        for (int i = 0; i < buildings.Length; i++)
+        {
+            if (buildings[i].Name == buildingName)
+            {
+                building = buildings[i];
+                break;
+            }
+        }
+
+        if (building.Prefab == Entity.Null)
+        {
+            Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Building \"{{0}}\" not found in the database", buildingName));
+            return false;
+        }
+
+        if (SystemAPI.TryGetComponent(building.PlaceholderPrefab, out Collider collider))
+        {
+            var map = QuadrantSystem.GetMap(ConnectionManager.ServerOrDefaultWorld.Unmanaged);
+
+            if (!TerrainGenerator.Instance.TrySampleFast(new(position.x, position.z), out position.y))
+            {
+                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Invalid position (terrain isn't loaded yet)"));
+                return false;
+            }
+
+            bool isValid = !Collision.Intersect(
+                map,
+                collider,
+                position,
+                out _,
+                out _);
+
+            if (!isValid)
+            {
+                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Invalid position (something is in the way)"));
+                return false;
+            }
+        }
+
+        Entity newEntity;
+        if (_player.InCreative)
+        {
+            newEntity = commandBuffer.Instantiate(building.Prefab);
+            commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(position));
+        }
+        else
+        {
+            if (!building.RequiredResearch.IsEmpty)
+            {
+                DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(player);
+                bool can = false;
+                foreach (var research in acquiredResearches)
+                {
+                    if (research.Name != building.RequiredResearch) continue;
+                    can = true;
+                    break;
+                }
+
+                if (!can)
+                {
+                    Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not researched", building.Name));
+                    return false;
+                }
+            }
+
+            if (_player.Resources < building.RequiredResources)
+            {
+                Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not enought resources ({{1}} < {{2}})", building.Name, _player.Resources, building.RequiredResources));
+                return false;
+            }
+
+            if (SystemAPI.HasComponent<Extractor>(building.Prefab))
+            {
+                foreach (var resource in
+                    SystemAPI.Query<RefRO<LocalTransform>>()
+                    .WithAll<ResourceNode>())
+                {
+                    if (math.distance(resource.ValueRO.Position, position) < 5f)
+                    {
+                        goto ok;
+                    }
+                }
+
+                Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": needs a resource node in 5 radius", building.Name));
+                return false;
+            ok:;
+            }
+
+            SystemAPI.GetComponentRW<Player>(player).ValueRW.Resources -= building.RequiredResources;
+
+            newEntity = commandBuffer.Instantiate(building.PlaceholderPrefab);
+            commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(position));
+            commandBuffer.SetComponent<BuildingPlaceholder>(newEntity, new()
+            {
+                BuildingName = building.Name,
+                BuildingPrefab = building.Prefab,
+                CurrentProgress = 0f,
+                TotalProgress = building.ConstructionTime,
+            });
+        }
+        commandBuffer.SetComponent<UnitTeam>(newEntity, new()
+        {
+            Team = _player.Team,
+        });
+        commandBuffer.SetComponent<GhostOwner>(newEntity, new()
+        {
+            NetworkId = networkId.Value,
+        });
+
+        return true;
     }
 }

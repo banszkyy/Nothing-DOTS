@@ -37,10 +37,10 @@ public partial class DebugLabelSystemClient : SystemBase
             NetcodeEndPoint ep = new(request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
             commandBuffer.DestroyEntity(entity);
 
-            foreach (var (player, labels) in
-                SystemAPI.Query<RefRO<Player>, DynamicBuffer<BufferedWorldLabel>>())
+            foreach (var (player, playerR, labels) in
+                SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>, DynamicBuffer<BufferedWorldLabel>>())
             {
-                if (player.ValueRO.ConnectionId != ep.ConnectionId.Value) continue;
+                if (playerR.ValueRO.ConnectionId != ep.ConnectionId.Value) continue;
                 labels.Add(new BufferedWorldLabel()
                 {
                     Position = command.ValueRO.Position,

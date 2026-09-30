@@ -156,10 +156,10 @@ public partial struct PlayerSystemClient : ISystem
             return false;
         }
 
-        foreach (var _player in
-            SystemAPI.Query<RefRO<Player>>())
+        foreach (var (_player, _playerR) in
+            SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>>())
         {
-            if (_player.ValueRO.ConnectionId != networkId.Value) continue;
+            if (_playerR.ValueRO.ConnectionId != networkId.Value) continue;
             player = _player.ValueRO;
             return true;
         }
@@ -170,12 +170,19 @@ public partial struct PlayerSystemClient : ISystem
 
     public bool TryGetLocalPlayer(out Player player)
     {
-        if (playersQ == default) playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player));
+        if (playersQ == default) playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
         if (connectionsQ == default) connectionsQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(NetworkId));
 
         if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
         {
-            return playersQ.TryGetSingleton<Player>(out player);
+            if (!playersQ.TryGetSingletonEntity<RealPlayer>(out var playerE))
+            {
+                player = default;
+                return false;
+            }
+
+            player = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Player>(playerE);
+            return true;
         }
 
         if (!connectionsQ.TryGetSingleton(out NetworkId networkId))
@@ -185,10 +192,39 @@ public partial struct PlayerSystemClient : ISystem
         }
 
         using NativeArray<Player> players = playersQ.ToComponentDataArray<Player>(Allocator.Temp);
+        using NativeArray<RealPlayer> playersR = playersQ.ToComponentDataArray<RealPlayer>(Allocator.Temp);
         for (int i = 0; i < players.Length; i++)
         {
-            if (players[i].ConnectionId != networkId.Value) continue;
+            if (playersR[i].ConnectionId != networkId.Value) continue;
             player = players[i];
+            return true;
+        }
+
+        player = default;
+        return false;
+    }
+
+    public bool TryGetLocalPlayer(out RealPlayer player)
+    {
+        if (playersQ == default) playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
+        if (connectionsQ == default) connectionsQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(NetworkId));
+
+        if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
+        {
+            return playersQ.TryGetSingleton<RealPlayer>(out player);
+        }
+
+        if (!connectionsQ.TryGetSingleton(out NetworkId networkId))
+        {
+            player = default;
+            return false;
+        }
+
+        using NativeArray<RealPlayer> playersR = playersQ.ToComponentDataArray<RealPlayer>(Allocator.Temp);
+        for (int i = 0; i < playersR.Length; i++)
+        {
+            if (playersR[i].ConnectionId != networkId.Value) continue;
+            player = playersR[i];
             return true;
         }
 
@@ -198,12 +234,12 @@ public partial struct PlayerSystemClient : ISystem
 
     public bool TryGetLocalPlayer(out Entity player)
     {
-        if (playersQ == default) playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player));
+        if (playersQ == default) playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
         if (connectionsQ == default) connectionsQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(NetworkId));
 
         if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
         {
-            return playersQ.TryGetSingletonEntity<Player>(out player);
+            return playersQ.TryGetSingletonEntity<RealPlayer>(out player);
         }
 
         if (!connectionsQ.TryGetSingleton(out NetworkId networkId))
@@ -215,7 +251,7 @@ public partial struct PlayerSystemClient : ISystem
         using NativeArray<Entity> players = playersQ.ToEntityArray(Allocator.Temp);
         for (int i = 0; i < players.Length; i++)
         {
-            if (ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Player>(players[i]).ConnectionId != networkId.Value) continue;
+            if (ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<RealPlayer>(players[i]).ConnectionId != networkId.Value) continue;
             player = players[i];
             return true;
         }
@@ -230,7 +266,7 @@ public partial struct PlayerSystemClient : ISystem
 
         if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
         {
-            using EntityQuery playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player));
+            if (playersQ == default) playersQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
             playersQ.GetSingletonRW<Player>().ValueRW.Nickname = nickname;
         }
     }

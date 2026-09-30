@@ -473,10 +473,11 @@ public partial class CompilerSystemServer : SystemBase
         {
             lock (source)
             {
+                //Debug.Log($"{DebugEx.ServerPrefix} Updating source version ({source.SourceFile} {source.CompiledVersion} -> {source.LatestVersion})");
+
                 source.Status = CompilationStatus.Generated;
                 source.Compiled = compiled;
                 source.Generated = generated;
-                Debug.Log($"{DebugEx.ServerPrefix} Updating source version ({source.CompiledVersion} -> {source.LatestVersion})");
                 source.CompiledVersion = source.LatestVersion;
                 source.IsSuccess = false;
 
@@ -541,7 +542,7 @@ public partial class CompilerSystemServer : SystemBase
                 source.UnitCommandDefinitions = new(commandDefinitions.ToArray(), Allocator.Persistent);
 
                 source.Status = CompilationStatus.Generated;
-                //Debug.Log($"{DebugEx.ServerPrefix} Updating source version ({source.CompiledVersion} -> {source.LatestVersion})");
+                //Debug.Log($"{DebugEx.ServerPrefix} Updating source version ({source.SourceFile} {source.CompiledVersion} -> {source.LatestVersion})");
                 source.CompiledVersion = source.LatestVersion;
                 source.IsSuccess = true;
                 source.Progress = float.NaN;

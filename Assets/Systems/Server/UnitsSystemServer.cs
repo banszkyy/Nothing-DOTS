@@ -20,18 +20,35 @@ public partial struct UnitsSystemServer : ISystem
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
-            (Entity Entity, Player Player) requestPlayer = default;
+            Entity requestPlayerE = default;
+            Player requestPlayer = default;
 
-            foreach (var (player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                requestPlayer = (_entity, player.ValueRO);
-                break;
+                foreach (var (player, _player, _entity) in
+                    SystemAPI.Query<RefRO<Player>, RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (_player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayerE = _entity;
+                    requestPlayer = player.ValueRO;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _player, _entity) in
+                    SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (_player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayerE = _entity;
+                    requestPlayer = player.ValueRO;
+                    break;
+                }
             }
 
-            if (requestPlayer.Entity == Entity.Null)
+            if (requestPlayerE == Entity.Null)
             {
                 Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Failed to place unit: requested by `{{0}}` but doesn't have a team", networkId));
                 continue;
@@ -57,7 +74,7 @@ public partial struct UnitsSystemServer : ISystem
             }
 
             Entity newEntity;
-            if (requestPlayer.Player.InCreative)
+            if (requestPlayer.InCreative)
             {
                 newEntity = commandBuffer.Instantiate(unit.Prefab);
                 commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(command.ValueRO.Position));
@@ -69,7 +86,7 @@ public partial struct UnitsSystemServer : ISystem
             }
             commandBuffer.SetComponent<UnitTeam>(newEntity, new()
             {
-                Team = requestPlayer.Player.Team,
+                Team = requestPlayer.Team,
             });
             commandBuffer.SetComponent<GhostOwner>(newEntity, new()
             {
@@ -87,13 +104,27 @@ public partial struct UnitsSystemServer : ISystem
 
             Entity requestPlayer = default;
 
-            foreach (var (player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                requestPlayer = _entity;
-                break;
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
             }
 
             if (requestPlayer == Entity.Null)

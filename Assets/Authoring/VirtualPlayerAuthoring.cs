@@ -1,19 +1,19 @@
 using Unity.Entities;
 using UnityEngine;
 
-[AddComponentMenu("Authoring/Player")]
-class PlayerAuthoring : MonoBehaviour
+[AddComponentMenu("Authoring/Virtual Player")]
+class VirtualPlayerAuthoring : MonoBehaviour
 {
-    class Baker : Baker<PlayerAuthoring>
+    class Baker : Baker<VirtualPlayerAuthoring>
     {
-        public override void Bake(PlayerAuthoring authoring)
+        public override void Bake(VirtualPlayerAuthoring authoring)
         {
             Entity entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent<Player>(entity, new()
             {
                 Team = Player.UnassignedTeam,
             });
-            AddComponent<RealPlayer>(entity, new());
+            AddComponent<VirtualPlayer>(entity, new());
             AddBuffer<BufferedAcquiredResearch>(entity);
         }
     }

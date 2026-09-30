@@ -35,15 +35,16 @@ partial class DebugHost
         EntityManager e = ConnectionManager.ServerOrDefaultWorld.EntityManager;
 
         {
-            using var q = e.CreateEntityQuery(typeof(Player));
+            using var q = e.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
             using var playerEntities = q.ToEntityArray(Allocator.Temp);
 
             for (int i = 0; i < playerEntities.Length; i++)
             {
                 var player = e.GetComponentData<Player>(playerEntities[i]);
+                var playerR = e.GetComponentData<RealPlayer>(playerEntities[i]);
                 if (player.Guid != guid) continue;
 
-                playerConnectionId = player.ConnectionId;
+                playerConnectionId = playerR.ConnectionId;
                 playerEntity = playerEntities[i];
                 playerTeam = player.Team;
 

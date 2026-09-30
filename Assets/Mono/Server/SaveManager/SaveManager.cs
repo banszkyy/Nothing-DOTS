@@ -737,16 +737,45 @@ static class SaveManager
         writer.Write(serverWorld.Unmanaged.GetSystem<PlayerSystemServer>().ServerGuid);
 
         {
-            EntityQuery q = entityManager.CreateEntityQuery(typeof(Player));
+            EntityQuery q = entityManager.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
             NativeArray<Entity> e = q.ToEntityArray(Allocator.Temp);
             writer.Write(e.Length);
             foreach (Entity entity in e)
             {
                 Player player = entityManager.GetComponentData<Player>(entity);
+                RealPlayer playerR = entityManager.GetComponentData<RealPlayer>(entity);
                 DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = entityManager.GetBuffer<BufferedAcquiredResearch>(entity);
 
                 writer.Write(player.Guid);
-                writer.Write(player.ConnectionState);
+                writer.Write(playerR.ConnectionState);
+                writer.Write(player.InCreative);
+                writer.Write(player.IsAdmin);
+                writer.Write(player.IsCoreComputerSpawned);
+                writer.Write(player.Nickname);
+                writer.Write(player.Outcome);
+                writer.Write(player.Resources);
+                writer.Write(player.Team);
+
+                writer.Write(acquiredResearches, (writer, i) =>
+                {
+                    writer.Write(i.Name);
+                });
+            }
+            q.Dispose();
+        }
+
+        {
+            EntityQuery q = entityManager.CreateEntityQuery(typeof(Player), typeof(VirtualPlayer));
+            NativeArray<Entity> e = q.ToEntityArray(Allocator.Temp);
+            writer.Write(e.Length);
+            foreach (Entity entity in e)
+            {
+                Player player = entityManager.GetComponentData<Player>(entity);
+                VirtualPlayer playerV = entityManager.GetComponentData<VirtualPlayer>(entity);
+                DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = entityManager.GetBuffer<BufferedAcquiredResearch>(entity);
+
+                writer.Write(player.Guid);
+                writer.Write(playerV.Index);
                 writer.Write(player.InCreative);
                 writer.Write(player.IsAdmin);
                 writer.Write(player.IsCoreComputerSpawned);
@@ -899,19 +928,22 @@ static class SaveManager
                 Entity newPlayer = commandBuffer.Instantiate(prefabs.Player);
                 Player player = new()
                 {
-                    ConnectionId = -1,
-                    ConnectionState = PlayerConnectionState.Disconnected,
                     Team = Player.UnassignedTeam,
                     IsCoreComputerSpawned = false,
                     Guid = default,
                     Nickname = default,
                 };
+                RealPlayer playerR = new()
+                {
+                    ConnectionId = -1,
+                    ConnectionState = PlayerConnectionState.Disconnected,
+                };
 
                 player.Guid = reader.ReadGuid();
                 PlayerConnectionState connectionState = (PlayerConnectionState)reader.ReadByte();
                 if (connectionState is PlayerConnectionState.Connected) connectionState = PlayerConnectionState.Disconnected;
-                if (connectionState is PlayerConnectionState.Local or PlayerConnectionState.Server) player.ConnectionId = 0;
-                player.ConnectionState = connectionState;
+                if (connectionState is PlayerConnectionState.Local or PlayerConnectionState.Server) playerR.ConnectionId = 0;
+                playerR.ConnectionState = connectionState;
                 player.InCreative = reader.ReadBool();
                 player.IsAdmin = reader.ReadBool();
                 player.IsCoreComputerSpawned = reader.ReadBool();
@@ -921,6 +953,43 @@ static class SaveManager
                 player.Team = reader.ReadInt();
 
                 commandBuffer.SetComponent(newPlayer, player);
+                commandBuffer.SetComponent(newPlayer, playerR);
+
+                reader.ReadDynamicBuffer(commandBuffer.SetBuffer<BufferedAcquiredResearch>(newPlayer), reader =>
+                {
+                    BufferedAcquiredResearch res = default;
+                    res.Name = reader.ReadFixedString64();
+                    return res;
+                });
+            }
+        }
+
+        {
+            int playerCount = reader.ReadInt();
+            for (int i = 0; i < playerCount; i++)
+            {
+                Entity newPlayer = commandBuffer.Instantiate(prefabs.VirtualPlayer);
+                Player player = new()
+                {
+                    Team = Player.UnassignedTeam,
+                    IsCoreComputerSpawned = false,
+                    Guid = default,
+                    Nickname = default,
+                };
+                VirtualPlayer playerV = new();
+
+                player.Guid = reader.ReadGuid();
+                playerV.Index = reader.ReadInt();
+                player.InCreative = reader.ReadBool();
+                player.IsAdmin = reader.ReadBool();
+                player.IsCoreComputerSpawned = reader.ReadBool();
+                player.Nickname = reader.ReadFixedString32();
+                player.Outcome = (GameOutcome)reader.ReadByte();
+                player.Resources = reader.ReadFloat();
+                player.Team = reader.ReadInt();
+
+                commandBuffer.SetComponent(newPlayer, player);
+                commandBuffer.SetComponent(newPlayer, playerV);
 
                 reader.ReadDynamicBuffer(commandBuffer.SetBuffer<BufferedAcquiredResearch>(newPlayer), reader =>
                 {

@@ -151,14 +151,15 @@ public class ChatManager : Singleton<ChatManager>
             if (item.Sender > 0)
             {
                 EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
-                using EntityQuery playersQ = entityManager.CreateEntityQuery(typeof(Player));
+                using EntityQuery playersQ = entityManager.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
                 using NativeArray<Player> players = playersQ.ToComponentDataArray<Player>(Allocator.Temp);
+                using NativeArray<RealPlayer> playersR = playersQ.ToComponentDataArray<RealPlayer>(Allocator.Temp);
 
                 string? senderDisplayName = null;
 
                 for (int i = 0; i < players.Length; i++)
                 {
-                    if (players[i].ConnectionId != item.Sender) continue;
+                    if (playersR[i].ConnectionId != item.Sender) continue;
                     senderDisplayName = players[i].Nickname.ToString();
                     break;
                 }

@@ -70,20 +70,20 @@ partial class ProcessorSourceSystemServer : SystemBase
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             commandBuffer.DestroyEntity(entity);
 
+            NetcodeEndPoint ep;
+            if (request.ValueRO.SourceConnection == default)
+            {
+                ep = NetcodeEndPoint.Server;
+            }
+            else
+            {
+                ep = new(SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
+                if (!World.IsServer()) ep = NetcodeEndPoint.Server;
+            }
+
             foreach (var (ghostInstance, processor) in
                 SystemAPI.Query<RefRO<GhostInstance>, RefRW<Processor>>())
             {
-                NetcodeEndPoint ep;
-                if (request.ValueRO.SourceConnection == default)
-                {
-                    ep = NetcodeEndPoint.Server;
-                }
-                else
-                {
-                    ep = new(SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
-                    if (!World.IsServer()) ep = NetcodeEndPoint.Server;
-                }
-
                 if (!command.ValueRO.Entity.Equals(ghostInstance.ValueRO)) continue;
 
                 processor.ValueRW.SourceFile = new FileId(command.ValueRO.Source, ep);

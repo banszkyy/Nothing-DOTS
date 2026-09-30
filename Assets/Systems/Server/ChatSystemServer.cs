@@ -20,14 +20,16 @@ public partial struct ChatSystemServer : ISystem
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
             Player senderPlayer = default;
+            RealPlayer senderPlayerR = default;
             Entity senderPlayerE = default;
-            foreach (var (player, playerE) in
-                SystemAPI.Query<RefRO<Player>>()
+            foreach (var (player, playerR, playerE) in
+                SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>>()
                 .WithEntityAccess())
             {
-                if (player.ValueRO.ConnectionId == networkId.Value)
+                if (playerR.ValueRO.ConnectionId == networkId.Value)
                 {
                     senderPlayer = player.ValueRO;
+                    senderPlayerR = playerR.ValueRO;
                     senderPlayerE = playerE;
                     break;
                 }
@@ -52,7 +54,7 @@ public partial struct ChatSystemServer : ISystem
                 ReadOnlySpan<byte> cmd = message.AsSpan()[1..];
                 if (cmd.SequenceEqual("creative"u8))
                 {
-                    if (senderPlayer.ConnectionState is PlayerConnectionState.Local or PlayerConnectionState.Server || senderPlayer.IsAdmin)
+                    if (senderPlayerR.ConnectionState is PlayerConnectionState.Local or PlayerConnectionState.Server || senderPlayer.IsAdmin)
                     {
                         SystemAPI.GetComponentRW<Player>(senderPlayerE).ValueRW.InCreative = true;
                         NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ChatMessageNotificationRpc()
@@ -74,7 +76,7 @@ public partial struct ChatSystemServer : ISystem
                 }
                 else if (cmd.StartsWith("research"u8))
                 {
-                    if (senderPlayer.ConnectionState is PlayerConnectionState.Local or PlayerConnectionState.Server || senderPlayer.IsAdmin)
+                    if (senderPlayerR.ConnectionState is PlayerConnectionState.Local or PlayerConnectionState.Server || senderPlayer.IsAdmin)
                     {
                         ReadOnlySpan<byte> arg = cmd["research".Length..].TrimStart();
                         if (arg.SequenceEqual("all"u8))

@@ -436,7 +436,7 @@ partial class FileChunkManagerSystem : SystemBase
         string? path = ResolveFile(fileName);
         if (path != null)
         {
-            return FileData.FromLocal(Path.Combine(BasePath, "." + fileName));
+            return FileData.FromLocal(path);
         }
         else
         {

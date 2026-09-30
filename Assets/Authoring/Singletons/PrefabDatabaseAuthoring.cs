@@ -15,6 +15,7 @@ class PrefabDatabaseAuthoring : MonoBehaviour
             AddComponent<PrefabDatabase>(entity, new()
             {
                 Player = GetEntity(authoring.Prefabs.PlayerPrefab, TransformUsageFlags.Dynamic),
+                VirtualPlayer = GetEntity(authoring.Prefabs.VirtualPlayerPrefab, TransformUsageFlags.Dynamic),
                 CoreComputer = GetEntity(authoring.Prefabs.CoreComputerPrefab, TransformUsageFlags.Dynamic),
                 Builder = GetEntity(authoring.Prefabs.Builder.Prefab, TransformUsageFlags.Dynamic),
                 Resource = GetEntity(authoring.Prefabs.Resource, TransformUsageFlags.Dynamic),

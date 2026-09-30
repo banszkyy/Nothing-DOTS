@@ -29,26 +29,41 @@ public partial struct FactorySystemServer : ISystem
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
-            Entity playerE = default;
-            Player player = default;
+            Entity requestPlayerE = default;
+            Player requestPlayer = default;
 
-            foreach (var (_player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (_player.ValueRO.ConnectionId != networkId.Value) continue;
-                playerE = _entity;
-                player = _player.ValueRO;
-                break;
+                foreach (var (player, _player, _entity) in
+                    SystemAPI.Query<RefRO<Player>, RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (_player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayerE = _entity;
+                    requestPlayer = player.ValueRO;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _player, _entity) in
+                    SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (_player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayerE = _entity;
+                    requestPlayer = player.ValueRO;
+                    break;
+                }
             }
 
-            if (playerE == Entity.Null)
+            if (requestPlayerE == Entity.Null)
             {
                 Debug.LogError(string.Format($"{DebugEx.ServerPrefix} Failed to queue unit: requested by {{0}} but doesn't have a team", networkId));
                 continue;
             }
 
-            DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(playerE);
+            DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayerE);
 
             foreach (var (ghostInstance, ghostEntity) in
                 SystemAPI.Query<RefRO<GhostInstance>>()
@@ -88,19 +103,13 @@ public partial struct FactorySystemServer : ISystem
                     }
                 }
 
-                if (player.Resources < unit.RequiredResources)
+                if (requestPlayer.Resources < unit.RequiredResources)
                 {
-                    Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Can't queue unit \"{{0}}\": not enought resources ({{1}} < {{2}})", unit.Name, player.Resources, unit.RequiredResources));
+                    Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Can't queue unit \"{{0}}\": not enought resources ({{1}} < {{2}})", unit.Name, requestPlayer.Resources, unit.RequiredResources));
                     break;
                 }
 
-                foreach (var _player in
-                    SystemAPI.Query<RefRW<Player>>())
-                {
-                    if (_player.ValueRO.ConnectionId != networkId.Value) continue;
-                    _player.ValueRW.Resources -= unit.RequiredResources;
-                    break;
-                }
+                SystemAPI.GetComponentRW<Player>(requestPlayerE).ValueRW.Resources -= unit.RequiredResources;
 
                 SystemAPI.GetBuffer<BufferedProducingUnit>(ghostEntity).Add(new BufferedProducingUnit()
                 {

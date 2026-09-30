@@ -18,6 +18,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
     public static World ClientOrDefaultWorld => NetcodeBootstrap.ClientWorld ?? NetcodeBootstrap.LocalWorld ?? World.DefaultGameObjectInjectionWorld;
     public static World ServerOrDefaultWorld => NetcodeBootstrap.ServerWorld ?? NetcodeBootstrap.LocalWorld ?? World.DefaultGameObjectInjectionWorld;
     public static World StagingOrDefaultWorld => NetcodeBootstrap.StagingWorld ?? NetcodeBootstrap.LocalWorld ?? World.DefaultGameObjectInjectionWorld;
+    public static World? HostWorld => NetcodeBootstrap.ServerWorld ?? NetcodeBootstrap.LocalWorld;
 
     [SerializeField, NotNull] GameObject? ServerObjects = default;
     [SerializeField, NotNull] GameObject? ClientObjects = default;

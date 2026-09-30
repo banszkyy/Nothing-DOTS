@@ -61,7 +61,7 @@ public partial struct RelevancySphereISystemServer : ISystem
         Connections.Clear();
 
         foreach (var player in
-            SystemAPI.Query<RefRO<Player>>())
+            SystemAPI.Query<RefRO<RealPlayer>>())
         {
             if (player.ValueRO.ConnectionState is not PlayerConnectionState.Connected and not PlayerConnectionState.Local) continue;
             Connections.Add(new ConnectionRelevancy()

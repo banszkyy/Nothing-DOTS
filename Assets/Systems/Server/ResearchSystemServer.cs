@@ -21,13 +21,27 @@ public partial struct ResearchSystemServer : ISystem
 
             Entity requestPlayer = default;
 
-            foreach (var (player, _entity) in
-                SystemAPI.Query<RefRO<Player>>()
-                .WithEntityAccess())
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                requestPlayer = _entity;
-                break;
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.ConnectionId != networkId.Value) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
             }
 
             if (requestPlayer == Entity.Null)

@@ -18,7 +18,7 @@ partial struct PingSystemClient : ISystem
             commandBuffer.DestroyEntity(entity);
 
             foreach (var player in
-                SystemAPI.Query<RefRW<Player>>())
+                SystemAPI.Query<RefRW<RealPlayer>>())
             {
                 if (player.ValueRO.ConnectionId != command.ValueRO.Source) continue;
 
@@ -61,7 +61,7 @@ partial struct PingSystemClient : ISystem
         }
 
         foreach (var player in
-            SystemAPI.Query<RefRW<Player>>())
+            SystemAPI.Query<RefRW<RealPlayer>>())
         {
             if ((player.ValueRO.PingResponded == 0 || TimeSpan.FromTicks(now - player.ValueRO.PingResponded).TotalSeconds > 2) && TimeSpan.FromTicks(now - player.ValueRO.PingRequested).TotalSeconds > 2)
             {

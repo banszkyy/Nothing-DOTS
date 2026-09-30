@@ -37,7 +37,7 @@ partial struct DebugLinesSystemClient : ISystem
             commandBuffer.DestroyEntity(entity);
 
             foreach (var (player, lines) in
-                SystemAPI.Query<RefRO<Player>, DynamicBuffer<BufferedLine>>())
+                SystemAPI.Query<RefRO<RealPlayer>, DynamicBuffer<BufferedLine>>())
             {
                 if (player.ValueRO.ConnectionId != ep.ConnectionId.Value) continue;
                 lines.Add(new BufferedLine()

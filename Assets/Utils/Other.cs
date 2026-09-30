@@ -13,6 +13,27 @@ public static partial class Utils
 
     public static T GetSystem<T>(this World world) where T : ComponentSystemBase => world.GetExistingSystemManaged<T>();
 
+    public static T GetSingleton<T>(this EntityManager entityManager) where T : unmanaged, IComponentData
+    {
+        using EntityQuery q = entityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
+        return q.GetSingleton<T>();
+    }
+
+
+    public static bool TryGetComponentData<T>(this EntityManager entityManager, Entity entity, out T component) where T : unmanaged, IComponentData
+    {
+        if (entityManager.HasComponent<T>(entity))
+        {
+            component = entityManager.GetComponentData<T>(entity);
+            return true;
+        }
+        else
+        {
+            component = default;
+            return false;
+        }
+    }
+
     public static void GetAllComponents<T>(this GameObject o, List<T> result, bool includeInactive = false)
     {
         o.GetComponents(result);

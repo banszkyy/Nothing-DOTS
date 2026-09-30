@@ -20,12 +20,28 @@ partial struct UnitLogSystemServer : ISystem
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
 
             int sourceTeam = -1;
-            foreach (var player in
-                SystemAPI.Query<RefRO<Player>>())
+
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                if (player.ValueRO.ConnectionId != networkId.Value) continue;
-                sourceTeam = player.ValueRO.Team;
-                break;
+                foreach (var (player, _player, _entity) in
+                    SystemAPI.Query<RefRO<Player>, RefRO<VirtualPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (_player.ValueRO.Index != virtualRpc.PlayerIndex) continue;
+                    sourceTeam = player.ValueRO.Team;
+                    break;
+                }
+            }
+            else
+            {
+                foreach (var (player, _player, _entity) in
+                    SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>>()
+                    .WithEntityAccess())
+                {
+                    if (_player.ValueRO.ConnectionId != networkId.Value) continue;
+                    sourceTeam = player.ValueRO.Team;
+                    break;
+                }
             }
 
             if (sourceTeam == -1)

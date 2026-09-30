@@ -41,6 +41,14 @@ public static class NetcodeUtils
     }
 
     [BurstCompile]
+    public static void CreateFakeRPC<T>(in WorldUnmanaged world, in T componentData, int playerIndex)
+        where T : unmanaged, IComponentData
+    {
+        CreateFakeRPCImpl(in world, ComponentType.ReadWrite<T>(), playerIndex, out Entity entity);
+        world.EntityManager.SetComponentData(entity, componentData);
+    }
+
+    [BurstCompile]
     static void CreateRPCImpl(in WorldUnmanaged world, in ComponentType componentType, in Entity connectionEntity, out Entity result)
     {
         if (world.IsClient() || world.IsServer())
@@ -58,12 +66,25 @@ public static class NetcodeUtils
             result = world.EntityManager.CreateEntity(stackalloc ComponentType[]
             {
                 componentType,
-                ComponentType.ReadOnly<SendRpcCommandRequest>(),
                 ComponentType.ReadWrite<ReceiveRpcCommandRequest>(),
             });
 
             world.EntityManager.SetComponentData(result, new ReceiveRpcCommandRequest() { SourceConnection = connectionEntity });
         }
+    }
+
+    [BurstCompile]
+    static void CreateFakeRPCImpl(in WorldUnmanaged world, in ComponentType componentType, int playerIndex, out Entity result)
+    {
+        result = world.EntityManager.CreateEntity(stackalloc ComponentType[]
+        {
+            componentType,
+            ComponentType.ReadWrite<ReceiveRpcCommandRequest>(),
+            ComponentType.ReadWrite<VirtualRpc>(),
+        });
+
+        world.EntityManager.SetComponentData(result, new ReceiveRpcCommandRequest());
+        world.EntityManager.SetComponentData(result, new VirtualRpc() { PlayerIndex = playerIndex });
     }
 
     [BurstCompile]
