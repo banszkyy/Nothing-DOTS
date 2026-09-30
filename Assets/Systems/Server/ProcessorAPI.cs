@@ -9,7 +9,6 @@ using AOT;
 using LanguageCore.Runtime;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Profiling;
 using FunctionScope = ProcessorSystemServer.FunctionScope;
@@ -58,11 +57,6 @@ static unsafe class ProcessorAPI
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(GUI.Destroy).Value, GUI.Prefix + 2, ExternalFunctionGenerator.SizeOf<int>(), 0, default));
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(GUI.Update).Value, GUI.Prefix + 3, ExternalFunctionGenerator.SizeOf<int>(), 0, default));
 
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Pendrive.TryPlug).Value, Pendrive.Prefix + 1, 0, 0, default));
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Pendrive.TryUnplug).Value, Pendrive.Prefix + 2, 0, 0, default));
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Pendrive.Read).Value, Pendrive.Prefix + 3, ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>(), default));
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Pendrive.Write).Value, Pendrive.Prefix + 4, ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>(), default));
-
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Attributes.QueryAttribute).Value, Attributes.Prefix + 1, ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>(), default));
     }
 
@@ -105,11 +99,6 @@ static unsafe class ProcessorAPI
         new ExternalFunctionStub(GUI.Prefix + 2,               "gui_destroy", ExternalFunctionGenerator.SizeOf<int>(), 0),
         new ExternalFunctionStub(GUI.Prefix + 3,               "gui_update", ExternalFunctionGenerator.SizeOf<int>(), 0),
 
-        new ExternalFunctionStub(Pendrive.Prefix + 1,          "pendrive_plug", 0, 0),
-        new ExternalFunctionStub(Pendrive.Prefix + 2,          "pendrive_unplug", 0, 0),
-        new ExternalFunctionStub(Pendrive.Prefix + 3,          "pendrive_read", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
-        new ExternalFunctionStub(Pendrive.Prefix + 4,          "pendrive_write", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
-
         new ExternalFunctionStub(Attributes.Prefix + 1,        "attributes_query", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
     };
 
@@ -121,7 +110,6 @@ static unsafe class ProcessorAPI
         public const int Prefix = 0x00010000;
 
         public static readonly Unity.Mathematics.Random SharedRandom = Unity.Mathematics.Random.CreateFromIndex(420);
-        static readonly ProfilerMarker MarkerRandom = new("ProcessorSystemServer.External.other");
 
         [BurstCompile]
         [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
@@ -835,169 +823,6 @@ static unsafe class ProcessorAPI
             }
         }
     }
-
-    [BurstCompile]
-    public static class Pendrive
-    {
-        public const int Prefix = 0x00090000;
-
-        [BurstCompile]
-        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
-        public static void TryPlug(nint _scope, nint arguments, nint returnValue)
-        {
-            FunctionScope* scope = (FunctionScope*)_scope;
-            scope->EntityRef.Processor->PendrivePlugRequested = true;
-        }
-
-        [BurstCompile]
-        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
-        public static void TryUnplug(nint _scope, nint arguments, nint returnValue)
-        {
-            FunctionScope* scope = (FunctionScope*)_scope;
-            scope->EntityRef.Processor->PendriveUnplugRequested = true;
-        }
-
-        [BurstCompile]
-        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
-        public static void Read(nint _scope, nint arguments, nint returnValue)
-        {
-            (int source, int destination, int length) = ExternalFunctionGenerator.TakeParameters<int, int, int>(arguments);
-            FunctionScope* scope = (FunctionScope*)_scope;
-
-            if (scope->EntityRef.Processor->PluggedPendrive.Entity == Entity.Null || source < 0 || source >= 1024 || destination <= 0 || length <= 0 || length > 1024)
-            {
-                returnValue.Set(0);
-                return;
-            }
-
-            scope->EntityRef.Processor->PluggedPendrive.Pendrive.Span.Slice(source, length).CopyTo(scope->ProcessorRef.MemorySpan[destination..]);
-            scope->EntityRef.Processor->USBLED.Blink();
-
-            returnValue.Set(1);
-        }
-
-        [BurstCompile]
-        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
-        public static void Write(nint _scope, nint arguments, nint returnValue)
-        {
-            (int source, int destination, int length) = ExternalFunctionGenerator.TakeParameters<int, int, int>(arguments);
-            FunctionScope* scope = (FunctionScope*)_scope;
-
-            if (scope->EntityRef.Processor->PluggedPendrive.Entity == Entity.Null || destination < 0 || destination >= 1024 || source <= 0 || length <= 0 || length > 1024)
-            {
-                returnValue.Set(0);
-                return;
-            }
-
-            scope->ProcessorRef.MemorySpan.Slice(source, length).CopyTo(scope->EntityRef.Processor->PluggedPendrive.Pendrive.Span[destination..]);
-            scope->EntityRef.Processor->PluggedPendrive.Write = true;
-            scope->EntityRef.Processor->USBLED.Blink();
-
-            returnValue.Set(1);
-        }
-    }
-
-    /*
-    [BurstCompile]
-    public static class Construction
-    {
-        public const int Prefix = 0x000a0000;
-
-        [BurstCompile]
-        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
-        public static void Place(nint _scope, nint arguments, nint returnValue)
-        {
-            (float2 position, int namePtr) = ExternalFunctionGenerator.TakeParameters<float2, int>(arguments);
-            FunctionScope* scope = (FunctionScope*)_scope;
-
-            (Entity Entity, Player Player) requestPlayer = default;
-
-            var playersQ = World.DefaultGameObjectInjectionWorld.EntityManager.CreateEntityQuery(new EntityQueryBuilder(Allocator.TempJob)
-                .WithAllRW<Player>());
-
-            var players = playersQ.ToComponentDataArray<Player>(Allocator.TempJob);
-            var playerEntities = playersQ.ToEntityArray(Allocator.TempJob);
-
-            for (int i = 0; i < players.Length; i++)
-            {
-                if (players[i].Team != scope->EntityRef.Team.Team) continue;
-                requestPlayer = (playerEntities[i], players[i]);
-                break;
-            }
-
-            if (requestPlayer.Entity == Entity.Null)
-            {
-                UnityEngine.Debug.LogError("Failed to place building: player doesn't have a team");
-                return;
-            }
-
-            //World.DefaultGameObjectInjectionWorld.EntityManager.
-
-            DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayer.Entity);
-            DynamicBuffer<BufferedBuilding> buildings = SystemAPI.GetBuffer<BufferedBuilding>(SystemAPI.GetSingletonEntity<BuildingDatabase>());
-
-            BufferedBuilding building = default;
-
-            for (int i = 0; i < buildings.Length; i++)
-            {
-                if (buildings[i].Name == command.BuildingName)
-                {
-                    building = buildings[i];
-                    break;
-                }
-            }
-
-            if (building.Prefab == Entity.Null)
-            {
-                Debug.LogWarning($"{DebugEx.ServerPrefix} Building \"{command.BuildingName}\" not found in the database");
-                continue;
-            }
-
-            if (!building.RequiredResearch.IsEmpty)
-            {
-                bool can = false;
-                foreach (var research in acquiredResearches)
-                {
-                    if (research.Name != building.RequiredResearch) continue;
-                    can = true;
-                    break;
-                }
-
-                if (!can)
-                {
-                    Debug.LogWarning($"{DebugEx.ServerPrefix} Can't place building \"{building.Name}\": not researched");
-                    continue;
-                }
-            }
-
-            if (requestPlayer.Player.Resources < building.RequiredResources)
-            {
-                Debug.LogWarning($"{DebugEx.ServerPrefix} Can't place building \"{building.Name}\": not enought resources ({requestPlayer.Player.Resources} < {building.RequiredResources})");
-                break;
-            }
-
-            foreach (var _player in
-                SystemAPI.Query<RefRW<Player>>())
-            {
-                if (_player.ConnectionId != networkId.Value) continue;
-                _player.ValueRW.Resources -= building.RequiredResources;
-                break;
-            }
-
-            Entity newEntity = BuildingSystemServer.PlaceBuilding(commandBuffer, building, command.Position);
-            commandBuffer.SetComponent<UnitTeam>(newEntity, new()
-            {
-                Team = requestPlayer.Player.Team,
-            });
-            commandBuffer.SetComponent<GhostOwner>(newEntity, new()
-            {
-                NetworkId = networkId.Value,
-            });
-
-            returnValue.Set(0);
-        }
-    }
-    */
 
     [BurstCompile]
     public static class Attributes

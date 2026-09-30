@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PlayerPrefab: {fileID: 3425909852624401331, guid: 71f673ee2f763e7bc877987e74e01299,
     type: 3}
+  VirtualPlayerPrefab: {fileID: 3425909852624401331, guid: 74844798ae352d277a031e4840ef7587,
+    type: 3}
   CoreComputerPrefab: {fileID: 4988928766331271095, guid: 0691a3b3c438f1b17982bff2e95e5d91,
     type: 3}
   Resource: {fileID: 6334593378185089363, guid: 5b4b7aeb8300291c29331478debf9697,

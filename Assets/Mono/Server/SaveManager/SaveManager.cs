@@ -473,8 +473,6 @@ static class SaveManager
                         writer.WriteUnsafe(v.Id);
                         writer.WriteUnsafe(v.Data);
                     });
-                    writer.Write(v.PendrivePlugRequested);
-                    writer.Write(v.PendriveUnplugRequested);
                     writer.Write(v.IsKeyRequested);
                     writer.WriteUnsafe(v.InputKey);
                     writer.Write(v.RadarRequest);
@@ -513,8 +511,6 @@ static class SaveManager
                         FixedList32Bytes<byte> data = reader.ReadFixedList32Unsafe<byte>();
                         return new UnitCommandRequest(id, data);
                     });
-                    v.PendrivePlugRequested = reader.ReadBool();
-                    v.PendriveUnplugRequested = reader.ReadBool();
                     v.IsKeyRequested = reader.ReadBool();
                     v.InputKey = reader.ReadFixedList128Unsafe<byte>();
                     v.RadarRequest = reader.ReadFloat2();

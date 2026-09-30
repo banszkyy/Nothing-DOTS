@@ -6,7 +6,7 @@ export void stop_moving()
     Vehicle.forward = (i8)0;
 }
 
-export void move_to(float targetX, float targetZ)
+export bool move_to(float targetX, float targetZ)
 {
     float2 forward = new float2(GPS.forward.x, GPS.forward.z);
     float2 position = new float2(GPS.position.x, GPS.position.z);
@@ -26,6 +26,7 @@ export void move_to(float targetX, float targetZ)
     {
         Vehicle.steer = (i8)0;
         Vehicle.forward = (i8)0;
+        return false;
     }
     else if (t4 > 0.1f)
     {
@@ -50,4 +51,5 @@ export void move_to(float targetX, float targetZ)
         if (d > 127f) { d = 127f; }
         Vehicle.forward = (i8)(int)d;
     }
+    return true;
 }

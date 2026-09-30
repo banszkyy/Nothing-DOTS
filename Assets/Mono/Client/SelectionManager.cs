@@ -399,13 +399,6 @@ public class SelectionManager : Singleton<SelectionManager>
             return true;
         }
 
-        if (entityManager.HasComponent<Pendrive>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.DiskDrive)
-                .Setup(DiskDriveManager.Instance, entity);
-            return true;
-        }
-
         if (entityManager.HasComponent<Building>(entity))
         {
             UIManager.Instance.OpenUI(UIManager.Instance.Unit)

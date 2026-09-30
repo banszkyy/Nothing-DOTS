@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using SaintsField;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
@@ -34,6 +35,7 @@ public class ChatManager : Singleton<ChatManager>
     ChatSchema? ui = default;
 
     [SerializeField, NotNull] VisualTreeAsset? _chatMessageTemplate = default;
+    [SerializeField, Min(0), PostFieldRichLabel("sec")] float MessageVisibleTime = 1f;
 
     readonly List<ChatMessage> _chatMessages = new();
 
@@ -55,8 +57,8 @@ public class ChatManager : Singleton<ChatManager>
             foreach (VisualElement child in ui.ContainerMessages.Children())
             {
                 ChatMessage message = (ChatMessage)child.userData;
-                child.EnableInClassList("old", (now - message.Time).TotalSeconds > 3);
-                child.EnableInClassList("very-old", (now - message.Time).TotalSeconds > 4);
+                child.EnableInClassList("old", (now - message.Time).TotalSeconds > MessageVisibleTime);
+                child.EnableInClassList("very-old", (now - message.Time).TotalSeconds > MessageVisibleTime + 1);
             }
         }
 

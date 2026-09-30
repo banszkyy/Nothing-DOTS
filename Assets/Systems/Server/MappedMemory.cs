@@ -106,15 +106,6 @@ public struct MappedMemory_GPS
 /// Size: 1
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct MappedMemory_Pendrive
-{
-    public bool IsPlugged;
-}
-
-/// <summary>
-/// Size: 1
-/// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct MappedMemory_Facility
 {
     public const u8 SignalEnqueueHash = 1;
@@ -130,12 +121,11 @@ public struct MappedMemory_Facility
 public struct MappedMemory
 {
     [FieldOffset(0)] public MappedMemory_GPS GPS;
-    [FieldOffset(24)] public MappedMemory_Pendrive Pendrive;
-    [FieldOffset(25)] public MappedMemory_Radar Radar;
-    [FieldOffset(45)] public MappedMemory_Vehicle Vehicle;
-    [FieldOffset(47)] public MappedMemory_LEDS Leds;
+    [FieldOffset(24)] public MappedMemory_Radar Radar;
+    [FieldOffset(44)] public MappedMemory_Vehicle Vehicle;
+    [FieldOffset(46)] public MappedMemory_LEDS Leds;
 
-    const int GenericModulesSize = 48;
+    const int GenericModulesSize = 47;
 
     [FieldOffset(GenericModulesSize)] public MappedMemory_CombatTurret CombatTurret;
     [FieldOffset(GenericModulesSize)] public MappedMemory_Extractor Extractor;

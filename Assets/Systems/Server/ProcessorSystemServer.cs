@@ -526,8 +526,6 @@ partial struct ProcessorJob : IJobEntity
         //memory.CopyFrom(new Span<byte>(Unsafe.AsPointer(ref processor.Memory), Processor.TotalMemorySize).ToArray());
         Span<byte> memory = new(Unsafe.AsPointer(ref processor.Memory), Processor.TotalMemorySize);
 
-        processor.Memory.MappedMemory.Pendrive.IsPlugged = processor.PluggedPendrive.Entity != Entity.Null;
-
         FixedList128Bytes<BufferedLogPiece> log = new();
         ProcessorSystemServer.FunctionScope scope = new()
         {

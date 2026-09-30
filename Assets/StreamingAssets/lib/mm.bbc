@@ -52,11 +52,6 @@ struct MappedMemory_GPS
     float3 forward;
 }
 
-struct MappedMemory_Pendrive
-{
-    byte plugged;
-}
-
 struct MappedMemory_Facility
 {
     byte signal;
@@ -67,21 +62,19 @@ export alias TechnologyHash byte[30];
 
 
 const int TotalMemorySize = 2048;
-const int HeapSize = 512;
 const int StackSize = 1024;
 
 const int UserMemorySize = StackSize + HeapSize;
 const int MappedMemoryStart = UserMemorySize;
 const int MappedMemorySize = TotalMemorySize - UserMemorySize;
 
-const int GenericModulesSize = sizeof(MappedMemory_GPS) + sizeof(MappedMemory_Pendrive) + sizeof(MappedMemory_Radar) + sizeof(MappedMemory_Vehicle) + sizeof(MappedMemory_Leds);
+const int GenericModulesSize = sizeof(MappedMemory_GPS) + sizeof(MappedMemory_Radar) + sizeof(MappedMemory_Vehicle) + sizeof(MappedMemory_Leds);
 
 
 [MSILIncompatible] export const MappedMemory_GPS*            GPS =             MappedMemoryStart + 0;
-[MSILIncompatible] export const MappedMemory_Pendrive*       Pendrive =        MappedMemoryStart + sizeof(MappedMemory_GPS);
-[MSILIncompatible] export const MappedMemory_Radar*          Radar =           Pendrive + sizeof(MappedMemory_Pendrive);
+[MSILIncompatible] export const MappedMemory_Radar*          Radar =           GPS + sizeof(MappedMemory_GPS);
 [MSILIncompatible] export const MappedMemory_Vehicle*        Vehicle =         Radar + sizeof(MappedMemory_Radar);
-[MSILIncompatible] export const MappedMemory_Leds*           LEDs =         Vehicle + sizeof(MappedMemory_Vehicle);
+[MSILIncompatible] export const MappedMemory_Leds*           LEDs =            Vehicle + sizeof(MappedMemory_Vehicle);
 
 [MSILIncompatible] export const MappedMemory_CombatTurret*   CombatTurret =    MappedMemoryStart + GenericModulesSize;
 [MSILIncompatible] export const MappedMemory_Extractor*      Extractor =       MappedMemoryStart + GenericModulesSize;
@@ -96,6 +89,4 @@ const int GenericModulesSize = sizeof(MappedMemory_GPS) + sizeof(MappedMemory_Pe
 *Transporter = new MappedMemory_Transporter;
 *Radar = new MappedMemory_Radar;
 *GPS = new MappedMemory_GPS;
-*Pendrive = new MappedMemory_Pendrive;
 *Facility = new MappedMemory_Facility;
-

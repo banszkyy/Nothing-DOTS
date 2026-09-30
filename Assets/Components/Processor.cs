@@ -133,10 +133,6 @@ struct Processor : IComponentData
     public FixedList128Bytes<BufferedUnitTransmissionOutgoing> OutgoingTransmissions;
     public FixedList128Bytes<UnitCommandRequest> CommandQueue;
 
-    public bool PendrivePlugRequested;
-    public bool PendriveUnplugRequested;
-    public (bool Write, Pendrive Pendrive, Entity Entity) PluggedPendrive;
-
     public bool IsKeyRequested;
     public FixedList128Bytes<byte> InputKey;
 
