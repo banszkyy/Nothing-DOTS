@@ -130,6 +130,7 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
         {
             Unit = unit.Name,
             Entity = ghostInstance,
+            Source = default,
         });
 
         if (selectedFactory.TotalProgress == default)
@@ -138,7 +139,7 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
             {
                 Name = unit.Name,
                 Prefab = unit.Prefab,
-                ProductionTime = unit.ProductionTime
+                ProductionTime = unit.ProductionTime,
             };
             selectedFactory.CurrentProgress = 0f;
             selectedFactory.TotalProgress = unit.ProductionTime;
@@ -150,7 +151,7 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
             {
                 Name = unit.Name,
                 Prefab = unit.Prefab,
-                ProductionTime = unit.ProductionTime
+                ProductionTime = unit.ProductionTime,
             });
         }
         refreshAt = Time.time + .1f;

@@ -21,6 +21,7 @@ public partial struct BuildingSystemServer : ISystem
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
+            NetcodeEndPoint ep = new(networkId, request.ValueRO.SourceConnection);
 
             Entity requestPlayer = default;
 
@@ -53,7 +54,7 @@ public partial struct BuildingSystemServer : ISystem
                 continue;
             }
 
-            TryPlaceBuilding(command.ValueRO.BuildingName, command.ValueRO.Position, commandBuffer, networkId, requestPlayer, ref state);
+            TryPlaceBuilding(command.ValueRO.BuildingName, command.ValueRO.Position, new(command.ValueRO.Source, ep), commandBuffer, networkId, requestPlayer, ref state);
         }
 
         foreach (var (request, command, entity) in
@@ -235,6 +236,13 @@ public partial struct BuildingSystemServer : ISystem
             {
                 Team = unitTeam.ValueRO.Team,
             });
+            if (placeholder.ValueRO.Source != default)
+            {
+                commandBuffer.AddComponent<ProcessorInitialization>(newEntity, new()
+                {
+                    SourceFile = placeholder.ValueRO.Source,
+                });
+            }
 
             commandBuffer.DestroyEntity(entity);
         }
@@ -304,7 +312,7 @@ public partial struct BuildingSystemServer : ISystem
         }
     }
 
-    bool TryPlaceBuilding(FixedString32Bytes buildingName, float3 position, EntityCommandBuffer commandBuffer, NetworkId networkId, Entity player, ref SystemState state)
+    bool TryPlaceBuilding(FixedString32Bytes buildingName, float3 position, FileId source, EntityCommandBuffer commandBuffer, NetworkId networkId, Entity player, ref SystemState state)
     {
         Player _player = SystemAPI.GetComponent<Player>(player);
 
@@ -356,6 +364,13 @@ public partial struct BuildingSystemServer : ISystem
         {
             newEntity = commandBuffer.Instantiate(building.Prefab);
             commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(position));
+            if (source != default)
+            {
+                commandBuffer.AddComponent<ProcessorInitialization>(newEntity, new()
+                {
+                    SourceFile = source,
+                });
+            }
         }
         else
         {
@@ -410,6 +425,7 @@ public partial struct BuildingSystemServer : ISystem
                 BuildingPrefab = building.Prefab,
                 CurrentProgress = 0f,
                 TotalProgress = building.ConstructionTime,
+                Source = source,
             });
         }
         commandBuffer.SetComponent<UnitTeam>(newEntity, new()

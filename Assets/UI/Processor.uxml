@@ -7,15 +7,15 @@
     <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement style="flex-grow: 1;">
         <ui:VisualElement style="flex-direction: row;">
-            <ui:ProgressBar value="0" title="Loading ..." name="progress-compilation" high-value="1" tooltip="Processor Status" class="label-left" style="flex-grow: 1;"/>
-            <ui:Button text="\uf04c" name="button-halt" parse-escape-sequences="true" tooltip="Halt Processor" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-            <ui:Button text="\uf2f9" name="button-reset" parse-escape-sequences="true" tooltip="Restart Processor" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-            <ui:Button text="\uf04b" name="button-continue" parse-escape-sequences="true" tooltip="Continue Processor" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 20px; height: 20px;"/>
-            <ui:Button text="\uf188" name="button-start-debug" parse-escape-sequences="true" tooltip="Debug" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
+            <ui:ProgressBar value="0" title="Loading ..." name="progress-compilation" high-value="1" class="label-left" style="flex-grow: 1;"/>
+            <ui:Button text="\udb80\udfe4" name="button-halt" parse-escape-sequences="true" tooltip="Halt Processor" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
+            <ui:Button text="\udb81\udc50" name="button-reset" parse-escape-sequences="true" tooltip="Restart Processor" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
+            <ui:Button text="\udb81\udc0a" name="button-continue" parse-escape-sequences="true" tooltip="Continue Processor" style="margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 20px; height: 20px;"/>
+            <ui:Button text="\udb80\udce4" name="button-start-debug" parse-escape-sequences="true" tooltip="Debug" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
         </ui:VisualElement>
         <ui:VisualElement name="panel-debug" style="flex-direction: row; background-color: rgb(178, 34, 34); display: none;">
             <ui:Label text="Currently debugging" style="flex-grow: 1; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; -unity-text-align: middle-left;"/>
-            <ui:Button text="\ue490" parse-escape-sequences="true" tooltip="Stop Debugging" name="button-stop-debug" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 20px; height: 20px;"/>
+            <ui:Button text="\udb82\ude30" parse-escape-sequences="true" tooltip="Stop Debugging" name="button-stop-debug" style="margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 20px; height: 20px;"/>
         </ui:VisualElement>
         <ui:TabView name="tabs" style="height: 120px; flex-grow: 1;">
             <ui:Tab label="Terminal" enabled="true" style="flex-grow: 1;">
@@ -26,9 +26,9 @@
             <ui:Tab label="Source" style="flex-grow: 1;">
                 <ui:VisualElement name="source-toolbar" style="flex-direction: row; flex-shrink: 0;">
                     <ui:TextField name="input-source-path" tooltip="Source File Path" style="flex-grow: 1; margin-top: 0; margin-bottom: 0;"/>
-                    <ui:Button text="\uf07c" name="button-select" parse-escape-sequences="true" tooltip="Select File" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-                    <ui:Button text="\uf06d" name="button-hotreload" parse-escape-sequences="true" tooltip="Hot-reload" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-                    <ui:Button text="\uf6e3" name="button-compile" parse-escape-sequences="true" tooltip="Compile" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/Font%20Awesome%207%20Free-Solid-900.otf?fileID=12800000&amp;guid=08a8c06d1c31b66bead804787c809857&amp;type=3#Font Awesome 7 Free-Solid-900&quot;); margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
+                    <ui:Button text="\ue5fe" name="button-select" parse-escape-sequences="true" tooltip="Select File" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
+                    <ui:Button text="\udb80\ude38" name="button-hotreload" parse-escape-sequences="true" tooltip="Hot-reload" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
+                    <ui:Button text="\ueeff" name="button-compile" parse-escape-sequences="true" tooltip="Compile" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
                 </ui:VisualElement>
                 <ui:VisualElement name="files-container" style="flex-grow: 1;">
                     <ui:Label text="Label" name="label-base-path" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; color: rgb(164, 164, 164); font-size: 8px;"/>
@@ -46,7 +46,7 @@
                     <ui:ProgressBar value="0" name="memory-progress" high-value="1" style="flex-grow: 1;"/>
                     <ui:Button text="Analyze" name="memory-button-analyze"/>
                 </ui:VisualElement>
-                <ui:Label name="memory-error" style="font-size: 12px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; color: rgb(255, 0, 0);"/>
+                <ui:Label name="memory-error" class="error" style="font-size: 12px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;"/>
                 <ui:VisualElement name="heap-container" style="flex-grow: 1;"/>
             </ui:Tab>
             <ui:Tab label="Logs" enabled="true" style="flex-grow: 1;">

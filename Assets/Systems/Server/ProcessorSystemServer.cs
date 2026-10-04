@@ -163,13 +163,41 @@ unsafe partial struct ProcessorSystemServer : ISystem
         public readonly void GetString(int pointer, out FixedString32Bytes @string)
         {
             @string = new();
-            for (int i = pointer; i < pointer + 32; i += sizeof(char))
+            for (int i = pointer; i < pointer + FixedString32Bytes.UTF8MaxLengthInBytes; i += sizeof(char))
             {
+                if (i < 0 || i + sizeof(char) >= MemorySpan.Length) break;
                 char c = *(char*)((byte*)Memory + i);
                 if (c == '\0') break;
                 @string.Append(c);
             }
         }
+
+        [BurstCompile]
+        public readonly void GetString(int pointer, out FixedString64Bytes @string)
+        {
+            @string = new();
+            for (int i = pointer; i < pointer + FixedString64Bytes.UTF8MaxLengthInBytes; i += sizeof(char))
+            {
+                if (i < 0 || i + sizeof(char) >= MemorySpan.Length) break;
+                char c = *(char*)((byte*)Memory + i);
+                if (c == '\0') break;
+                @string.Append(c);
+            }
+        }
+    }
+
+    [BurstCompile]
+    public struct WorldRef
+    {
+        public required EntityCommandBuffer.ParallelWriter CommandBuffer;
+        public required int SortIndex;
+        public required NativeList<OwnedData<BufferedLine>>.ParallelWriter DebugLines;
+        public required NativeList<OwnedData<BufferedWorldLabel>>.ParallelWriter WorldLabels;
+        public required NativeList<EntityOwnedData<UserUIElement>>.ParallelWriter UIElements;
+        [ReadOnly] public required ComponentLookup<CoreComputer> QCoreComputer;
+        [ReadOnly] public required ComponentLookup<Radar> QRadar;
+        [ReadOnly] public required ComponentLookup<Facility> QFacility;
+        [ReadOnly] public required ComponentLookup<Factory> QFactory;
     }
 
     [BurstCompile]
@@ -180,14 +208,13 @@ unsafe partial struct ProcessorSystemServer : ISystem
         public required LocalToWorld WorldTransform;
         public required LocalTransform LocalTransform;
         public required UnitTeam Team;
+        public required SpawnedGhost Ghost;
     }
 
     [BurstCompile]
     public ref struct FunctionScope
     {
-        public required NativeList<OwnedData<BufferedLine>>.ParallelWriter DebugLines;
-        public required NativeList<OwnedData<BufferedWorldLabel>>.ParallelWriter WorldLabels;
-        public required NativeList<EntityOwnedData<UserUIElement>>.ParallelWriter UIElements;
+        public required WorldRef WorldRef;
         public required ProcessorRef ProcessorRef;
         public required EntityRef EntityRef;
         public required FixedList128Bytes<BufferedLogPiece>* Log;
@@ -477,15 +504,19 @@ unsafe partial struct ProcessorSystemServer : ISystem
 
         new ProcessorJob()
         {
-            scopedExternalFunctions = scopedExternalFunctions,
-
-            debugLines = debugLines.AsParallelWriter(),
-            worldLabels = worldLabels.AsParallelWriter(),
-            uiElements = uiElements.AsParallelWriter(),
-
-            QCoreComputer = SystemAPI.GetComponentLookup<CoreComputer>(true),
-            QRadar = SystemAPI.GetComponentLookup<Radar>(true),
-            QFacility = SystemAPI.GetComponentLookup<Facility>(true),
+            scopedExternalFunctions = scopedExternalFunctions.AsReadOnly(),
+            worldRef = new()
+            {
+                CommandBuffer = commandBuffer.AsParallelWriter(),
+                SortIndex = -1,
+                DebugLines = debugLines.AsParallelWriter(),
+                WorldLabels = worldLabels.AsParallelWriter(),
+                UIElements = uiElements.AsParallelWriter(),
+                QCoreComputer = SystemAPI.GetComponentLookup<CoreComputer>(true),
+                QRadar = SystemAPI.GetComponentLookup<Radar>(true),
+                QFacility = SystemAPI.GetComponentLookup<Facility>(true),
+                QFactory = SystemAPI.GetComponentLookup<Factory>(true),
+            },
         }.ScheduleParallel();
     }
 }
@@ -498,21 +529,18 @@ partial struct ProcessorJob : IJobEntity
     public static readonly ProfilerMarker __ProcessorJobInner = new("ProcessorJobInner");
 #endif
 
-    [ReadOnly] public NativeArray<ExternalFunctionScopedSync> scopedExternalFunctions;
-    public NativeList<OwnedData<BufferedLine>>.ParallelWriter debugLines;
-    public NativeList<OwnedData<BufferedWorldLabel>>.ParallelWriter worldLabels;
-    public NativeList<EntityOwnedData<UserUIElement>>.ParallelWriter uiElements;
-    [ReadOnly] public ComponentLookup<CoreComputer> QCoreComputer;
-    [ReadOnly] public ComponentLookup<Radar> QRadar;
-    [ReadOnly] public ComponentLookup<Facility> QFacility;
+    [ReadOnly] public required NativeArray<ExternalFunctionScopedSync>.ReadOnly scopedExternalFunctions;
+    public required ProcessorSystemServer.WorldRef worldRef;
 
     unsafe void Execute(
         ref Processor processor,
         in UnitTeam team,
+        in GhostInstance ghost,
         in LocalToWorld worldTransform,
         in LocalTransform localTransform,
         ref DynamicBuffer<BufferedLogPiece> _log,
-        Entity entity)
+        Entity entity,
+        [ChunkIndexInQuery] int chunkIndex)
     {
         using var _1 = __ProcessorJobOuter.Auto();
 
@@ -529,9 +557,7 @@ partial struct ProcessorJob : IJobEntity
         FixedList128Bytes<BufferedLogPiece> log = new();
         ProcessorSystemServer.FunctionScope scope = new()
         {
-            DebugLines = debugLines,
-            WorldLabels = worldLabels,
-            UIElements = uiElements,
+            WorldRef = worldRef,
             ProcessorRef = new ProcessorSystemServer.ProcessorRef()
             {
                 Memory = Unsafe.AsPointer(ref processor.Memory),
@@ -546,6 +572,7 @@ partial struct ProcessorJob : IJobEntity
                 WorldTransform = worldTransform,
                 LocalTransform = localTransform,
                 Team = team,
+                Ghost = ghost,
             },
             Log = &log,
         };
@@ -555,7 +582,13 @@ partial struct ProcessorJob : IJobEntity
         for (int i = 0; i < this.scopedExternalFunctions.Length; i++)
         {
             if ((this.scopedExternalFunctions[i].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.GUI.Prefix &&
-                !QCoreComputer.HasComponent(entity))
+                !worldRef.QCoreComputer.HasComponent(entity))
+            {
+                continue;
+            }
+
+            if ((this.scopedExternalFunctions[i].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.Factory.Prefix &&
+                !worldRef.QFactory.HasComponent(entity))
             {
                 continue;
             }
@@ -604,9 +637,9 @@ partial struct ProcessorJob : IJobEntity
             }
         }
 
-        if (((ProcessorMemory*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(memory)))->MappedMemory.Leds.CustomLED != 0)
+        if (processor.Memory.MappedMemory.Leds.CustomLED != 0)
         {
-            ((ProcessorMemory*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(memory)))->MappedMemory.Leds.CustomLED = 0;
+            processor.Memory.MappedMemory.Leds.CustomLED = 0;
             processor.CustomLED.Blink();
         }
 
@@ -636,7 +669,7 @@ partial struct ProcessorJob : IJobEntity
         __ProcessorJobInner.Begin();
         try
         {
-            for (int i = 0; i < processor.CyclesPerTick; i++)
+            for (int i = 0; i < processor.CyclesPerTick && !processorState.IsDone; i++)
             {
                 if (processorState.Signal != Signal.None)
                 {
@@ -732,7 +765,7 @@ partial struct ProcessorJob : IJobEntity
 
         try
         {
-            for (int i = 0; i < processor.CyclesPerTick; i++)
+            for (int i = 0; i < processor.CyclesPerTick && !processorState.IsDone; i++)
             {
                 if (!processor.DebugContext.SkipCurrentBreakpoint)
                 {

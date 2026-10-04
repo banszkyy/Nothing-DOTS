@@ -479,7 +479,9 @@ public class SelectionManager : Singleton<SelectionManager>
         }
 
         VisualElement container = commandsUi.ContainerUnitCommands;
+        VisualElement containerQuick = commandsUi.ContainerUnitQuickCommands;
         container.Clear();
+        containerQuick.Clear();
 
         foreach (VirtualGhostEntity selected in _selected)
         {
@@ -495,24 +497,27 @@ public class SelectionManager : Singleton<SelectionManager>
                     continue;
                 }
 
-                VisualElement? _added = container.Children().FirstOrDefault(v =>
+                string name = command.Label.ToString();
+                int id = command.Id;
+
+                VisualElement _container = name.Length <= 2 ? containerQuick : container;
+
+                VisualElement? _added = _container.Children().FirstOrDefault(v =>
                 {
                     (UnitCommandDefinition, int) d = ((UnitCommandDefinition, int))v.userData;
                     return d.Item1.Id == command.Id && d.Item1.Label == command.Label;
                 });
                 UnitCommandItemSchema? added = _added is null ? null : new(_added);
 
-                string name = command.Label.ToString();
-                int id = command.Id;
-
-                UnitCommandItemSchema itemUi = added ?? container.AddNew<UnitCommandItemSchema>(UnitCommandItemUI);
-                itemUi.UnitCommandName.text = $"#{id} {name}{(added is null ? null : $" ({(((UnitCommandDefinition, int))added.Root.userData).Item2 + 1})")}";
-                itemUi.UnitCommandName.clicked += () => HandleUnitCommandClick(id);
+                UnitCommandItemSchema itemUi = added ?? _container.AddNew<UnitCommandItemSchema>(UnitCommandItemUI);
+                itemUi.UnitCommandName.text = name;
+                itemUi.UnitCommandInstances.text = added is null ? string.Empty : $"x{(((UnitCommandDefinition, int))added.Root.userData).Item2 + 1}";
+                itemUi.UnitCommandButton.clicked += () => HandleUnitCommandClick(id);
                 itemUi.Root.userData = (command, added is null ? 1 : (((UnitCommandDefinition, int))added.Root.userData).Item2 + 1);
             }
         }
 
-        if (container.childCount == 0) UnitCommandsUI.ForceSetActive(false);
+        if (container.childCount == 0 && containerQuick.childCount == 0) UnitCommandsUI.ForceSetActive(false);
     }
 
     void HideUnitCommandsUI()

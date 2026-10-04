@@ -71,14 +71,50 @@ partial class ProcessorSourceSystemServer : SystemBase
             commandBuffer.DestroyEntity(entity);
 
             NetcodeEndPoint ep;
-            if (request.ValueRO.SourceConnection == default)
+            if (SystemAPI.TryGetComponent(entity, out VirtualRpc virtualRpc))
             {
-                ep = NetcodeEndPoint.Server;
+                if (virtualRpc.PlayerIndex != -1)
+                {
+                    ep = NetcodeEndPoint.Server;
+                }
+                else
+                {
+                    Entity c = Entity.Null;
+                    foreach (var (player, playerR) in SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>>())
+                    {
+                        if (player.ValueRO.Team != virtualRpc.Team) continue;
+                        if (c == Entity.Null)
+                        {
+                            c = playerR.ValueRO.Connection;
+                        }
+                        else
+                        {
+                            Debug.LogError($"{DebugEx.ServerPrefix} Cannot set the source of the processor, virtual RPC team matched multiple players");
+                            c = Entity.Null;
+                            break;
+                        }
+                    }
+
+                    if (c == default)
+                    {
+                        Debug.LogError($"{DebugEx.ServerPrefix} Cannot set the source of the processor");
+                        continue;
+                    }
+
+                    ep = new NetcodeEndPoint(SystemAPI.GetComponent<NetworkId>(c), c);
+                }
             }
             else
             {
-                ep = new(SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
-                if (!World.IsServer()) ep = NetcodeEndPoint.Server;
+                if (request.ValueRO.SourceConnection == default)
+                {
+                    ep = NetcodeEndPoint.Server;
+                }
+                else
+                {
+                    ep = new(SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
+                    if (!World.IsServer()) ep = NetcodeEndPoint.Server;
+                }
             }
 
             foreach (var (ghostInstance, processor) in
@@ -106,6 +142,16 @@ partial class ProcessorSourceSystemServer : SystemBase
 
                 break;
             }
+        }
+
+        foreach (var (processor, initialization, entity) in
+            SystemAPI.Query<RefRW<Processor>, RefRO<ProcessorInitialization>>()
+            .WithEntityAccess())
+        {
+            processor.ValueRW.SourceFile = initialization.ValueRO.SourceFile;
+
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
+            commandBuffer.RemoveComponent<ProcessorInitialization>(entity);
         }
 
         foreach (var (processor, processorEntity) in

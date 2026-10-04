@@ -142,6 +142,7 @@ partial struct VirtualPlayerSystemServer : ISystem
                         {
                             Unit = unit.Name,
                             Entity = SystemAPI.GetComponent<GhostInstance>(nextFactory),
+                            Source = default,
                         }, playerV.ValueRO.Index);
                     }
                 }
@@ -153,6 +154,7 @@ partial struct VirtualPlayerSystemServer : ISystem
                         {
                             Unit = unit.Name,
                             Entity = SystemAPI.GetComponent<GhostInstance>(nextFactory),
+                            Source = default,
                         }, playerV.ValueRO.Index);
                     }
                 }
@@ -302,6 +304,7 @@ partial struct VirtualPlayerSystemServer : ISystem
             {
                 BuildingName = building.Name,
                 Position = validPosition,
+                Source = default,
             }, playerV.Index);
             return true;
         }

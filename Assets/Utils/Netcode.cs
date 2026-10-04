@@ -84,7 +84,7 @@ public static class NetcodeUtils
         });
 
         world.EntityManager.SetComponentData(result, new ReceiveRpcCommandRequest());
-        world.EntityManager.SetComponentData(result, new VirtualRpc() { PlayerIndex = playerIndex });
+        world.EntityManager.SetComponentData(result, new VirtualRpc() { PlayerIndex = playerIndex, Team = -1 });
     }
 
     [BurstCompile]

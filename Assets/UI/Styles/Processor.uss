@@ -1,13 +1,13 @@
 .terminal {
-    background-color: rgb(0, 0, 0);
+    background-color: #000000;
     flex-shrink: 0;
     flex-grow: 1;
     flex-basis: 100px;
     display: flex;
-    border-left-color: rgb(0, 0, 0);
-    border-right-color: rgb(0, 0, 0);
-    border-top-color: rgb(0, 0, 0);
-    border-bottom-color: rgb(0, 0, 0);
+    border-left-color: #00000000;
+    border-right-color: #00000000;
+    border-top-color: #00000000;
+    border-bottom-color: #00000000;
     border-top-width: 2px;
     border-right-width: 2px;
     border-bottom-width: 2px;
@@ -15,10 +15,10 @@
 }
 
 .terminal:enabled:focus {
-    border-left-color: rgb(255, 255, 255);
-    border-right-color: rgb(255, 255, 255);
-    border-top-color: rgb(255, 255, 255);
-    border-bottom-color: rgb(255, 255, 255);
+    border-left-color: var(--focusedBorder);
+    border-right-color: var(--focusedBorder);
+    border-top-color: var(--focusedBorder);
+    border-bottom-color: var(--focusedBorder);
     border-top-width: 2px;
     border-right-width: 2px;
     border-bottom-width: 2px;
@@ -31,7 +31,7 @@
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 4px;
     flex-grow: 1;
-    background-color: rgb(0, 0, 0);
+    background-color: var(--backgroundSecondary);
     margin-top: 0;
     margin-right: 0;
     margin-bottom: 0;
@@ -40,10 +40,10 @@
     border-right-width: 0;
     border-bottom-width: 0;
     border-left-width: 0;
-    border-left-color: rgb(0, 0, 0);
-    border-right-color: rgb(0, 0, 0);
-    border-top-color: rgb(0, 0, 0);
-    border-bottom-color: rgb(0, 0, 0);
+    border-left-color: #00000000;
+    border-right-color: #00000000;
+    border-top-color: #00000000;
+    border-bottom-color: #00000000;
 }
 
 .diagnostics-item > .unity-foldout > Toggle {
@@ -69,7 +69,7 @@
 }
 
 .diagnostics-item > .unity-foldout > .unity-foldout__toggle > .unity-foldout__input > #unity-checkmark {
-    -unity-background-image-tint-color: rgb(209, 209, 209);
+    -unity-background-image-tint-color: var(--foreground);
     width: 14px;
     height: 14px;
 }
@@ -118,4 +118,8 @@
     padding-bottom: 0;
     padding-left: 0;
     -unity-font-style: bold;
+}
+
+#diagnostic-foldout > #unity-content {
+    margin-left: 16px;
 }

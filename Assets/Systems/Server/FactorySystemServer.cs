@@ -28,6 +28,7 @@ public partial struct FactorySystemServer : ISystem
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetworkId networkId = request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO;
+            NetcodeEndPoint ep = new(networkId, request.ValueRO.SourceConnection);
 
             Entity requestPlayerE = default;
             Player requestPlayer = default;
@@ -116,6 +117,7 @@ public partial struct FactorySystemServer : ISystem
                     Name = unit.Name,
                     Prefab = unit.Prefab,
                     ProductionTime = unit.ProductionTime,
+                    Source = new(command.ValueRO.Source, ep),
                 });
 
                 break;
@@ -157,6 +159,13 @@ public partial struct FactorySystemServer : ISystem
             {
                 Team = unitTeam.ValueRO.Team
             });
+            if (finishedUnit.Source != default)
+            {
+                commandBuffer.AddComponent<ProcessorInitialization>(newUnit, new()
+                {
+                    SourceFile = finishedUnit.Source,
+                });
+            }
         }
     }
 }

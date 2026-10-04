@@ -11,12 +11,15 @@
 /Assets/TextMesh Pro
 /Assets/Samples
 /Assets/_Recovery
+/Assets/UI/Models
 
 /Packages/packages-lock.json
 /Packages/*/tools
 
 /sessions
 /tiles
+
+/Recordings
 
 *.csproj
 *.slnx

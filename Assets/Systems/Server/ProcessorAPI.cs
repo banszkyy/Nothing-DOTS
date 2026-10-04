@@ -9,7 +9,9 @@ using AOT;
 using LanguageCore.Runtime;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Profiling;
 using FunctionScope = ProcessorSystemServer.FunctionScope;
 
@@ -58,6 +60,12 @@ static unsafe class ProcessorAPI
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(GUI.Update).Value, GUI.Prefix + 3, ExternalFunctionGenerator.SizeOf<int>(), 0, default));
 
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Attributes.QueryAttribute).Value, Attributes.Prefix + 1, ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>(), default));
+
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Buildings.BuildAt).Value, Buildings.Prefix + 1, ExternalFunctionGenerator.SizeOf<float3, int, int>(), ExternalFunctionGenerator.SizeOf<byte>(), default));
+
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Factory.QueueUnit).Value, Factory.Prefix + 1, ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>(), default));
+
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Processor_.SetSource).Value, Processor_.Prefix + 1, ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<byte>(), default));
     }
 
     public static IExternalFunction[] GenerateManagedExternalFunctions() => new IExternalFunction[]
@@ -251,7 +259,7 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            if (length < 0 || length >= 30)
+            if (length is < 0 or >= 30)
             {
                 // Passed buffer length must be in range [0,30] inclusive
                 scope->ProcessorRef.DoCrash();
@@ -369,7 +377,7 @@ static unsafe class ProcessorAPI
             (int bufferPtr, int length, byte port) = ExternalFunctionGenerator.TakeParameters<int, int, byte>(arguments);
             if (bufferPtr == 0 || length == 0) return;
 
-            if (length < 0 || length >= 30)
+            if (length is < 0 or >= 30)
             {
                 // Passed buffer length must be in range [0,30] inclusive
                 scope->ProcessorRef.DoCrash();
@@ -471,7 +479,7 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            if (dataPtr < 0 || dataPtr >= Processor.UserMemorySize)
+            if (dataPtr is < 0 or >= Processor.UserMemorySize)
             {
                 // Passed buffer pointer is invalid
                 scope->ProcessorRef.DoCrash();
@@ -514,7 +522,7 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            if (scope->DebugLines.ListData->Length + 1 < scope->DebugLines.ListData->Capacity) scope->DebugLines.AddNoResize(new(
+            if (scope->WorldRef.DebugLines.ListData->Length + 1 < scope->WorldRef.DebugLines.ListData->Capacity) scope->WorldRef.DebugLines.AddNoResize(new(
                 scope->EntityRef.Team.Team,
                 new BufferedLine(new float3x2(
                     scope->EntityRef.WorldTransform.Position,
@@ -550,7 +558,7 @@ static unsafe class ProcessorAPI
 
             float3 transformed = scope->EntityRef.LocalTransform.TransformPoint(position);
 
-            if (scope->DebugLines.ListData->Length + 1 < scope->DebugLines.ListData->Capacity) scope->DebugLines.AddNoResize(new(
+            if (scope->WorldRef.DebugLines.ListData->Length + 1 < scope->WorldRef.DebugLines.ListData->Capacity) scope->WorldRef.DebugLines.AddNoResize(new(
                 scope->EntityRef.Team.Team,
                 new BufferedLine(new float3x2(
                     scope->EntityRef.WorldTransform.Position,
@@ -592,7 +600,7 @@ static unsafe class ProcessorAPI
                 text.Append(c);
             }
 
-            if (scope->WorldLabels.ListData->Length + 1 < scope->WorldLabels.ListData->Capacity) scope->WorldLabels.AddNoResize(new(
+            if (scope->WorldRef.WorldLabels.ListData->Length + 1 < scope->WorldRef.WorldLabels.ListData->Capacity) scope->WorldRef.WorldLabels.AddNoResize(new(
                 scope->EntityRef.Team.Team,
                 new BufferedWorldLabel(position, 0b111, text, default)
             ));
@@ -620,7 +628,7 @@ static unsafe class ProcessorAPI
 
             float3 transformed = scope->EntityRef.LocalTransform.TransformPoint(position);
 
-            if (scope->WorldLabels.ListData->Length + 1 < scope->WorldLabels.ListData->Capacity) scope->WorldLabels.AddNoResize(new(
+            if (scope->WorldRef.WorldLabels.ListData->Length + 1 < scope->WorldRef.WorldLabels.ListData->Capacity) scope->WorldRef.WorldLabels.AddNoResize(new(
                 scope->EntityRef.Team.Team,
                 new BufferedWorldLabel(transformed, 0b111, text, default)
             ));
@@ -767,10 +775,10 @@ static unsafe class ProcessorAPI
             {
                 bool exists = false;
 
-                for (int i = 0; i < scope->UIElements.ListData->Length; i++)
+                for (int i = 0; i < scope->WorldRef.UIElements.ListData->Length; i++)
                 {
-                    if ((*scope->UIElements.ListData)[i].Value.Id != id) continue;
-                    if ((*scope->UIElements.ListData)[i].OwnerTeam != scope->EntityRef.Team.Team) continue;
+                    if ((*scope->WorldRef.UIElements.ListData)[i].Value.Id != id) continue;
+                    if ((*scope->WorldRef.UIElements.ListData)[i].OwnerTeam != scope->EntityRef.Team.Team) continue;
                     exists = true;
                     break;
                 }
@@ -784,7 +792,7 @@ static unsafe class ProcessorAPI
             element.IsDirty = true;
             element.Id = id;
 
-            scope->UIElements.AddNoResize(new(scope->EntityRef.Team.Team, scope->EntityRef.Entity, *ptr = element));
+            scope->WorldRef.UIElements.AddNoResize(new(scope->EntityRef.Team.Team, scope->EntityRef.Entity, *ptr = element));
         }
 
         [BurstCompile]
@@ -794,11 +802,11 @@ static unsafe class ProcessorAPI
             int id = ExternalFunctionGenerator.TakeParameters<int>(arguments);
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            for (int i = 0; i < scope->UIElements.ListData->Length; i++)
+            for (int i = 0; i < scope->WorldRef.UIElements.ListData->Length; i++)
             {
-                if ((*scope->UIElements.ListData)[i].Value.Id != id) continue;
-                if ((*scope->UIElements.ListData)[i].OwnerTeam != scope->EntityRef.Team.Team) continue;
-                (*scope->UIElements.ListData)[i] = default;
+                if ((*scope->WorldRef.UIElements.ListData)[i].Value.Id != id) continue;
+                if ((*scope->WorldRef.UIElements.ListData)[i].OwnerTeam != scope->EntityRef.Team.Team) continue;
+                (*scope->WorldRef.UIElements.ListData)[i] = default;
                 break;
             }
         }
@@ -812,9 +820,9 @@ static unsafe class ProcessorAPI
 
             UserUIElement* ptr = (UserUIElement*)((nint)scope->ProcessorRef.Memory + _ptr);
 
-            for (int i = 0; i < scope->UIElements.ListData->Length; i++)
+            for (int i = 0; i < scope->WorldRef.UIElements.ListData->Length; i++)
             {
-                ref EntityOwnedData<UserUIElement> uiElement = ref (*scope->UIElements.ListData).Ptr[i];
+                ref EntityOwnedData<UserUIElement> uiElement = ref (*scope->WorldRef.UIElements.ListData).Ptr[i];
                 if (uiElement.Value.Id != ptr->Id) continue;
                 if (uiElement.OwnerTeam != scope->EntityRef.Team.Team) continue;
                 ptr->IsDirty = true;
@@ -844,6 +852,124 @@ static unsafe class ProcessorAPI
             AttributeMeta attribute = attributes.Fields.Ptr[attributeId];
 
             scope->ProcessorRef.MemorySpan.Set(destination, new ReadOnlySpan<byte>(attributes.Data.Ptr + attribute.Offset, attribute.Size));
+
+            returnValue.Set(true);
+            return;
+        bad:
+            returnValue.Set(false);
+            return;
+        }
+    }
+
+    [BurstCompile]
+    public static class Buildings
+    {
+        public const int Prefix = 0x000B0000;
+
+        [BurstCompile]
+        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
+        public static void BuildAt(nint _scope, nint arguments, nint returnValue)
+        {
+            FunctionScope* scope = (FunctionScope*)_scope;
+            (float3 position, int namePtr, int sourcePtr) = ExternalFunctionGenerator.TakeParameters<int, int, int>(arguments);
+
+            if (namePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
+
+            scope->ProcessorRef.GetString(namePtr, out FixedString32Bytes name);
+            scope->ProcessorRef.GetString(sourcePtr, out FixedString64Bytes source);
+
+            Entity rpcE = scope->WorldRef.CommandBuffer.CreateEntity(scope->WorldRef.SortIndex);
+            scope->WorldRef.CommandBuffer.AddComponent<PlaceBuildingRequestRpc>(scope->WorldRef.SortIndex, rpcE, new()
+            {
+                BuildingName = name,
+                Position = position,
+                Source = source,
+            });
+            scope->WorldRef.CommandBuffer.AddComponent<ReceiveRpcCommandRequest>(scope->WorldRef.SortIndex, rpcE);
+            scope->WorldRef.CommandBuffer.AddComponent<VirtualRpc>(scope->WorldRef.SortIndex, rpcE, new()
+            {
+                PlayerIndex = -1,
+                Team = scope->EntityRef.Team.Team,
+            });
+
+            returnValue.Set(true);
+            return;
+        bad:
+            returnValue.Set(false);
+            return;
+        }
+    }
+
+    [BurstCompile]
+    public static class Factory
+    {
+        public const int Prefix = 0x000C0000;
+
+        [BurstCompile]
+        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
+        public static void QueueUnit(nint _scope, nint arguments, nint returnValue)
+        {
+            FunctionScope* scope = (FunctionScope*)_scope;
+            (int namePtr, int sourcePtr) = ExternalFunctionGenerator.TakeParameters<int, int>(arguments);
+
+            if (namePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
+
+            scope->ProcessorRef.GetString(namePtr, out FixedString32Bytes name);
+            scope->ProcessorRef.GetString(sourcePtr, out FixedString64Bytes source);
+
+            Entity rpcE = scope->WorldRef.CommandBuffer.CreateEntity(scope->WorldRef.SortIndex);
+            scope->WorldRef.CommandBuffer.AddComponent<FactoryQueueUnitRequestRpc>(scope->WorldRef.SortIndex, rpcE, new()
+            {
+                Entity = scope->EntityRef.Ghost,
+                Unit = name,
+                Source = source,
+            });
+            scope->WorldRef.CommandBuffer.AddComponent<ReceiveRpcCommandRequest>(scope->WorldRef.SortIndex, rpcE);
+            scope->WorldRef.CommandBuffer.AddComponent<VirtualRpc>(scope->WorldRef.SortIndex, rpcE, new()
+            {
+                PlayerIndex = -1,
+                Team = scope->EntityRef.Team.Team,
+            });
+
+            returnValue.Set(true);
+            return;
+        bad:
+            returnValue.Set(false);
+            return;
+        }
+    }
+
+    [BurstCompile]
+    public static class Processor_
+    {
+        public const int Prefix = 0x000D0000;
+
+        [BurstCompile]
+        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
+        public static void SetSource(nint _scope, nint arguments, nint returnValue)
+        {
+            FunctionScope* scope = (FunctionScope*)_scope;
+            int namePtr = ExternalFunctionGenerator.TakeParameters<int>(arguments);
+
+            if (namePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
+
+            scope->ProcessorRef.GetString(namePtr, out FixedString64Bytes name);
+
+            Entity rpcE = scope->WorldRef.CommandBuffer.CreateEntity(scope->WorldRef.SortIndex);
+            scope->WorldRef.CommandBuffer.AddComponent<SetProcessorSourceRequestRpc>(scope->WorldRef.SortIndex, rpcE, new()
+            {
+                Entity = scope->EntityRef.Ghost,
+                IsHotReload = false,
+                Source = name
+            });
+            scope->WorldRef.CommandBuffer.AddComponent<ReceiveRpcCommandRequest>(scope->WorldRef.SortIndex, rpcE);
+            scope->WorldRef.CommandBuffer.AddComponent<VirtualRpc>(scope->WorldRef.SortIndex, rpcE, new()
+            {
+                PlayerIndex = -1,
+                Team = scope->EntityRef.Team.Team,
+            });
+
+            scope->ProcessorRef.Registers->CodePointer = scope->EntityRef.Processor->Source.Code.Length;
 
             returnValue.Set(true);
             return;

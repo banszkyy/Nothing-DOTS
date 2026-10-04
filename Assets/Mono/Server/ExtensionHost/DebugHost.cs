@@ -344,6 +344,22 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
             return;
         }
 
+        if (!processor.Source.Code.IsCreated)
+        {
+            Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
+            Protocol.SendEvent(new TerminatedEvent());
+            _entity = Entity.Null;
+            return;
+        }
+
+        if (processor.Registers.CodePointer == processor.Source.Code.Length)
+        {
+            Protocol.SendEvent(new ExitedEvent() { ExitCode = 0 });
+            Protocol.SendEvent(new TerminatedEvent());
+            _entity = Entity.Null;
+            return;
+        }
+
         {
             ulong beginOffset = Math.Max(0, processor.StdOutBufferCursor - (ulong)processor.StdOutBuffer.Length);
             ulong endOffset = processor.StdOutBufferCursor;

@@ -2,7 +2,7 @@
     <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style" />
     <ui:VisualElement style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; justify-content: center; align-items: center;">
         <ui:VisualElement class="panel">
-            <ui:Label text="Timeout" enable-rich-text="false" style="-unity-font-style: bold; -unity-text-align: upper-center; color: rgb(255, 0, 0);" />
+            <ui:Label text="Timeout" enable-rich-text="false" class="error" style="-unity-font-style: bold; -unity-text-align: upper-center;" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

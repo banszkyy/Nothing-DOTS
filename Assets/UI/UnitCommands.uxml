@@ -1,10 +1,15 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:Template name="UnitCommandItem" src="project://database/Assets/UI/UnitCommandItem.uxml" />
-    <Style src="project://database/Assets/UI/Styles/Style.uss" />
-    <ui:VisualElement class="panel" style="position: absolute;">
-        <ui:ProgressBar value="0" name="progress" high-value="1" style="display: none;" />
-        <ui:VisualElement name="container-unit-commands">
-            <ui:Instance template="UnitCommandItem" name="UnitCommandItem" />
+    <ui:Template name="UnitCommandItem" src="project://database/Assets/UI/UnitCommandItem.uxml?fileID=9197481963319205126&amp;guid=433be92ce1f6d95a188352be01004cd8&amp;type=3#UnitCommandItem"/>
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
+    <ui:VisualElement class="panel" style="position: absolute; max-width: 200px; padding-top: 0; padding-right: 0; margin-top: 0; margin-right: 0; border-top-width: 0; border-right-width: 1px; min-width: auto;">
+        <ui:ProgressBar value="0" name="progress" high-value="1" style="display: none; width: 100%;"/>
+        <ui:VisualElement name="container-unit-quick-commands" style="flex-direction: row; flex-wrap: wrap; padding-top: 0; padding-right: 0; width: 100%; justify-content: space-evenly;">
+            <ui:Instance template="UnitCommandItem"/>
+            <ui:Instance template="UnitCommandItem"/>
+            <ui:Instance template="UnitCommandItem"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="container-unit-commands" style="width: 100%; padding-top: 0; padding-right: 0; margin-top: 0; margin-right: 0;">
+            <ui:Instance template="UnitCommandItem"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -58,7 +58,7 @@
     margin-left: 0;
     border-bottom-width: 0;
     border-left-width: 0;
-    background-color: rgba(0, 0, 0, 0);
+    background-color: #00000000;
 }
 
 .chat-input > #unity-text-input > TextElement {
@@ -83,11 +83,11 @@
     border-right-width: 0;
     border-bottom-width: 0;
     border-left-width: 0;
-    background-color: rgba(0, 0, 0, 0);
+    background-color: #00000000;
     color: rgba(255, 255, 255, 0.6);
 }
 
 .chat-send-button:enabled:hover {
     color: rgb(255, 255, 255);
-    background-color: rgba(0, 0, 0, 0);
+    background-color: #00000000;
 }

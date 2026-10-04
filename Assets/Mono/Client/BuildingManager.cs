@@ -540,6 +540,7 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
                 {
                     BuildingName = SelectedBuilding.Name,
                     Position = position,
+                    Source = default,
                 });
             }
 
