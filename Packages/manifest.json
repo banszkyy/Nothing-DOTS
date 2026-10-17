@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "com.andrewraphaellukasik.segments": "file:/home/bb/Projects/Segments",
-    "com.banszky.bblang": "file:/home/bb/Projects/BBLang/Core/Unity",
-    "com.bb.bblang.debughost": "file:/home/bb/Projects/BBLang/DebugHostUnity",
+    "com.banszky.vibrissa": "file:/home/bb/Projects/BBLang/Core/Unity",
+    "com.banszky.vibrissa-debughost-unity": "file:/home/bb/Projects/BBLang/DebugHostUnity",
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.editorcoroutines": "1.1.0",

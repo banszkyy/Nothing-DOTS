@@ -3,19 +3,19 @@ using "lib/move";
 using "lib/api";
 using "lib/protocol";
 
-[UnitCommand(1, "Attack at")]
+[UnitCommand(1, "󰓾")]
 struct CommandAttackAt
 {
     [Context("position3")] float3 position;
 }
 
-[UnitCommand(2, "Move to")]
+[UnitCommand(2, "󰍒")]
 struct CommandMoveTo
 {
     [Context("position2")] float2 position;
 }
 
-[UnitCommand(3, "Stop")]
+[UnitCommand(3, "󰹆")]
 struct CommandStop
 {
     

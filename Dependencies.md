@@ -8,7 +8,7 @@
 
 # My dependencies
 
-- BBLang [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/BBpezsgo/Interpreter) Imported as local package
+- Vibrissa [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/BBpezsgo/Vibrissa) Imported as local package
 
 # Assets used
 

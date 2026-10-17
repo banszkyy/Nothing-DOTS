@@ -1,0 +1,8 @@
+using "lib/api";
+using "lib/protocol";
+
+while (true)
+{
+    string v = readline();
+    printline(v);
+}

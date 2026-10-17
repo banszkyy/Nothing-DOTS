@@ -1,0 +1,112 @@
+using "lib/turret";
+using "lib/move";
+using "lib/api";
+using "lib/protocol";
+
+void performRadar()
+{
+    radarProgress = (radarProgress + 0.05f) % TAU;
+    Radar.direction = radarProgress;
+    float3 radarPoint = radar();
+    if (!empty(radarPoint))
+    {
+        toglobal(&radarPoint);
+
+        Unit enemy;
+        enemy.recorded = time() + 2f;
+        enemy.expires = time() + 12f;
+        enemy.position = radarPoint;
+        enemy.position_records = 1;
+        update_unit(&enemies, enemy);
+    }
+}
+
+float3 targetedPosition = new float3;
+float3 currentTarget = new float3;
+float3 currentUserTarget = new float3;
+List<Unit> enemies = new List<Unit>(MaxUnits);
+float2 currentDestination = new float2;
+byte shouldShoot = false;
+float turretLastUseTime = 0f;
+float radarProgress = 0f;
+
+while (1)
+{
+    performRadar();
+
+    currentTarget = new float3;
+    shouldShoot = false;
+
+    for (int i = enemies.length() - 1; i >= 0; i--)
+    {
+        if (time() >= enemies[i].expires)
+        {
+            enemies.swapback(i);
+        }
+        else
+        {
+            float3 p = enemies[i].position;
+            tolocal(&p);
+
+            float3 norm = p;
+            norm.y = 0f;
+            normalise(&norm);
+            float radarDirection = atan2(norm.z, norm.x);
+            float3 radarPoint = radar(radarDirection);
+            bool destroyed = empty(radarPoint) || distancesqr(p, radarPoint) > DistanceThresholdSq;
+            const float increment = 0.04f;
+            float currentIncrement = increment;
+            while (destroyed && currentIncrement < 0.2f)
+            {
+                float3 radarPoint = radar(radarDirection + currentIncrement);
+                destroyed = empty(radarPoint) || distancesqr(p, radarPoint) > DistanceThresholdSq;
+                if (destroyed)
+                {
+                    float3 radarPoint = radar(radarDirection - currentIncrement);
+                    destroyed = empty(radarPoint) || distancesqr(p, radarPoint) > DistanceThresholdSq;
+                }
+                currentIncrement += increment;
+            }
+
+            if (destroyed)
+            {
+                enemies.swapback(i);
+            }
+            else
+            {
+                toglobal(&p);
+                currentTarget = p;
+                shouldShoot = true;
+            }
+        }
+    }
+
+    if (currentTarget.x != 0f &&
+        currentTarget.z != 0f)
+    {
+        turretLastUseTime = time();
+        if (shouldShoot)
+        {
+            shootat(currentTarget, &targetedPosition);
+        }
+        else
+        {
+            targetat(currentTarget, &targetedPosition);
+        }
+    }
+    else if (time() - turretLastUseTime > 5f)
+    {
+        CombatTurret.target_rotation = 0f;
+        CombatTurret.target_angle = 0f;
+    }
+
+    if (currentDestination.x != 0f &&
+        currentDestination.y != 0f)
+    {
+        move_to(currentDestination.x, currentDestination.y);
+    }
+    else
+    {
+        stop_moving();
+    }
+}

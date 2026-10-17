@@ -3,14 +3,14 @@ using "lib/move";
 using "lib/api";
 using "lib/protocol";
 
-[UnitCommand(1, "Build at")]
-struct CommandBuildAt
+[UnitCommand(1, "Move to")]
+struct CommandMoveTo
 {
     [Context("position3")] float3 position;
 }
 
-[UnitCommand(2, "Move to")]
-struct CommandMoveTo
+[UnitCommand(2, "Build at")]
+struct CommandBuildAt
 {
     [Context("position3")] float3 position;
 }
@@ -49,7 +49,9 @@ void Receive()
 float3 currentDestination = new float3;
 float3 currentBuildAt = new float3;
 float3 targetedPosition = new float3;
-float turretLastUseTime = 0f;
+bool isBuilding = false;
+
+print("ready\n");
 
 while (1)
 {
@@ -62,30 +64,45 @@ while (1)
     if (commandId == 1)
     {
         CommandMoveTo* command = &_command as CommandMoveTo*;
-        currentBuildAt = command.position;
-        currentDestination = new float3;
+        currentBuildAt = new float3;
+        currentDestination = command.position;
+        print("moving\n");
     }
     else if (commandId == 2)
     {
         CommandMoveTo* command = &_command as CommandMoveTo*;
-        currentBuildAt = new float3;
-        currentDestination = command.position;
+        currentBuildAt = command.position;
+        currentDestination = new float3;
+        print("building\n");
     }
 
     if (currentDestination.x != 0f &&
         currentDestination.z != 0f)
     {
-        move_to(currentDestination.x, currentDestination.z);
+        if (!move_to(currentDestination.x, currentDestination.z))
+        {
+            currentDestination = new float3;
+            print("ready\n");
+        }
     }
 
     if (currentBuildAt.x != 0f &&
         currentBuildAt.z != 0f)
     {
-        turretLastUseTime = time();
         float d = distancesqr(GPS.position, currentBuildAt);
-        if (d < 3f * 3f)
+        if (d < 4f * 4f)
         {
             stop_moving();
+
+            if (CombatTurret.shoot == 2)
+            {
+                isBuilding = true;
+            }
+            else if (isBuilding)
+            {
+                currentBuildAt = new float3;
+                print("ready\n");
+            }
 
             shootat_simple(currentBuildAt, &targetedPosition);
             debug(currentBuildAt, Color.White);
@@ -95,8 +112,9 @@ while (1)
             move_to(currentBuildAt.x, currentBuildAt.z);
         }
     }
-    else if (time() - turretLastUseTime > 5f)
+    else
     {
+        isBuilding = false;
         CombatTurret.target_rotation = 0f;
         CombatTurret.target_angle = 0f;
     }

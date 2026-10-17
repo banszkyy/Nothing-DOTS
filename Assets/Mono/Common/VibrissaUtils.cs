@@ -3,7 +3,7 @@ using System.Text;
 using LanguageCore.Runtime;
 using UnityEngine;
 
-class BBLangUtils : MonoBehaviour
+class VibrissaUtils : MonoBehaviour
 {
     [SaintsField.Playa.Button("Generate Config")]
     public void GenerateConfig()

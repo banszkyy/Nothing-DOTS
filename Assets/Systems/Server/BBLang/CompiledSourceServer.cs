@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using LanguageCore;
-using LanguageCore.BBLang.Generator;
+using LanguageCore.Bytecode.Generator;
 using LanguageCore.Compiler;
 using LanguageCore.Runtime;
 using Unity.Collections;
@@ -26,7 +26,7 @@ public class CompiledSourceServer : ICompiledSource
     public CompiledDebugInformation DebugInformation;
     public DiagnosticsCollection Diagnostics;
     public CompilerResult Compiled;
-    public BBLangGeneratorResult Generated;
+    public BytecodeGeneratorResult Generated;
     public Dictionary<FileId, ProgressRecord<(int Current, int Total)>> SubFiles;
 
     FileId ICompiledSource.SourceFile => SourceFile;

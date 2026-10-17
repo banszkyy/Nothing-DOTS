@@ -1,0 +1,44 @@
+using "lib/api";
+using "lib/protocol";
+
+while (1)
+{
+    print(" > ");
+    string input = readline();
+    int left = 0;
+    int right = 0;
+    int i = 0;
+
+    while (input[i] == ' ') i++;
+
+    while (input[i] >= '0' && input[i] <= '9')
+    {
+        left *= 10;
+        left += input[i] - '0';
+        i++;
+    }
+
+    while (input[i] == ' ') i++;
+
+    char operator = input[i];
+    i++;
+
+    while (input[i] == ' ') i++;
+
+    while (input[i] >= '0' && input[i] <= '9')
+    {
+        right *= 10;
+        right += input[i] - '0';
+        i++;
+    }
+
+    delete input;
+
+    int result;
+    if (operator == '+') result = left + right;
+    else if (operator == '-') result = left - right;
+    else if (operator == '*') result = left * right;
+    else if (operator == '/') result = left / right;
+
+    printline(result);
+}

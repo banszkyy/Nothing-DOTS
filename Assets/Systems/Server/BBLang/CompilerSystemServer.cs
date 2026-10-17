@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LanguageCore;
-using LanguageCore.BBLang.Generator;
+using LanguageCore.Bytecode.Generator;
 using LanguageCore.Compiler;
 using LanguageCore.Parser;
 using LanguageCore.Parser.Statements;
@@ -361,7 +361,7 @@ public partial class CompilerSystemServer : SystemBase
         ImmutableArray<UserDefinedAttribute> attributes = GetUserAttributes();
 
         CompilerResult compiled = CompilerResult.MakeEmpty(sourceUri);
-        BBLangGeneratorResult generated = new()
+        BytecodeGeneratorResult generated = new()
         {
             Code = ImmutableArray<Instruction>.Empty,
             DebugInfo = null,

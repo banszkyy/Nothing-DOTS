@@ -1,6 +1,6 @@
-using "stdlib/System.bbc";
-using "mm.bbc";
-using "utils.bbc";
+using "stdlib/System";
+using mm;
+using utils;
 
 export void print(float2 v)
 {
@@ -391,37 +391,4 @@ export struct UIImage
 
     export inline void set(float2 pos, int r, int g, int b) { this.set((int)pos.x, (int)pos.y, r, g, b); }
     export inline void set(float2 pos, byte color)            { this.set((int)pos.x, (int)pos.y, color); }
-}
-
-[External("pendrive_plug")]
-export void _pendrive_plug();
-
-[External("pendrive_unplug")]
-export void _pendrive_unplug();
-
-[External("pendrive_read")]
-export int _pendrive_read(int source, byte[]* destination, int length);
-
-[External("pendrive_write")]
-export int _pendrive_write(byte[]* source, int destination, int length);
-
-export void _facility_enqueue(TechnologyHash* hash)
-{
-    Facility.hash_location = hash;
-    Facility.signal = (byte)1;
-    while (Facility.signal == (byte)1)
-    {
-
-    }
-}
-
-export byte _facility_dequeue(TechnologyHash* hash)
-{
-    Facility.hash_location = hash;
-    Facility.signal = (byte)2;
-    while (Facility.signal == (byte)2)
-    {
-
-    }
-    return Facility.signal == (byte)3;
 }

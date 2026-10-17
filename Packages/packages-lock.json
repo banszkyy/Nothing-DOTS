@@ -8,13 +8,13 @@
         "com.unity.entities.graphics": "1.4.12"
       }
     },
-    "com.banszky.bblang": {
+    "com.banszky.vibrissa": {
       "version": "file:/home/bb/Projects/BBLang/Core/Unity",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
-    "com.bb.bblang.debughost": {
+    "com.banszky.vibrissa-debughost-unity": {
       "version": "file:/home/bb/Projects/BBLang/DebugHostUnity",
       "depth": 0,
       "source": "local",

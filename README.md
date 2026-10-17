@@ -5,7 +5,7 @@
 > [!WARNING]
 > This is a WIP prototype.
 
-Multiplayer RTS combat game with programming. You have to write scripts for all of your units/buildings using [BBLang](https://github.com/banszkyy/BBLang).
+Multiplayer RTS combat game with programming. You have to write scripts for all of your units/buildings using [Vibrissa](https://github.com/banszkyy/Vibrissa).
 
 ## Controls
 

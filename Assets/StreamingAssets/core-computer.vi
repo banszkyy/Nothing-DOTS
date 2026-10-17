@@ -69,7 +69,7 @@ void receive()
         {
             EnemyNotificationPacket* packet = &v as EnemyNotificationPacket*;
 
-            printline("E");
+            print("E\n");
 
             Unit unit;
             unit.position = packet.position;
@@ -86,7 +86,7 @@ void receive()
                     tolocal(&direction);
                     normalise(&direction);
 
-                    printline("NTFY");
+                    print("NTFY\n");
 
                     wsend(&packet as byte[]*, sizeof(EnemyNotificationPacket), &direction);
                 }
@@ -161,7 +161,7 @@ void receive()
         {
             EnemyNotificationPacket* packet = &v as EnemyNotificationPacket*;
 
-            printline("E");
+            print("E\n");
 
             Unit unit;
             unit.position = packet.position;
@@ -178,7 +178,7 @@ void receive()
                     tolocal(&direction);
                     normalise(&direction);
 
-                    printline("NTFY");
+                    print("NTFY\n");
 
                     wsend(&packet as byte[]*, sizeof(EnemyNotificationPacket), &direction);
                 }
@@ -216,7 +216,7 @@ _minimap.update();
 
 const float MinimapScale = 1f;
 
-printline("Started ...");
+print("Started ...\n");
 
 while (1)
 {
@@ -241,7 +241,7 @@ while (1)
             {
                 ldebug(p, Color.Red);
                 (&_minimap).set((new float2(p.x, p.z) * (0.5f * MinimapScale) + new float2(11f, 11f)), (byte)((int)(0b_111 * max(0f, enemy.expires - time()) / 10f) << 5));
-                printline(p.x);
+                printf("%f\n", [p.x]);
             }
         }
     }
