@@ -175,7 +175,7 @@ partial struct VirtualPlayerSystemServer : ISystem
                     {
                         Entity = ghost.ValueRO,
                         IsHotReload = false,
-                        Source = "ai/builder.bbc",
+                        Source = "ai/builder.vi",
                     }, playerV.ValueRO.Index);
                     continue;
                 }

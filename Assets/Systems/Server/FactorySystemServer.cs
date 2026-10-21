@@ -44,6 +44,16 @@ public partial struct FactorySystemServer : ISystem
                     requestPlayer = player.ValueRO;
                     break;
                 }
+
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<Player>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Team != virtualRpc.Team) continue;
+                    requestPlayerE = _entity;
+                    requestPlayer = player.ValueRO;
+                    break;
+                }
             }
             else
             {
@@ -159,7 +169,7 @@ public partial struct FactorySystemServer : ISystem
             {
                 Team = unitTeam.ValueRO.Team
             });
-            if (finishedUnit.Source != default)
+            if (finishedUnit.Source.Name != default)
             {
                 commandBuffer.AddComponent<ProcessorInitialization>(newUnit, new()
                 {

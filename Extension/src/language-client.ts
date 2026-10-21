@@ -60,11 +60,11 @@ export class LanguageClientManager implements Disposable {
 
         const clientOptions: LanguageClientOptions = {
             documentSelector: [{
-                language: ".bbc",
+                language: ".vi",
             }],
             synchronize: {
                 fileEvents: [
-                    vscode.workspace.createFileSystemWatcher('**/.bbc')
+                    vscode.workspace.createFileSystemWatcher('**/.vi')
                 ],
             },
             outputChannel: this.outputChannel,

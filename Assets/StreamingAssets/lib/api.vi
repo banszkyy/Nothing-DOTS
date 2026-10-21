@@ -42,8 +42,8 @@ export void sleep(float sec)
 [External("acos")] export float acos(float v);
 [External("atan")] export float atan(float v);
 
-[External("wreceive")] export int wreceive(any* buffer, int length, float3& direction);
-[External("wsend")] export void wsend(any* buffer, int length, float3& direction, float angle);
+[External("wreceive")] export int wreceive(any* buffer, int length, float3* direction);
+[External("wsend")] export void wsend(any* buffer, int length, float3* direction, float angle);
 
 [External("receive")] export int receive(any* buffer, int length, byte port = 0);
 [External("send")] export void send(any* buffer, int length, byte port = 0);
@@ -53,7 +53,7 @@ export inline void wsend(any* buffer, int length, float3 direction, float angle)
     wsend(buffer, length, &direction, angle);
 }
 
-export inline void wsend(any* buffer, int length, float3& direction)
+export inline void wsend(any* buffer, int length, float3* direction)
 {
     wsend(buffer, length, direction, 0.1f);
 }
@@ -65,7 +65,7 @@ export inline void wsend(any* buffer, int length, float3 direction)
 
 export inline void wsend(any* buffer, int length)
 {
-    wsend(buffer, length, (float3*)0, 0f);
+    wsend(buffer, length, 0 as float3*, 0f);
 }
 
 [External("radar")] void _radar();
@@ -209,6 +209,13 @@ export void query_attribute(int attribute, any* data)
 export const int ATTRIBUTE_TURRET_MAGAZINE = 0;
 export const int ATTRIBUTE_TURRET_PROJECTILE_VELOCITY = 1;
 export const int ATTRIBUTE_TURRET_PROJECTILE_DAMAGE = 2;
+
+[External("build_at")] export bool build_at(float3 position, temp string name, temp string source);
+
+[External("queue_unit")] export bool queue_unit(temp string name, temp string source);
+
+[External("set_source")] export bool set_source(temp string name);
+[External("halt")] export void halt();
 
 [External("gui_create")] void gui_create(any* ptr);
 [External("gui_update")] void gui_update(any* ptr);

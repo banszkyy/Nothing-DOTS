@@ -17,6 +17,7 @@ export enum PacketHeader : byte
     indirect_response = 0b_00011110,
     radar_point       = 0b_00001111,
     pc_ad             = 0b_10000111,
+    buildable         = 0b_11000011,
 }
 
 export const float DistanceThreshold = 2f;
@@ -29,6 +30,12 @@ export const bool Debug = false;
 export const bool Logs = false;
 
 export const int MaxUnits = 8;
+
+export struct BuildableNotificationPacket
+{
+    PacketHeader header;
+    float3 position;
+}
 
 export struct VerificationRequestPacket
 {
@@ -139,6 +146,8 @@ export int unit_index_at(List<Unit>* units, float3 position)
 {
     for (int i = 0; i < units.length(); i++)
     {
+        printf("%f %f\n", [units[i].position.x, units[i].position.y]);
+        printf("%f %f\n", [position.x, position.y]);
         if (distancesqr(units[i].position, position) < DistanceThresholdSq)
         { return i; }
     }

@@ -13,6 +13,6 @@ class VibrissaUtils : MonoBehaviour
         {
             result.AppendLine($"externalfunc={externalFunction.Name} {externalFunction.ReturnValueSize} {externalFunction.ParametersSize}");
         }
-        File.WriteAllText(Path.Combine(Application.streamingAssetsPath, "lib", "bbl.conf"), result.ToString());
+        File.WriteAllText(Path.Combine(Application.streamingAssetsPath, "lib", "vi.conf"), result.ToString());
     }
 }

@@ -115,8 +115,8 @@ partial class CompilerSystemClient : SystemBase
                 {
                     if (source.OrphanDiagnostics[i].Parent == parent)
                     {
-                        source.OrphanDiagnostics.RemoveAt(i);
                         result.Add(source.OrphanDiagnostics[i]);
+                        source.OrphanDiagnostics.RemoveAt(i);
                     }
                 }
                 return result;

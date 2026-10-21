@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import * as languageClient from './language-client'
 import * as debuggerClient from './debugger-client'
+import * as profiling from './profiling'
 import * as utils from './utils'
 import path from 'path'
 import * as net from 'net'
@@ -179,6 +180,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     languageClient.activate(context)
     debuggerClient.activate(context)
+    profiling.activate(context)
 
     const _auth = () => {
         authenticate().then(v => token = v).catch(error => {

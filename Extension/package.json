@@ -66,6 +66,18 @@
                     "command": "nothingame.debug.attach",
                     "when": "viewItem == nothingameEntity"
                 }
+            ],
+            "debug/toolBar": [
+                {
+                    "command": "nothingame.profiling.start",
+                    "when": "isWorkspaceTrusted && debugType == 'nothingame' && !nothingame.isProfiling",
+                    "group": "navigation"
+                },
+                {
+                    "command": "nothingame.profiling.stop",
+                    "when": "isWorkspaceTrusted && debugType == 'nothingame' && nothingame.isProfiling",
+                    "group": "navigation"
+                }
             ]
         },
         "configuration": {
@@ -95,6 +107,22 @@
                 "command": "nothingame.debug.attach",
                 "category": "Nothingame",
                 "title": "Debug unit"
+            },
+            {
+                "command": "nothingame.profiling.start",
+                "category": "Nothingame",
+                "title": "Start profiling active debug session",
+                "when": "isWorkspaceTrusted && inDebugMode && debugType == 'nothingame'",
+                "icon": "$(flame)",
+                "shortTitle": "Start profiling"
+            },
+            {
+                "command": "nothingame.profiling.stop",
+                "category": "Nothingame",
+                "title": "Stop profiling active debug session",
+                "when": "isWorkspaceTrusted && inDebugMode && debugType == 'nothingame'",
+                "icon": "$(flame)",
+                "shortTitle": "Stop profiling"
             }
         ]
     },

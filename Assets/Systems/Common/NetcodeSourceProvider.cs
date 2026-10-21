@@ -22,9 +22,9 @@ class NetcodeSourceProvider : ISourceProviderAsync, ISourceQueryProvider
 
     public IEnumerable<Uri> GetQuery(string requestedFile, Uri? currentFile)
     {
-        if (!requestedFile.EndsWith($".{LanguageConstants.LanguageExtension}", StringComparison.Ordinal))
+        if (!requestedFile.EndsWith(LanguageConstants.LanguageExtension, StringComparison.Ordinal))
         {
-            requestedFile += $".{LanguageConstants.LanguageExtension}";
+            requestedFile += LanguageConstants.LanguageExtension;
         }
 
         if (requestedFile.StartsWith("/~")) requestedFile = requestedFile[1..];

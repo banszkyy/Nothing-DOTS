@@ -63,6 +63,8 @@ void receive()
             unit.verification_sent_at = time();
             remove_unit_at(&enemies, unit.position);
             update_unit(&allies, unit);
+            int bi = unit_index_at(&buildings, unit.position);
+            if (bi != -1) buildings[bi].placeholder = false;
         }
         else if (v[0] == (byte)PacketHeader.enemy &&
                  receivedLength == sizeof(EnemyNotificationPacket))
@@ -104,6 +106,8 @@ void receive()
             unit.verification_sent_at = time();
             remove_unit_at(&enemies, unit.position);
             update_unit(&allies, unit);
+            int bi = unit_index_at(&buildings, unit.position);
+            if (bi != -1) buildings[bi].placeholder = false;
         }
     }
 
@@ -120,7 +124,12 @@ void receive()
             VerificationResponsePacket responsePacket = new VerificationResponsePacket;
             responsePacket.header = PacketHeader.response;
 
-            if (distancesqr(packet.position, GPS.position) < DistanceThresholdLargeSq)
+            if (!packet.position.x && !packet.position.z)
+            {
+                responsePacket.position = GPS.position;
+                send(&responsePacket as byte[]*, sizeof(VerificationResponsePacket), port);
+            }
+            else if (distancesqr(packet.position, GPS.position) < DistanceThresholdLargeSq)
             {
                 responsePacket.position = packet.position;
                 debug(packet.position, Color.Cyan);
@@ -155,6 +164,8 @@ void receive()
             unit.verification_sent_at = time();
             remove_unit_at(&enemies, unit.position);
             update_unit(&allies, unit);
+            int bi = unit_index_at(&buildings, packet.position);
+            if (bi != -1) buildings[bi].placeholder = false;
         }
         else if (v[0] == (byte)PacketHeader.enemy &&
                  receivedLength == sizeof(EnemyNotificationPacket))
@@ -196,6 +207,8 @@ void receive()
             unit.verification_sent_at = time();
             remove_unit_at(&enemies, unit.position);
             update_unit(&allies, unit);
+            int bi = unit_index_at(&buildings, unit.position);
+            if (bi != -1) buildings[bi].placeholder = false;
         }
     }
 }
@@ -213,10 +226,32 @@ _minimap.width = 100;
 _minimap.height = 100;
 _minimap.margin = 8;
 _minimap.update();
+float lastPortScan = 0f;
 
 const float MinimapScale = 1f;
 
 print("Started ...\n");
+
+struct Building
+{
+    byte type;
+    bool placeholder;
+    float3 position;
+}
+
+List<Building> buildings = new List<Building>(4);
+
+{
+    u8[] s0 = "Facility";
+    u8[] s1 = "facility.vi";
+    float3 p = GPS.position + new float3(10f, 0f, 0f);
+    build_at(p, &s0, &s1);
+    var b = new Building;
+    b.type = 1;
+    b.placeholder = true;
+    b.position = p;
+    buildings.add(b);
+}
 
 while (1)
 {
@@ -276,6 +311,27 @@ while (1)
         notificationPacket.header = PacketHeader.enemy;
         notificationPacket.position = command.position;
         wsend(&notificationPacket as byte[]*, sizeof(EnemyNotificationPacket));
+    }
+
+    for (int i = buildings.length() - 1; i >= 0; i--)
+    {
+        Building b = buildings[i];
+        if (b.placeholder)
+        {
+            BuildableNotificationPacket p;
+            p.header = PacketHeader.buildable;
+            p.position = b.position;
+            wsend(&p as byte[]*, sizeof(BuildableNotificationPacket));
+        }
+    }
+
+    if (time() - lastPortScan > 5f)
+    {
+        lastPortScan = time();
+        VerificationRequestPacket p;
+        p.header = PacketHeader.request;
+        p.position = new float3;
+        send(&p as byte[]*, sizeof(VerificationRequestPacket), (byte)0);
     }
 
     (&_minimap).update();

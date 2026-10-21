@@ -120,6 +120,7 @@ struct Processor : IComponentData
     public ProcessorSource Source;
     public UnitAttributesPack Attributes;
     [GhostField] public ProcessorJob.DebugContext DebugContext;
+    [GhostField] public bool IsVersionLocked;
 
     public int CyclesPerTick;
     public Registers Registers;

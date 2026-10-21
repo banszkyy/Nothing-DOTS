@@ -64,6 +64,23 @@ partial class ProcessorSourceSystemServer : SystemBase
         }
 
         foreach (var (request, command, entity) in
+            SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<ToggleSourceLockRequestRpc>>()
+            .WithEntityAccess())
+        {
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
+            commandBuffer.DestroyEntity(entity);
+
+            foreach (var (ghostInstance, processor) in
+                SystemAPI.Query<RefRO<GhostInstance>, RefRW<Processor>>())
+            {
+                if (!command.ValueRO.Entity.Equals(ghostInstance.ValueRO)) continue;
+
+                processor.ValueRW.IsVersionLocked = !processor.ValueRO.IsVersionLocked;
+                break;
+            }
+        }
+
+        foreach (var (request, command, entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<SetProcessorSourceRequestRpc>>()
             .WithEntityAccess())
         {
@@ -194,7 +211,7 @@ partial class ProcessorSourceSystemServer : SystemBase
                 continue;
             }
 
-            if (processor.ValueRO.CompiledSourceVersion != source.CompiledVersion)
+            if (!processor.ValueRO.IsVersionLocked && processor.ValueRO.CompiledSourceVersion != source.CompiledVersion)
             {
                 if (source.HotReloadVersion == source.CompiledVersion)
                 {

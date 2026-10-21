@@ -40,7 +40,7 @@ Multiplayer RTS combat game with programming. You have to write scripts for all 
 
 ### Uploading a script into a unit
 
-1. Place your `.bbc` script into the `StreamingAssets` directory, which is located in the installed game's directory.
+1. Place your `.vi` script into the `StreamingAssets` directory, which is located in the installed game's directory.
     > The standard library and example scripts are also located here.
 2. Open the unit's menu
 3. Navigate to Processor > Source

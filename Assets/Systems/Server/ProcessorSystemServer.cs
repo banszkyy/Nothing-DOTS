@@ -151,37 +151,37 @@ unsafe partial struct ProcessorSystemServer : ISystem
         [BurstCompile]
         public void DoCrash(in FixedString32Bytes message)
         {
-            char* ptr = stackalloc char[message.Length * sizeof(char)];
-            Unicode.Utf8ToUtf16(message.GetUnsafePtr(), message.Length, ptr, out int utf16Length, message.Length * sizeof(char));
-            Push(new Span<byte>(ptr, utf16Length * sizeof(char)));
+            Push(new Span<byte>(message.GetUnsafePtr(), message.Length));
 
             *Crash = Registers->StackPointer;
             *Signal = LanguageCore.Runtime.Signal.UserCrash;
         }
 
         [BurstCompile]
-        public readonly void GetString(int pointer, out FixedString32Bytes @string)
+        public readonly void GetStringU8(int pointer, out FixedString32Bytes @string)
         {
             @string = new();
-            for (int i = pointer; i < pointer + FixedString32Bytes.UTF8MaxLengthInBytes; i += sizeof(char))
+            if (pointer == 0) return;
+            for (int i = pointer; i < pointer + FixedString32Bytes.UTF8MaxLengthInBytes; i++)
             {
-                if (i < 0 || i + sizeof(char) >= MemorySpan.Length) break;
-                char c = *(char*)((byte*)Memory + i);
-                if (c == '\0') break;
-                @string.Append(c);
+                if (i < 0 || i >= MemorySpan.Length) break;
+                byte c = *((byte*)Memory + i);
+                if (c == 0) break;
+                @string.Append((char)c);
             }
         }
 
         [BurstCompile]
-        public readonly void GetString(int pointer, out FixedString64Bytes @string)
+        public readonly void GetStringU8(int pointer, out FixedString64Bytes @string)
         {
             @string = new();
-            for (int i = pointer; i < pointer + FixedString64Bytes.UTF8MaxLengthInBytes; i += sizeof(char))
+            if (pointer == 0) return;
+            for (int i = pointer; i < pointer + FixedString64Bytes.UTF8MaxLengthInBytes; i++)
             {
-                if (i < 0 || i + sizeof(char) >= MemorySpan.Length) break;
-                char c = *(char*)((byte*)Memory + i);
-                if (c == '\0') break;
-                @string.Append(c);
+                if (i < 0 || i >= MemorySpan.Length) break;
+                byte c = *((byte*)Memory + i);
+                if (c == 0) break;
+                @string.Append((char)c);
             }
         }
     }

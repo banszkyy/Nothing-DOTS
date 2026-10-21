@@ -877,12 +877,15 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
     {
         base.DisposeSession();
 
-        EntityManager e = ConnectionManager.ServerOrDefaultWorld.EntityManager;
-        if (e.Exists(_entity))
+        if (ConnectionManager.ServerOrDefaultWorld.IsCreated)
         {
-            Processor _processor = e.GetComponentData<Processor>(_entity);
-            _processor.DebugContext = default;
-            e.SetComponentData(_entity, _processor);
+            EntityManager e = ConnectionManager.ServerOrDefaultWorld.EntityManager;
+            if (e.Exists(_entity))
+            {
+                Processor _processor = e.GetComponentData<Processor>(_entity);
+                _processor.DebugContext = default;
+                e.SetComponentData(_entity, _processor);
+            }
         }
 
         _originalSource = default;

@@ -47,12 +47,20 @@ void receive()
             print(packet.position);
             printline();
 
-            if (distancesqr(packet.position, GPS.position) < DistanceThresholdSq)
+            if (!packet.position.x && !packet.position.z)
             {
                 print(" M");
                 VerificationResponsePacket responsePacket = new VerificationResponsePacket;
                 responsePacket.header = PacketHeader.response;
                 responsePacket.position = GPS.position;
+                send(&responsePacket as byte[]*, sizeof(VerificationResponsePacket));
+            }
+            else if (distancesqr(packet.position, GPS.position) < DistanceThresholdSq)
+            {
+                print(" M");
+                VerificationResponsePacket responsePacket = new VerificationResponsePacket;
+                responsePacket.header = PacketHeader.response;
+                responsePacket.position = packet.position;
                 debug(packet.position, Color.Cyan);
                 send(&responsePacket as byte[]*, sizeof(VerificationResponsePacket));
             }
@@ -65,22 +73,21 @@ struct ExtractUSB
 {
 }
 
+printf("Started...", []);
+
 const int MaxCommandDataSize = 8;
 
 while (1)
 {
-    char v = stdin();
-    print(v);
-    
-    //receive();
-//
-    //byte[MaxCommandDataSize] _command;
-//
-    //int commandId = dequeue_command(&_command);
-//
+    receive();
+
+    byte[MaxCommandDataSize] _command;
+
+    int commandId = dequeue_command(&_command);
+
     //printline("Enter the research hash:");
     //string input = readline();
-//
+
     //if (length(input) < 30)
     //{
     //    printline("Invalid hash");
@@ -91,6 +98,6 @@ while (1)
     //    _facility_enqueue((TechnologyHash*)input);
     //    printline("Done");
     //}
-//
+
     //delete input;
 }

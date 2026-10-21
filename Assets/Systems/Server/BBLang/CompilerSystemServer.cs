@@ -420,7 +420,7 @@ public partial class CompilerSystemServer : SystemBase
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            //if (file.Name == "unit-6.bbc")
+            //if (file.Name == "unit-6.vi")
             //{
             //    const string _out = "/home/bb/Projects/BBLang/Core/Utility/out2.il";
             //    System.IO.File.WriteAllBytes(_out, Array.Empty<byte>());
@@ -430,7 +430,7 @@ public partial class CompilerSystemServer : SystemBase
             //    Debug.Log($"Bytecode has been written to {_out}");
             //}
 
-            //using (StreamWriter stringWriter = new($"/home/bb/Projects/BBLang/Core/out-{DateTime.Now:O}-{file.Name.ToString().Replace('/', '_')}.bbc"))
+            //using (StreamWriter stringWriter = new($"/home/bb/Projects/BBLang/Core/out-{DateTime.Now:O}-{file.Name.ToString().Replace('/', '_')}.vi"))
             //{
             //    stringWriter.WriteLine(compiled.Stringify());
             //    if (!generated.ILGeneratorBuilders.IsDefault)

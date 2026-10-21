@@ -251,6 +251,10 @@ public partial struct PlayerSystemServer : ISystem
                         {
                             NetworkId = playerR.ValueRO.ConnectionId,
                         });
+                        commandBuffer.AddComponent<ProcessorInitialization>(coreComputer, new()
+                        {
+                            SourceFile = new FileId("core-computer.vi", NetcodeEndPoint.Server)
+                        });
 
                         Entity builder = commandBuffer.Instantiate(prefabs.Builder);
                         commandBuffer.SetComponent<UnitTeam>(builder, new()
@@ -261,6 +265,10 @@ public partial struct PlayerSystemServer : ISystem
                         commandBuffer.SetComponent<GhostOwner>(builder, new()
                         {
                             NetworkId = playerR.ValueRO.ConnectionId,
+                        });
+                        commandBuffer.AddComponent<ProcessorInitialization>(builder, new()
+                        {
+                            SourceFile = new FileId("builder.vi", NetcodeEndPoint.Server)
                         });
 
                         goto spawned;

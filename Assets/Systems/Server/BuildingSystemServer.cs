@@ -35,6 +35,15 @@ public partial struct BuildingSystemServer : ISystem
                     requestPlayer = _entity;
                     break;
                 }
+
+                foreach (var (player, _entity) in
+                    SystemAPI.Query<RefRO<Player>>()
+                    .WithEntityAccess())
+                {
+                    if (player.ValueRO.Team != virtualRpc.Team) continue;
+                    requestPlayer = _entity;
+                    break;
+                }
             }
             else
             {
@@ -236,7 +245,7 @@ public partial struct BuildingSystemServer : ISystem
             {
                 Team = unitTeam.ValueRO.Team,
             });
-            if (placeholder.ValueRO.Source != default)
+            if (placeholder.ValueRO.Source.Name != default)
             {
                 commandBuffer.AddComponent<ProcessorInitialization>(newEntity, new()
                 {
@@ -364,7 +373,7 @@ public partial struct BuildingSystemServer : ISystem
         {
             newEntity = commandBuffer.Instantiate(building.Prefab);
             commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(position));
-            if (source != default)
+            if (source.Name != default)
             {
                 commandBuffer.AddComponent<ProcessorInitialization>(newEntity, new()
                 {

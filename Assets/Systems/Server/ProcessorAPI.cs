@@ -66,6 +66,7 @@ static unsafe class ProcessorAPI
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Factory.QueueUnit).Value, Factory.Prefix + 1, ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>(), default));
 
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Processor_.SetSource).Value, Processor_.Prefix + 1, ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<byte>(), default));
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Processor_.Halt).Value, Processor_.Prefix + 2, 0, 0, default));
     }
 
     public static IExternalFunction[] GenerateManagedExternalFunctions() => new IExternalFunction[]
@@ -108,6 +109,13 @@ static unsafe class ProcessorAPI
         new ExternalFunctionStub(GUI.Prefix + 3,               "gui_update", ExternalFunctionGenerator.SizeOf<int>(), 0),
 
         new ExternalFunctionStub(Attributes.Prefix + 1,        "attributes_query", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+
+        new ExternalFunctionStub(Buildings.Prefix + 1,         "build_at", ExternalFunctionGenerator.SizeOf<float3, int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+
+        new ExternalFunctionStub(Factory.Prefix + 1,           "queue_unit", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+
+        new ExternalFunctionStub(Processor_.Prefix + 1,        "set_source", ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+        new ExternalFunctionStub(Processor_.Prefix + 2,        "halt", 0, 0),
     };
 
     public const int GlobalPrefix = unchecked((int)0xFFFF0000);
@@ -592,13 +600,7 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            FixedString32Bytes text = new();
-            for (int i = textPtr; i < textPtr + 32; i += sizeof(char))
-            {
-                char c = *(char*)((byte*)scope->ProcessorRef.Memory + i);
-                if (c == '\0') break;
-                text.Append(c);
-            }
+            scope->ProcessorRef.GetStringU8(textPtr, out FixedString32Bytes text);
 
             if (scope->WorldRef.WorldLabels.ListData->Length + 1 < scope->WorldRef.WorldLabels.ListData->Capacity) scope->WorldRef.WorldLabels.AddNoResize(new(
                 scope->EntityRef.Team.Team,
@@ -618,13 +620,7 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            FixedString32Bytes text = new();
-            for (int i = textPtr; i < textPtr + 32; i += sizeof(char))
-            {
-                char c = *(char*)((byte*)scope->ProcessorRef.Memory + i);
-                if (c == '\0') break;
-                text.Append(c);
-            }
+            scope->ProcessorRef.GetStringU8(textPtr, out FixedString32Bytes text);
 
             float3 transformed = scope->EntityRef.LocalTransform.TransformPoint(position);
 
@@ -871,12 +867,13 @@ static unsafe class ProcessorAPI
         public static void BuildAt(nint _scope, nint arguments, nint returnValue)
         {
             FunctionScope* scope = (FunctionScope*)_scope;
-            (float3 position, int namePtr, int sourcePtr) = ExternalFunctionGenerator.TakeParameters<int, int, int>(arguments);
+            (float3 position, int namePtr, int sourcePtr) = ExternalFunctionGenerator.TakeParameters<float3, int, int>(arguments);
 
-            if (namePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
+            if (namePtr is <= 0 or >= Processor.TotalMemorySize) goto bad;
+            if (sourcePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
 
-            scope->ProcessorRef.GetString(namePtr, out FixedString32Bytes name);
-            scope->ProcessorRef.GetString(sourcePtr, out FixedString64Bytes source);
+            scope->ProcessorRef.GetStringU8(namePtr, out FixedString32Bytes name);
+            scope->ProcessorRef.GetStringU8(sourcePtr, out FixedString64Bytes source);
 
             Entity rpcE = scope->WorldRef.CommandBuffer.CreateEntity(scope->WorldRef.SortIndex);
             scope->WorldRef.CommandBuffer.AddComponent<PlaceBuildingRequestRpc>(scope->WorldRef.SortIndex, rpcE, new()
@@ -912,10 +909,11 @@ static unsafe class ProcessorAPI
             FunctionScope* scope = (FunctionScope*)_scope;
             (int namePtr, int sourcePtr) = ExternalFunctionGenerator.TakeParameters<int, int>(arguments);
 
-            if (namePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
+            if (namePtr is <= 0 or >= Processor.TotalMemorySize) goto bad;
+            if (sourcePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
 
-            scope->ProcessorRef.GetString(namePtr, out FixedString32Bytes name);
-            scope->ProcessorRef.GetString(sourcePtr, out FixedString64Bytes source);
+            scope->ProcessorRef.GetStringU8(namePtr, out FixedString32Bytes name);
+            scope->ProcessorRef.GetStringU8(sourcePtr, out FixedString64Bytes source);
 
             Entity rpcE = scope->WorldRef.CommandBuffer.CreateEntity(scope->WorldRef.SortIndex);
             scope->WorldRef.CommandBuffer.AddComponent<FactoryQueueUnitRequestRpc>(scope->WorldRef.SortIndex, rpcE, new()
@@ -951,9 +949,9 @@ static unsafe class ProcessorAPI
             FunctionScope* scope = (FunctionScope*)_scope;
             int namePtr = ExternalFunctionGenerator.TakeParameters<int>(arguments);
 
-            if (namePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
+            if (namePtr is <= 0 or >= Processor.TotalMemorySize) goto bad;
 
-            scope->ProcessorRef.GetString(namePtr, out FixedString64Bytes name);
+            scope->ProcessorRef.GetStringU8(namePtr, out FixedString64Bytes name);
 
             Entity rpcE = scope->WorldRef.CommandBuffer.CreateEntity(scope->WorldRef.SortIndex);
             scope->WorldRef.CommandBuffer.AddComponent<SetProcessorSourceRequestRpc>(scope->WorldRef.SortIndex, rpcE, new()
@@ -976,6 +974,14 @@ static unsafe class ProcessorAPI
         bad:
             returnValue.Set(false);
             return;
+        }
+
+        [BurstCompile]
+        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
+        public static void Halt(nint _scope, nint arguments, nint returnValue)
+        {
+            FunctionScope* scope = (FunctionScope*)_scope;
+            *scope->ProcessorRef.Signal = Signal.Halt;
         }
     }
 }
