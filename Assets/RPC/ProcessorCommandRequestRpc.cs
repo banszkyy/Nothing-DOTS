@@ -3,9 +3,8 @@ using Unity.NetCode;
 
 public enum ProcessorCommand : byte
 {
-    Halt,
     Reset,
-    Continue,
+    HaltContinue,
     Key,
 }
 

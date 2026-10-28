@@ -26,12 +26,20 @@
     border-width: 1px;
 }
 
-Label {
+Label { 
     color: var(--foregroundPrimary);
 }
 
 Label.error {
     color: var(--error);
+}
+
+Label.warning {
+    color: var(--warning);
+}
+
+Label.success {
+    color: var(--ok);
 }
 
 Label.secondary {
@@ -465,7 +473,7 @@ ProgressBar Label {
 }
 
 .unity-toggle > Label {
-    min-width: unset;
+    min-width: auto;
     margin: 0px;
     padding: 0px;
     align-self: center;

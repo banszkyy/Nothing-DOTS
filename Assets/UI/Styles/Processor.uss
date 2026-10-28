@@ -85,8 +85,9 @@
 .heap-block {
     flex-grow: 1;
     flex-shrink: 1;
-    min-height: 12px;
+    min-width: 4px;
     margin: 2px;
+    padding: 0px;
     border-top-width: 1px;
     border-right-width: 1px;
     border-bottom-width: 1px;
@@ -94,25 +95,34 @@
 }
 
 .heap-block.heap-block-used {
-    border-left-color: #eb6f92;
-    border-right-color: #eb6f92;
-    border-top-color: #eb6f92;
-    border-bottom-color: #eb6f92;
+    border-left-color: #b7b3d2;
+    border-right-color: #b7b3d2;
+    border-top-color: #b7b3d2;
+    border-bottom-color: #b7b3d2;
+}
+
+.heap-block.heap-block-used Label {
+    color: #b7b3d2;
+
 }
 
 .heap-block.heap-block-free {
-    border-left-color: #908caa;
-    border-right-color: #908caa;
-    border-top-color: #908caa;
-    border-bottom-color: #908caa;
+    border-left-color: #636363;
+    border-right-color: #636363;
+    border-top-color: #636363;
+    border-bottom-color: #636363;
+}
+
+.heap-block.heap-block-free Label {
+    color: #636363;
 }
 
 .heap-block Label {
-    font-size: 10px;
+    font-size: 7px;
     margin-top: 0;
-    margin-right: 0;
+    margin-right: 2px;
     margin-bottom: 0;
-    margin-left: 0;
+    margin-left: 2px;
     padding-top: 0;
     padding-right: 0;
     padding-bottom: 0;

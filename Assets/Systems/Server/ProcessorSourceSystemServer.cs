@@ -29,20 +29,24 @@ partial class ProcessorSourceSystemServer : SystemBase
 
                 switch (command.ValueRO.Command)
                 {
-                    case ProcessorCommand.Halt:
-                        processor.ValueRW.Signal = Signal.Halt;
+                    case ProcessorCommand.HaltContinue:
+                        if (processor.ValueRW.Signal != Signal.Halt)
+                        {
+                            processor.ValueRW.Signal = Signal.Halt;
+                        }
+                        else
+                        {
+                            processor.ValueRW.Signal = Signal.None;
+                            processor.ValueRW.Crash = 0;
+                            if (processor.ValueRO.DebugContext.IsBeingDebugged)
+                            {
+                                processor.ValueRW.DebugContext.IsContinueUnhandled = true;
+                            }
+                        }
                         break;
                     case ProcessorCommand.Reset:
                         DisposeProcessorResources(World.Unmanaged, processorEntity);
                         ResetProcessor(ref processor.ValueRW);
-                        if (processor.ValueRO.DebugContext.IsBeingDebugged)
-                        {
-                            processor.ValueRW.DebugContext.IsContinueUnhandled = true;
-                        }
-                        break;
-                    case ProcessorCommand.Continue:
-                        processor.ValueRW.Signal = Signal.None;
-                        processor.ValueRW.Crash = 0;
                         if (processor.ValueRO.DebugContext.IsBeingDebugged)
                         {
                             processor.ValueRW.DebugContext.IsContinueUnhandled = true;

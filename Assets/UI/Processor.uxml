@@ -6,55 +6,47 @@
     <Style src="project://database/Assets/UI/Styles/Processor.uss?fileID=7433441132597879392&amp;guid=913710a6a48cfd2aa9a2b83710b5d436&amp;type=3#Processor"/>
     <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:VisualElement style="flex-grow: 1;">
-        <ui:VisualElement style="flex-direction: row;">
-            <ui:ProgressBar value="0" title="Loading ..." name="progress-compilation" high-value="1" class="label-left" style="flex-grow: 1;"/>
-            <ui:Button text="\udb80\udfe4" name="button-halt" parse-escape-sequences="true" tooltip="Halt Processor" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-            <ui:Button text="\udb81\udc50" name="button-reset" parse-escape-sequences="true" tooltip="Restart Processor" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-            <ui:Button text="\udb81\udc0a" name="button-continue" parse-escape-sequences="true" tooltip="Continue Processor" style="margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 20px; height: 20px;"/>
-            <ui:Button text="\udb80\udce4" name="button-start-debug" parse-escape-sequences="true" tooltip="Debug" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
+        <ui:VisualElement name="panel-status" style="flex-direction: row; flex-shrink: 0;">
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+                <ui:Label text="?" name="icon-status" style="font-size: 10px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; -unity-text-align: middle-left;"/>
+                <ui:Label text="Loading ..." name="label-status" style="font-size: 10px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; -unity-text-align: middle-left; flex-grow: 1;"/>
+            </ui:VisualElement>
+            <ui:Button text="\udb80\udfe4" name="button-halt-continue" parse-escape-sequences="true" tooltip="Halt Processor" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px;"/>
+            <ui:Button text="\udb81\udc50" name="button-reset" parse-escape-sequences="true" tooltip="Restart Processor" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px;"/>
+            <ui:Button text="\udb80\udce4" name="button-start-debug" parse-escape-sequences="true" tooltip="Debug" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px;"/>
         </ui:VisualElement>
-        <ui:VisualElement name="panel-debug" style="flex-direction: row; background-color: rgb(178, 34, 34); display: none;">
-            <ui:Label text="Currently debugging" style="flex-grow: 1; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; -unity-text-align: middle-left;"/>
-            <ui:Button text="\udb82\ude30" parse-escape-sequences="true" tooltip="Stop Debugging" name="button-stop-debug" style="margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 20px; height: 20px;"/>
+        <ui:VisualElement name="panel-source" style="flex-direction: row; flex-shrink: 0;">
+            <ui:TextField name="input-source-path" tooltip="Source File Path" value="what" style="flex-grow: 1; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; font-size: 10px; height: 16px;"/>
+            <ui:Button text="\ue5fe" name="button-select" parse-escape-sequences="true" tooltip="Select File" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px; font-size: 12px;"/>
+            <ui:Button text="\udb80\ude38" name="button-hotreload" parse-escape-sequences="true" tooltip="Hot-reload" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px; font-size: 12px;"/>
+            <ui:Button text="\ueeff" name="button-compile" parse-escape-sequences="true" tooltip="Compile" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px; font-size: 10px;"/>
+            <ui:Button text="\uf2fc" name="button-lock" parse-escape-sequences="true" tooltip="Lock Source Version" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px; font-size: 10px;"/>
         </ui:VisualElement>
-        <ui:TabView name="tabs" style="height: 120px; flex-grow: 1;">
-            <ui:Tab label="Terminal" enabled="true" style="flex-grow: 1;">
-                <ui:ScrollView name="scroll-terminal" vertical-scroller-visibility="AlwaysVisible" horizontal-scroller-visibility="Hidden" mode="Vertical" class="terminal" style="white-space: normal; flex-basis: auto;">
-                    <ui:Label name="label-terminal" focusable="true" selectable="true" enable-rich-text="true" emoji-fallback-support="false" tabindex="0" text="┌─┬┐  ╔═╦╗  ╓─╥╖  ╒═╤╕&#10;│ ││  ║ ║║  ║ ║║  │ ││&#10;├─┼┤  ╠═╬╣  ╟─╫╢  ╞═╪╡&#10;└─┴┘  ╚═╩╝  ╙─╨╜  ╘═╧╛&#10;┌───────────────────┐&#10;│  ╔═══╗ Some Text  │▒&#10;│  ╚═╦═╝ in the box │▒&#10;╞═╤══╩══╤═══════════╡▒&#10;│ ├──┬──┤           │▒&#10;│ └──┴──┘           │▒&#10;└───────────────────┘▒&#10; ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒&#10;" class="terminal" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/NotoSansMono-VariableFont_wdth,wght.ttf?fileID=12800000&amp;guid=712786169bbdbed48a42ec0f34e99fc9&amp;type=3#NotoSansMono-VariableFont_wdth,wght&quot;); font-size: 12px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; border-top-left-radius: 0; border-left-width: 0; border-top-width: 0; border-bottom-width: 0; border-right-width: 0; -unity-paragraph-spacing: -24px; white-space: normal; flex-basis: auto; -unity-text-align: lower-left;"/>
-                </ui:ScrollView>
-            </ui:Tab>
-            <ui:Tab label="Source" style="flex-grow: 1;">
-                <ui:VisualElement name="source-toolbar" style="flex-direction: row; flex-shrink: 0;">
-                    <ui:TextField name="input-source-path" tooltip="Source File Path" style="flex-grow: 1; margin-top: 0; margin-bottom: 0;"/>
-                    <ui:Button text="\ue5fe" name="button-select" parse-escape-sequences="true" tooltip="Select File" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-                    <ui:Button text="\udb80\ude38" name="button-hotreload" parse-escape-sequences="true" tooltip="Hot-reload" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-                    <ui:Button text="\ueeff" name="button-compile" parse-escape-sequences="true" tooltip="Compile" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-                    <ui:Button text="\uf2fc" name="button-lock" parse-escape-sequences="true" tooltip="Lock Source Version" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 20px; height: 20px;"/>
-                </ui:VisualElement>
-                <ui:VisualElement name="files-container" style="flex-grow: 1;">
-                    <ui:Label text="Label" name="label-base-path" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; color: rgb(164, 164, 164); font-size: 8px;"/>
-                    <ui:ScrollView name="scroll-files" style="flex-grow: 1;">
-                        <ui:Instance template="TerminalFileItem"/>
-                    </ui:ScrollView>
-                </ui:VisualElement>
-                <ui:ScrollView name="scroll-progresses">
-                    <ui:Instance template="TerminalProgressItem"/>
-                </ui:ScrollView>
-                <ui:ScrollView name="scroll-diagnostics"/>
-            </ui:Tab>
-            <ui:Tab label="Memory" class="unity-fill-tab" style="flex-grow: 1;">
-                <ui:VisualElement style="flex-grow: 0; flex-direction: row; flex-shrink: 0;">
-                    <ui:ProgressBar value="0" name="memory-progress" high-value="1" style="flex-grow: 1;"/>
-                    <ui:Button text="Analyze" name="memory-button-analyze"/>
-                </ui:VisualElement>
-                <ui:Label name="memory-error" class="error" style="font-size: 12px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;"/>
-                <ui:VisualElement name="heap-container" style="flex-grow: 1;"/>
-            </ui:Tab>
-            <ui:Tab label="Logs" enabled="true" style="flex-grow: 1;">
-                <ui:ScrollView name="scroll-logs">
-                    <ui:Instance template="TerminalLogItem"/>
-                </ui:ScrollView>
-            </ui:Tab>
-        </ui:TabView>
+        <ui:VisualElement name="panel-heap" style="height: 14px; flex-direction: row; flex-shrink: 0;">
+            <ui:VisualElement name="heap-objects-container" style="flex-grow: 1; flex-direction: row;">
+                <ui:VisualElement class="heap-block heap-block-used" style="flex-grow: 1;"/>
+                <ui:VisualElement class="heap-block heap-block-used" style="flex-grow: 1;"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-debug" style="flex-direction: row; background-color: rgb(178, 34, 34); display: flex; flex-shrink: 0;">
+            <ui:Label text="Currently debugging" style="flex-grow: 1; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; -unity-text-align: middle-left; font-size: 10px; -unity-font-style: bold;"/>
+            <ui:Button text="\udb82\ude30" parse-escape-sequences="true" tooltip="Stop Debugging" name="button-stop-debug" style="margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 16px; height: 16px; margin-top: 2px; margin-bottom: 2px;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="files-container" style="flex-grow: 1;">
+            <ui:Label text="Label" name="label-base-path" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; color: rgb(164, 164, 164); font-size: 8px;"/>
+            <ui:ScrollView name="scroll-files" style="flex-grow: 1;">
+                <ui:Instance template="TerminalFileItem"/>
+            </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:ScrollView name="scroll-progresses">
+            <ui:Instance template="TerminalProgressItem"/>
+        </ui:ScrollView>
+        <ui:ScrollView name="scroll-diagnostics"/>
+        <ui:ScrollView name="scroll-logs" style="display: none;">
+            <ui:Instance template="TerminalLogItem"/>
+        </ui:ScrollView>
+        <ui:ScrollView name="scroll-terminal" vertical-scroller-visibility="AlwaysVisible" horizontal-scroller-visibility="Hidden" mode="Vertical" class="terminal" style="white-space: normal;">
+            <ui:Label name="label-terminal" focusable="true" selectable="true" enable-rich-text="true" emoji-fallback-support="false" tabindex="0" text="┌─┬┐  ╔═╦╗  ╓─╥╖  ╒═╤╕&#10;│ ││  ║ ║║  ║ ║║  │ ││&#10;├─┼┤  ╠═╬╣  ╟─╫╢  ╞═╪╡&#10;└─┴┘  ╚═╩╝  ╙─╨╜  ╘═╧╛&#10;┌───────────────────┐&#10;│  ╔═══╗ Some Text  │▒&#10;│  ╚═╦═╝ in the box │▒&#10;╞═╤══╩══╤═══════════╡▒&#10;│ ├──┬──┤           │▒&#10;│ └──┴──┘           │▒&#10;└───────────────────┘▒&#10; ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒&#10;&#10;meowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeowmeow" class="terminal" style="-unity-font-definition: url(&quot;project://database/Assets/UI/Fonts/NotoSansMono-VariableFont_wdth,wght.ttf?fileID=12800000&amp;guid=712786169bbdbed48a42ec0f34e99fc9&amp;type=3#NotoSansMono-VariableFont_wdth,wght&quot;); font-size: 12px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; border-top-left-radius: 0; border-left-width: 0; border-top-width: 0; border-bottom-width: 0; border-right-width: 0; -unity-paragraph-spacing: -24px; white-space: normal; flex-basis: auto; -unity-text-align: lower-left;"/>
+        </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>
