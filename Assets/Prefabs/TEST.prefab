@@ -567,7 +567,7 @@ MonoBehaviour:
   CustomLED: {fileID: 0}
   USBLED: {fileID: 0}
   USBPosition: {fileID: 0}
-  Script: turret-test.bbc
+  Script: turret-test.vi
 --- !u!114 &6231302723774336035
 MonoBehaviour:
   m_ObjectHideFlags: 0

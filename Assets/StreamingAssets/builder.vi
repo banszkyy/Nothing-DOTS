@@ -3,13 +3,13 @@ using "lib/move";
 using "lib/api";
 using "lib/protocol";
 
-[UnitCommand(1, "Move to")]
+[UnitCommand(1, "󰍒")]
 struct CommandMoveTo
 {
     [Context("position3")] float3 position;
 }
 
-[UnitCommand(2, "Build at")]
+[UnitCommand(2, "")]
 struct CommandBuildAt
 {
     [Context("position3")] float3 position;
@@ -50,19 +50,15 @@ void Receive()
             int ex = -1;
             for (int i = buildables.length() - 1; i >= 0; i--)
             {
-                if (distancesqr(buildables[i], packet.position) < 3)
+                if (distancesqr(buildables[i].position, packet.position) < 3)
                 {
                     ex = i;
                     break;
                 }
             }
-            if (ex != -1)
+            if (ex == -1 && buildables.length() < 4)
             {
-                buildables[ex] = packet.position;
-            }
-            else if (buildables.length() < 4)
-            {
-                buildables.add(packet.position);
+                buildables.add(new Buildable(packet.position));
             }
         }
         else
@@ -72,11 +68,21 @@ void Receive()
     }
 }
 
+struct Buildable
+{
+    float3 position;
+    float doneAt;
+
+    init(float3 p) {
+        this.position = p;
+    }
+}
+
 float3 currentDestination = new float3;
 float3 currentBuildAt = new float3;
 float3 targetedPosition = new float3;
 bool isBuilding = false;
-List<float3> buildables = new List<float3>(4);
+List<Buildable> buildables = new List<Buildable>(4);
 
 print("ready\n");
 
@@ -88,10 +94,13 @@ while (1)
 
     int currentBuildIndex = -1;
 
-    if (buildables.length())
+    for (int i = 0; i < buildables.length(); i++)
     {
-        currentBuildAt = buildables.raw()[0];
-        currentBuildIndex = 0;
+        if (!buildables[i].doneAt)
+        {
+            currentBuildAt = buildables[0].position;
+            currentBuildIndex = i;
+        }
     }
 
     int commandId = dequeue_command(&_command);
@@ -102,7 +111,7 @@ while (1)
         currentBuildAt = new float3;
         currentDestination = command.position;
         currentBuildIndex = -1;
-        print("moving\n");
+        printf("COMMAND moving to %f %f\n", [command.position.x, command.position.z]);
     }
     else if (commandId == 2)
     {
@@ -110,7 +119,7 @@ while (1)
         currentBuildAt = command.position;
         currentDestination = new float3;
         currentBuildIndex = -1;
-        print("building\n");
+        printf("COMMAND building at %f %f\n", [command.position.x, command.position.z]);
     }
 
     if (currentDestination.x != 0f ||
@@ -137,7 +146,11 @@ while (1)
             }
             else if (isBuilding)
             {
-                if (currentBuildIndex != -1) buildables.swapback(currentBuildIndex);
+                if (currentBuildIndex != -1)
+                {
+                    printf("building %d done\n", [currentBuildIndex]);
+                    buildables[currentBuildIndex].doneAt = time();
+                }
 
                 currentBuildAt = new float3;
                 print("ready\n");

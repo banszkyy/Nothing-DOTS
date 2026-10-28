@@ -46,7 +46,7 @@ partial struct TransporterProcessorSystemServer : ISystem
 
                     foreach (var (coreComputerTransform, coreComputerTeam) in
                         SystemAPI.Query<RefRO<LocalToWorld>, RefRO<UnitTeam>>()
-                        .WithAll<CoreComputer>())
+                        .WithAll<PlayerInterface>())
                     {
                         const int AdditionalReach = 4;
                         float distanceSq = math.distancesq(coreComputerTransform.ValueRO.Position, transform.ValueRO.Position);

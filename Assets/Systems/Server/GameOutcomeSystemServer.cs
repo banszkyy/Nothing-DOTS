@@ -24,8 +24,7 @@ partial struct GameOutcomeSystemServer : ISystem
 
             bool ok = false;
             foreach (var team in
-                SystemAPI.Query<RefRO<UnitTeam>>()
-                .WithAll<CoreComputer>())
+                SystemAPI.Query<RefRO<UnitTeam>>())
             {
                 if (team.ValueRO.Team != player.ValueRO.Team) continue;
 

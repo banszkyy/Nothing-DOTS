@@ -14,7 +14,7 @@ partial struct VirtualPlayerSystemServer : ISystem
         foreach (var (player, playerV, playerE) in SystemAPI.Query<RefRO<Player>, RefRO<VirtualPlayer>>().WithEntityAccess())
         {
             if (player.ValueRO.Outcome != GameOutcome.None) continue;
-            if (!player.ValueRO.IsCoreComputerSpawned) continue;
+            if (!player.ValueRO.IsStartkitSpawned) continue;
 
             int facilities = 0;
             int factories = 0;
@@ -23,12 +23,12 @@ partial struct VirtualPlayerSystemServer : ISystem
             Research nextResearch = default;
             bool buildFacility = false;
             bool buildFactory = false;
-            Entity coreComputer = Entity.Null;
+            Entity playerInterface = Entity.Null;
 
-            foreach (var (_coreComputer, team, entity) in SystemAPI.Query<RefRO<CoreComputer>, RefRO<UnitTeam>>().WithEntityAccess())
+            foreach (var (_coreComputer, team, entity) in SystemAPI.Query<RefRO<PlayerInterface>, RefRO<UnitTeam>>().WithEntityAccess())
             {
                 if (team.ValueRO.Team != player.ValueRO.Team) continue;
-                coreComputer = entity;
+                playerInterface = entity;
             }
 
             // Research
@@ -197,14 +197,14 @@ partial struct VirtualPlayerSystemServer : ISystem
                 {
                     if (TryGetBuilding("Facility", out var building, ref state))
                     {
-                        TryBuild(building, nextBuilder, player.ValueRO, playerV.ValueRO, SystemAPI.GetComponentRO<LocalTransform>(coreComputer).ValueRO.Position, ref state);
+                        TryBuild(building, nextBuilder, player.ValueRO, playerV.ValueRO, SystemAPI.GetComponentRO<LocalTransform>(playerInterface).ValueRO.Position, ref state);
                     }
                 }
                 else if (buildFactory)
                 {
                     if (TryGetBuilding("Factory", out var building, ref state))
                     {
-                        TryBuild(building, nextBuilder, player.ValueRO, playerV.ValueRO, SystemAPI.GetComponentRO<LocalTransform>(coreComputer).ValueRO.Position, ref state);
+                        TryBuild(building, nextBuilder, player.ValueRO, playerV.ValueRO, SystemAPI.GetComponentRO<LocalTransform>(playerInterface).ValueRO.Position, ref state);
                     }
                 }
             }

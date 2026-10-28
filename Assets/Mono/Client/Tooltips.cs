@@ -27,26 +27,15 @@ public class Tooltips : Singleton<Tooltips>
     public void Reregister(VisualElement? visualElement)
     {
         if (visualElement is null) return;
-
-        if (visualElement.tooltip is not null)
-        {
-            visualElement.UnregisterCallback<MouseEnterEvent>(OnElementMouseEnter);
-            visualElement.UnregisterCallback<MouseLeaveEvent>(OnElementMouseLeave);
-            visualElement.RegisterCallback<MouseEnterEvent>(OnElementMouseEnter);
-            visualElement.RegisterCallback<MouseLeaveEvent>(OnElementMouseLeave);
-        }
-
-        foreach (VisualElement item in visualElement.Children())
-        {
-            Reregister(item);
-        }
+        Unregister(visualElement);
+        Register(visualElement);
     }
 
-    public void Register(VisualElement? visualElement)
+    public void Register(VisualElement? visualElement, bool isChild = false)
     {
         if (visualElement is null) return;
 
-        if (visualElement.tooltip is not null)
+        if (isChild || visualElement.tooltip is not null)
         {
             visualElement.RegisterCallback<MouseEnterEvent>(OnElementMouseEnter);
             visualElement.RegisterCallback<MouseLeaveEvent>(OnElementMouseLeave);
@@ -54,7 +43,7 @@ public class Tooltips : Singleton<Tooltips>
 
         foreach (VisualElement item in visualElement.Children())
         {
-            Register(item);
+            Register(item, isChild: true);
         }
     }
 
@@ -62,11 +51,8 @@ public class Tooltips : Singleton<Tooltips>
     {
         if (visualElement is null) return;
 
-        if (visualElement.tooltip is not null)
-        {
-            visualElement.UnregisterCallback<MouseEnterEvent>(OnElementMouseEnter);
-            visualElement.UnregisterCallback<MouseLeaveEvent>(OnElementMouseLeave);
-        }
+        visualElement.UnregisterCallback<MouseEnterEvent>(OnElementMouseEnter);
+        visualElement.UnregisterCallback<MouseLeaveEvent>(OnElementMouseLeave);
 
         foreach (VisualElement item in visualElement.Children())
         {
@@ -100,7 +86,13 @@ public class Tooltips : Singleton<Tooltips>
     void OnElementMouseEnter(MouseEnterEvent e)
     {
         if (e.currentTarget is not VisualElement visualElement) return;
-        SetTooltip(visualElement.tooltip, visualElement);
+        VisualElement v = visualElement;
+        string? tooltip = null;
+        while (v is not null && string.IsNullOrWhiteSpace(tooltip = v.tooltip))
+        {
+            v = v.parent;
+        }
+        SetTooltip(tooltip, visualElement);
     }
 
     void OnElementMouseLeave(MouseLeaveEvent e)

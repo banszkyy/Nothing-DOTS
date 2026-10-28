@@ -16,17 +16,12 @@ public static class Collision
     {
         depth = default;
         float3 closestPoint = math.clamp(sphereOrigin, aabb.Min + aabbOrigin, aabb.Max + aabbOrigin);
+        if (closestPoint.Equals(sphereOrigin)) closestPoint = aabb.Center.x + aabbOrigin.x;
         normal = sphereOrigin - closestPoint;
 
         float distanceSquared = math.lengthsq(normal);
-        if (distanceSquared >= (float)(sphereRadius * sphereRadius))
+        if (distanceSquared >= sphereRadius * sphereRadius)
         { return false; }
-
-        if (distanceSquared == 0f)
-        {
-            normal = sphereOrigin - (aabb.Center + aabbOrigin);
-            distanceSquared = math.lengthsq(normal);
-        }
 
         if (distanceSquared == 0f)
         { return false; }

@@ -16,7 +16,7 @@ class PrefabDatabaseAuthoring : MonoBehaviour
             {
                 Player = GetEntity(authoring.Prefabs.PlayerPrefab, TransformUsageFlags.Dynamic),
                 VirtualPlayer = GetEntity(authoring.Prefabs.VirtualPlayerPrefab, TransformUsageFlags.Dynamic),
-                CoreComputer = GetEntity(authoring.Prefabs.CoreComputerPrefab, TransformUsageFlags.Dynamic),
+                PlayerInterface = GetEntity(authoring.Prefabs.PlayerInterface.Prefab, TransformUsageFlags.Dynamic),
                 Builder = GetEntity(authoring.Prefabs.Builder.Prefab, TransformUsageFlags.Dynamic),
                 Resource = GetEntity(authoring.Prefabs.Resource, TransformUsageFlags.Dynamic),
             });

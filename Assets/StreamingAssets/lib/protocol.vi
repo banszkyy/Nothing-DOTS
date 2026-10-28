@@ -88,7 +88,7 @@ export struct Unit
     float notified_at;
 }
 
-export void try_send_verification_request(Unit* unit)
+export void try_send_verification_request(Unit& unit)
 {
     if (unit.verification_sent_at + 1f < time())
     {
@@ -96,7 +96,7 @@ export void try_send_verification_request(Unit* unit)
     }
 }
 
-export void send_verification_request(Unit* unit)
+export void send_verification_request(Unit& unit)
 {
     float3 point = unit.position;
 
@@ -142,19 +142,19 @@ export void send_verification_request(Unit* unit)
     unit.verification_sent_at = time();
 }
 
-export int unit_index_at(List<Unit>* units, float3 position)
+export int unit_index_at(List<Unit>& units, float3 position)
 {
     for (int i = 0; i < units.length(); i++)
     {
-        printf("%f %f\n", [units[i].position.x, units[i].position.y]);
-        printf("%f %f\n", [position.x, position.y]);
+        printf("item: %f %f\n", [units[i].position.x, units[i].position.z]);
+        printf("query: %f %f\n", [position.x, position.z]);
         if (distancesqr(units[i].position, position) < DistanceThresholdSq)
         { return i; }
     }
     return -1;
 }
 
-export int unit_index_at(List<Unit>* units, float3 position, float* distanceSqr)
+export int unit_index_at(List<Unit>& units, float3 position, float* distanceSqr)
 {
     for (int i = 0; i < units.length(); i++)
     {
@@ -165,7 +165,7 @@ export int unit_index_at(List<Unit>* units, float3 position, float* distanceSqr)
     return -1;
 }
 
-export int update_unit(List<Unit>* units, Unit unit)
+export int update_unit(List<Unit>& units, Unit unit)
 {
     float distanceSqr = 0f;
     int existing = unit_index_at(units, unit.position, &distanceSqr);
@@ -204,7 +204,7 @@ export int update_unit(List<Unit>* units, Unit unit)
     return existing;
 }
 
-export int set_unit(List<Unit>* units, Unit unit)
+export int set_unit(List<Unit>& units, Unit unit)
 {
     int existing = unit_index_at(units, unit.position);
     if (existing == -1)
@@ -228,7 +228,7 @@ export int set_unit(List<Unit>* units, Unit unit)
     return existing;
 }
 
-export void remove_unit_at(List<Unit>* units, float3 unit)
+export void remove_unit_at(List<Unit>& units, float3 unit)
 {
     byte isNotDone = true;
     for (int i = 0; isNotDone && i < units.length(); i++)

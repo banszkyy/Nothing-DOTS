@@ -28,10 +28,7 @@ const MaxUnitLogLength = 50
 let onStartDebugging = () => { }
 
 export function startDebugging(token: string, entity: string | null, ghost: string | null) {
-    log.trace('[Debugger] Entity:', entity)
-    log.trace('[Debugger] Ghost:', ghost)
-
-    log.trace('[Debugger] Start debuging ...')
+    log.debug(`[Debugger] Start debuging entity ${entity} ghost ${ghost} ...`)
     vscode.debug.startDebugging(undefined, {
         type: extensionId,
         name: 'Debug Entity',
@@ -104,8 +101,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     adapterFactory = new class implements vscode.DebugAdapterDescriptorFactory {
         createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): ProviderResult<vscode.DebugAdapterDescriptor> {
-            log.trace(`[Debugger] Registering adapter descriptor`, session, executable)
-
+            log.trace(`[Debugger] Registering adapter descriptor with ${'127.0.0.1'}:${8053}`)
             return new vscode.DebugAdapterServer(8053, '127.0.0.1')
         }
     }()
@@ -157,6 +153,7 @@ export function activate(context: vscode.ExtensionContext) {
         log.debug('[Debugger] Try to start debugging ...')
 
         if (!entity) {
+            log.warn('[Debugger] No entity provided')
             vscode.window.showErrorMessage(`No entity provided`)
             return
         }
@@ -289,4 +286,3 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
 
 }
-

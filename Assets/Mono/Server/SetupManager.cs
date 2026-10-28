@@ -393,7 +393,7 @@ public class SetupManager : Singleton<SetupManager>
         {
             entityManager.ModifyComponent(entity, (ref Processor v) =>
             {
-                v.SourceFile = new FileId(unitSetup.Script, NetcodeEndPoint.Server);
+                v.SourceFile = new FileId($"./{unitSetup.Script}", NetcodeEndPoint.Server);
             });
         }
 

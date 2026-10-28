@@ -1,6 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
-        <ui:Label text="Research" name="label-name" style="flex-grow: 1;" />
-        <ui:Button text="Queue" name="button-queue" tabindex="-1" />
-    </ui:VisualElement>
-</ui:UXML>

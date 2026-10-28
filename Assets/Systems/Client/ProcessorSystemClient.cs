@@ -10,6 +10,7 @@ using Unity.Rendering;
 [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.LocalSimulation)]
 partial struct ProcessorSystemClient : ISystem
 {
+    const float LedIntensity = 10f;
     ComponentLookup<URPMaterialPropertyEmissionColor> _emissionColorQ;
     public NativeList<UserUIElement> uiElements;
 
@@ -35,9 +36,9 @@ partial struct ProcessorSystemClient : ISystem
                 _emissionColorQ.GetRefRW(processor.ValueRO.StatusLED.Entity).ValueRW.Value = processor.ValueRO.StatusLED.Status switch
                 {
                     ProcessorStatus.Off => default,
-                    ProcessorStatus.Running => new float4(0f, 1f, 0f, 1f) * 10f,
-                    ProcessorStatus.Halted => new float4(1f, 1f, 0f, 1f) * 10f,
-                    ProcessorStatus.Error => new float4(1f, 0f, 0f, 1f) * 10f,
+                    ProcessorStatus.Running => new float4(0f, 1f, 0f, 1f) * LedIntensity,
+                    ProcessorStatus.Halted => new float4(1f, 1f, 0f, 1f) * LedIntensity,
+                    ProcessorStatus.Error => new float4(1f, 0f, 0f, 1f) * LedIntensity,
                     _ => throw new UnreachableException(),
                 };
             }
@@ -46,7 +47,7 @@ partial struct ProcessorSystemClient : ISystem
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.NetworkSendLED.Entity).ValueRW.Value =
                     processor.ValueRW.NetworkSendLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * 10f :
+                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
                     default;
             }
 
@@ -54,7 +55,7 @@ partial struct ProcessorSystemClient : ISystem
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.NetworkReceiveLED.Entity).ValueRW.Value =
                     processor.ValueRW.NetworkReceiveLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * 10f :
+                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
                     default;
             }
 
@@ -62,7 +63,7 @@ partial struct ProcessorSystemClient : ISystem
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.RadarLED.Entity).ValueRW.Value =
                     processor.ValueRW.RadarLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * 10f :
+                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
                     default;
             }
 
@@ -70,7 +71,7 @@ partial struct ProcessorSystemClient : ISystem
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.USBLED.Entity).ValueRW.Value =
                     processor.ValueRW.USBLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * 10f :
+                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
                     default;
             }
 
@@ -78,7 +79,7 @@ partial struct ProcessorSystemClient : ISystem
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.CustomLED.Entity).ValueRW.Value =
                     processor.ValueRW.CustomLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * 10f :
+                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
                     default;
             }
         }

@@ -227,6 +227,79 @@ public partial struct BuildingSystemServer : ISystem
             }
         }
 
+        foreach (var (wiresA, ghostA, initializingWires, entityA) in
+            SystemAPI.Query<DynamicBuffer<BufferedWire>, RefRO<GhostInstance>, RefRO<InitializingWires>>()
+            .WithEntityAccess())
+        {
+            if (ghostA.ValueRO == default) continue;
+
+            for (int i = 0; i < wiresA.Length; i++)
+            {
+                var wA = wiresA[i];
+
+                if (wA.EntityA == initializingWires.ValueRO.DestroyedPlaceholderEntity)
+                {
+                    wA.EntityA = entityA;
+                    wA.GhostA = ghostA.ValueRO;
+                }
+                else
+                {
+                    var wiresB = SystemAPI.GetBuffer<BufferedWire>(wA.EntityA);
+                    for (int j = 0; j < wiresB.Length; j++)
+                    {
+                        var wB = wiresB[j];
+
+                        if (wB.EntityA == initializingWires.ValueRO.DestroyedPlaceholderEntity)
+                        {
+                            wB.EntityA = entityA;
+                            wB.GhostA = ghostA.ValueRO;
+                        }
+
+                        if (wB.EntityB == initializingWires.ValueRO.DestroyedPlaceholderEntity)
+                        {
+                            wB.EntityB = entityA;
+                            wB.GhostB = ghostA.ValueRO;
+                        }
+
+                        wiresB.Set(j, wB);
+                    }
+                }
+
+                if (wA.EntityB == initializingWires.ValueRO.DestroyedPlaceholderEntity)
+                {
+                    wA.EntityB = entityA;
+                    wA.GhostB = ghostA.ValueRO;
+                }
+                else
+                {
+                    var wiresB = SystemAPI.GetBuffer<BufferedWire>(wA.EntityB);
+                    for (int j = 0; j < wiresB.Length; j++)
+                    {
+                        var wB = wiresB[j];
+
+                        if (wB.EntityA == initializingWires.ValueRO.DestroyedPlaceholderEntity)
+                        {
+                            wB.EntityA = entityA;
+                            wB.GhostA = ghostA.ValueRO;
+                        }
+
+                        if (wB.EntityB == initializingWires.ValueRO.DestroyedPlaceholderEntity)
+                        {
+                            wB.EntityB = entityA;
+                            wB.GhostB = ghostA.ValueRO;
+                        }
+
+                        wiresB.Set(j, wB);
+                    }
+                }
+
+                wiresA.Set(i, wA);
+            }
+
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+            commandBuffer.RemoveComponent<InitializingWires>(entityA);
+        }
+
         foreach (var (placeholder, transform, owner, unitTeam, entity) in
             SystemAPI.Query<RefRW<BuildingPlaceholder>, RefRO<LocalToWorld>, RefRO<GhostOwner>, RefRO<UnitTeam>>()
             .WithEntityAccess())
@@ -251,6 +324,17 @@ public partial struct BuildingSystemServer : ISystem
                 {
                     SourceFile = placeholder.ValueRO.Source,
                 });
+            }
+            if (SystemAPI.HasBuffer<BufferedWire>(entity))
+            {
+                commandBuffer.AddComponent<InitializingWires>(newEntity, new()
+                {
+                    DestroyedPlaceholderEntity = entity,
+                });
+                DynamicBuffer<BufferedWire> wires = SystemAPI.GetBuffer<BufferedWire>(entity);
+                DynamicBuffer<BufferedWire> newWires = commandBuffer.SetBuffer<BufferedWire>(newEntity);
+                newWires.Clear();
+                newWires.AddRange(wires.AsNativeArray());
             }
 
             commandBuffer.DestroyEntity(entity);

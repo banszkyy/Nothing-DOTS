@@ -1,3 +1,5 @@
+using "stdlib/System";
+
 export inline bool empty(float3 v)
 {
     return !((v.x as int) || (v.y as int) || (v.z as int));

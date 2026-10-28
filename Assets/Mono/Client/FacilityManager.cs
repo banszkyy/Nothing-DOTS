@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
@@ -8,12 +9,11 @@ using UnityEngine.UIElements;
 
 public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUICleanup
 {
-    [Header("UI Assets")]
-
-    [SerializeField, NotNull] VisualTreeAsset? UI_AvaliableResearch = default;
-    [SerializeField, NotNull] VisualTreeAsset? UI_QueueItem = default;
+    [SerializeField, NotNull] AllPrefabs? Prefabs = default;
 
     [Header("UI")]
+
+    [SerializeField, NotNull] VisualTreeAsset? UI_ResearchItem = default;
 
     FacilitySchema? ui;
 
@@ -60,8 +60,7 @@ public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUI
         if (selected.Current.Name.IsEmpty) return;
 
         selected.CurrentProgress += Time.deltaTime * Facility.ResearchSpeed;
-        ui.ProgressCurrent.value = selected.CurrentProgress / selected.Current.ResearchTime;
-        ui.ProgressCurrent.title = selected.Current.Name.ToString();
+        ui.CurrentProgressbar.value = selected.CurrentProgress / selected.Current.ResearchTime;
     }
 
     public void Setup(UIElementReference ui, Entity entity)
@@ -80,17 +79,21 @@ public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUI
 
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
 
-        ScrollView avaliableList = ui.ListAvaliable;
-        ScrollView queueList = ui.ListQueue;
+        ScrollView avaliableList = ui.AvailableScrollview;
+        ScrollView queueList = ui.QueueScrollview;
 
         avaliableList.Clear();
         queueList.Clear();
 
         DynamicBuffer<BufferedResearch> queue = entityManager.GetBuffer<BufferedResearch>(entity);
 
-        queueList.SyncList<BufferedResearch, FacilityQueueItemSchema>(queue, UI_QueueItem, (item, element, recycled) =>
+        queueList.SyncList<BufferedResearch, ResearchItemSchema>(queue, UI_ResearchItem, (item, element, recycled) =>
         {
-            element.LabelName.text = item.Name.ToString();
+            ResearchMetadata v = Prefabs.Researches.First(v => v.Name == item.Name.ToString());
+            element.Root.userData = v.Name;
+            element.NameLabel.text = v.Name;
+            element.LabelResources.text = v.ResearchTime.ToString();
+            element.Thumbnail.image = null;
         });
 
         NativeList<FixedString64Bytes> avaliable = ResearchSystemClient.GetInstance(entityManager.WorldUnmanaged).AvaliableResearches;
@@ -115,17 +118,44 @@ public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUI
         inQueue:;
         }
 
-        avaliableList.SyncList<FixedString64Bytes, FacilityAvaliableItemSchema>(avaliableNotInQueue, UI_AvaliableResearch, (item, element, recycled) =>
+        avaliableList.SyncList<FixedString64Bytes, ResearchItemSchema>(avaliableNotInQueue, UI_ResearchItem, (item, element, recycled) =>
         {
-            element.Root.userData = item.ToString();
-            element.LabelName.text = item.ToString();
-            if (!recycled) element.ButtonQueue.clicked += () => QueueResearch((string)element.Root.userData);
+            ResearchMetadata v = Prefabs.Researches.First(v => v.Name == item.ToString());
+            element.Root.userData = v.Name;
+            element.NameLabel.text = v.Name;
+            element.LabelResources.text = v.ResearchTime.ToString();
+            element.Thumbnail.image = null;
+            if (!recycled) element.ButtonSelect.clicked += () => QueueResearch((string)element.Root.userData);
         });
 
         avaliableNotInQueue.Dispose();
 
-        ui.ProgressCurrent.value = selected.CurrentProgress / selected.Current.ResearchTime;
-        ui.ProgressCurrent.title = selected.Current.Name.ToString();
+        if (selected.Current.Name != default)
+        {
+            ui.CurrentProgressbar.value = selected.CurrentProgress / selected.Current.ResearchTime;
+            ui.CurrentContainer.style.visibility = Visibility.Visible;
+
+            VisualElement? _element = ui.CurrentContainer.Children().FirstOrDefault();
+            if (_element is null)
+            {
+                _element = UI_ResearchItem.Instantiate();
+                ui.CurrentContainer.Add(_element);
+            }
+            ResearchItemSchema element = new(_element);
+            ResearchMetadata v = Prefabs.Researches.First(v => v.Name == selected.Current.Name.ToString());
+
+            element.Root.userData = v.Name;
+            element.Thumbnail.image = null;
+            element.LabelResources.text = v.ResearchTime.ToString();
+            element.NameLabel.text = v.Name;
+            element.Root.tooltip = v.Name;
+            Tooltips.Instance.Reregister(element.Root);
+        }
+        else
+        {
+            ui.CurrentProgressbar.value = 0f;
+            ui.CurrentContainer.style.visibility = Visibility.Hidden;
+        }
     }
 
     void QueueResearch(in FixedString64Bytes name)

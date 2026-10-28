@@ -52,7 +52,7 @@ partial struct ProjectileSystemServer : ISystem
 #endif
 
             bool didHitTerrain = terrainSystem.Raycast(ray.Start, ray.Direction, math.distance(lastPosition, newPosition), out float terrainHit, out _);
-            bool didHitUnit = QuadrantRayCast.RayCast(map, ray, out Hit unitHit) && damageQ.TryGetBuffer(unitHit.Entity.Entity, out damage);
+            bool didHitUnit = QuadrantRayCast.Raycast(map, ray, out Hit unitHit) && damageQ.TryGetBuffer(unitHit.Entity.Entity, out damage);
 
             if (didHitTerrain && (!didHitUnit || unitHit.Distance >= terrainHit))
             {

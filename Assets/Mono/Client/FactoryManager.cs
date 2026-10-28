@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Unity.Entities;
 using Unity.NetCode;
 using UnityEngine;
@@ -6,12 +7,12 @@ using UnityEngine.UIElements;
 
 public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICleanup
 {
-    [Header("UI Assets")]
-
-    [SerializeField, NotNull] VisualTreeAsset? UI_AvaliableItem = default;
-    [SerializeField, NotNull] VisualTreeAsset? UI_QueueItem = default;
+    [SerializeField, NotNull] AllPrefabs? Prefabs = default;
 
     [Header("UI")]
+
+    [SerializeField, NotNull] VisualTreeAsset? UI_UnitItem = default;
+
 
     FactorySchema? ui;
 
@@ -58,8 +59,7 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
         if (selectedFactory.TotalProgress == default) return;
 
         selectedFactory.CurrentProgress += Time.deltaTime * Factory.ProductionSpeed;
-        ui.ProgressCurrent.value = selectedFactory.CurrentProgress / selectedFactory.TotalProgress;
-        ui.ProgressCurrent.title = selectedFactory.Current.Name.ToString();
+        ui.CurrentProgressbar.value = selectedFactory.CurrentProgress / selectedFactory.TotalProgress;
     }
 
     public void Setup(UIElementReference ui, Entity factoryEntity)
@@ -78,29 +78,57 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
 
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
 
-        VisualElement avaliableList = ui.ListAvaliable;
-        ScrollView queueList = ui.ListQueue;
-
-        avaliableList.Clear();
-        queueList.Clear();
+        ui.AvailableScrollview.Clear();
+        ui.QueueScrollview.Clear();
 
         DynamicBuffer<BufferedProducingUnit> queue = entityManager.GetBuffer<BufferedProducingUnit>(factoryEntity);
 
-        queueList.SyncList<BufferedProducingUnit, FactoryQueueItemSchema>(queue, UI_QueueItem, (item, element, recycled) =>
+        ui.QueueScrollview.SyncList<BufferedProducingUnit, UnitItemSchema>(queue, UI_UnitItem, (item, element, recycled) =>
         {
-            element.LabelUnitName.text = item.Name.ToString();
-        });
-
-        avaliableList.SyncList<BufferedUnit, FactoryAvaliableItemSchema>(UnitsSystemClient.GetInstance(entityManager.WorldUnmanaged).Units, UI_AvaliableItem, (item, element, recycled) =>
-        {
+            UnitPrefab v = Prefabs.Units.First(v => v.Prefab.name == item.Name.ToString());
             element.Root.userData = item.Name.ToString();
-            element.LabelName.text = item.Name.ToString();
-            element.LabelResources.text = item.RequiredResources.ToString();
-            if (!recycled) element.ButtonSelect.clicked += () => QueueUnit((string)element.Root.userData);
+            element.Thumbnail.image = v.Thumbnail;
+            element.LabelResources.text = v.RequiredResources.ToString();
+            element.Root.tooltip = item.Name.ToString();
+            Tooltips.Instance.Reregister(element.Root);
         });
 
-        ui.ProgressCurrent.value = selectedFactory.CurrentProgress / selectedFactory.TotalProgress;
-        ui.ProgressCurrent.title = selectedFactory.Current.Name.ToString();
+        ui.AvailableScrollview.SyncList<BufferedUnit, UnitItemSchema>(UnitsSystemClient.GetInstance(entityManager.WorldUnmanaged).Units, UI_UnitItem, (item, element, recycled) =>
+        {
+            UnitPrefab v = Prefabs.Units.First(v => v.Prefab.name == item.Name.ToString());
+            element.Root.userData = item.Name.ToString();
+            element.Thumbnail.image = v.Thumbnail;
+            element.LabelResources.text = item.RequiredResources.ToString();
+            element.Root.tooltip = item.Name.ToString();
+            if (!recycled) element.ButtonSelect.clicked += () => QueueUnit((string)element.Root.userData);
+            Tooltips.Instance.Reregister(element.Root);
+        });
+
+        if (selectedFactory.Current.Name != default)
+        {
+            ui.CurrentProgressbar.value = selectedFactory.CurrentProgress / selectedFactory.TotalProgress;
+            ui.CurrentContainer.style.visibility = Visibility.Visible;
+
+            VisualElement? _element = ui.CurrentContainer.Children().FirstOrDefault();
+            if (_element is null)
+            {
+                _element = UI_UnitItem.Instantiate();
+                ui.CurrentContainer.Add(_element);
+            }
+            UnitItemSchema element = new(_element);
+
+            UnitPrefab v = Prefabs.Units.First(v => v.Prefab.name == selectedFactory.Current.Name.ToString());
+            element.Root.userData = selectedFactory.Current.Name.ToString();
+            element.Thumbnail.image = v.Thumbnail;
+            element.LabelResources.text = v.RequiredResources.ToString();
+            element.Root.tooltip = selectedFactory.Current.Name.ToString();
+            Tooltips.Instance.Reregister(element.Root);
+        }
+        else
+        {
+            ui.CurrentProgressbar.value = 0f;
+            ui.CurrentContainer.style.visibility = Visibility.Hidden;
+        }
     }
 
     void QueueUnit(string unitName)

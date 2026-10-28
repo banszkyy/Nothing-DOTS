@@ -16,10 +16,9 @@ MonoBehaviour:
     type: 3}
   VirtualPlayerPrefab: {fileID: 3425909852624401331, guid: 74844798ae352d277a031e4840ef7587,
     type: 3}
-  CoreComputerPrefab: {fileID: 4988928766331271095, guid: 0691a3b3c438f1b17982bff2e95e5d91,
-    type: 3}
   Resource: {fileID: 6334593378185089363, guid: 5b4b7aeb8300291c29331478debf9697,
     type: 3}
+  PlayerInterface: {fileID: 11400000, guid: 684f3dcf70fc1bf88b243d76f67abede, type: 2}
   Builder: {fileID: 11400000, guid: 8dda5381af209590391709b98011e95c, type: 2}
   Units:
   - {fileID: 11400000, guid: fbda40a2b4c99e1c9bc6f96f362b3124, type: 2}
@@ -34,6 +33,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 48f962cb34be8ea53a988cfec48260c1, type: 2}
   - {fileID: 11400000, guid: 52f9e7c941b34e9a9a4530d03c394592, type: 2}
   - {fileID: 11400000, guid: 653c3a2c8529e246d86bf79e65367783, type: 2}
+  - {fileID: 11400000, guid: 684f3dcf70fc1bf88b243d76f67abede, type: 2}
   Projectiles:
   - {fileID: 11400000, guid: 1657b32a4c8f3b33b849550d48ea391b, type: 2}
   - {fileID: 11400000, guid: d4f919d59d79be04f9a5f75733be5019, type: 2}
+  Researches:
+  - {fileID: 11400000, guid: fc0eaeb66b6434378a662ecb6f621d31, type: 2}
+  - {fileID: 11400000, guid: 547b479e188c49eac87f7d2f2bb19aeb, type: 2}
+  - {fileID: 11400000, guid: dbfa5352568e5092fb1251aec01debb5, type: 2}

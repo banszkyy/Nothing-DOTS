@@ -40,7 +40,7 @@ public class EntityInfoUIManager : Singleton<EntityInfoUIManager>
             static void HandleBar(EntityInfoUIBar bar, float percent)
             {
                 bar.Foreground.fillAmount = percent;
-                bool barVisible = percent != default;
+                bool barVisible = percent is > 0f and < 1f;
                 if (bar.IsVisible != barVisible)
                 {
                     bar.IsVisible = barVisible;
@@ -52,7 +52,7 @@ public class EntityInfoUIManager : Singleton<EntityInfoUIManager>
             {
                 bar.Foreground1.fillAmount = percent1;
                 bar.Foreground2.fillAmount = percent2;
-                bool barVisible = percent1 != default || percent2 != default;
+                bool barVisible = percent1 is > 0f and < 1f || percent2 is > 0f and < 1f;
                 if (bar.IsVisible != barVisible)
                 {
                     bar.IsVisible = barVisible;
@@ -69,7 +69,7 @@ public class EntityInfoUIManager : Singleton<EntityInfoUIManager>
 
             item.CanvasGroup.alpha = math.clamp(1f - ((screenPoint.z - StartFadeDistance) / (DisappearDistance - StartFadeDistance)), 0f, 1f);
 
-            if (item.SelectionStatusIndicator.enabled = item.SelectionStatus == SelectionStatus.Selected)
+            if (item.SelectionStatusIndicator.enabled = item.SelectionStatus is SelectionStatus.Selected or SelectionStatus.Candidate)
             {
                 Vector3 c = item.Bounds.center;
                 Vector3 e = item.Bounds.extents;

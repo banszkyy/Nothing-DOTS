@@ -49,7 +49,7 @@ void receive()
 
             if (!packet.position.x && !packet.position.z)
             {
-                print(" M");
+                print(" m\n");
                 VerificationResponsePacket responsePacket = new VerificationResponsePacket;
                 responsePacket.header = PacketHeader.response;
                 responsePacket.position = GPS.position;
@@ -57,7 +57,7 @@ void receive()
             }
             else if (distancesqr(packet.position, GPS.position) < DistanceThresholdSq)
             {
-                print(" M");
+                print(" M\n");
                 VerificationResponsePacket responsePacket = new VerificationResponsePacket;
                 responsePacket.header = PacketHeader.response;
                 responsePacket.position = packet.position;

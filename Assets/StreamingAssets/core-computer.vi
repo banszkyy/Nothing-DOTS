@@ -1,7 +1,7 @@
 using "lib/api";
 using "lib/protocol";
 
-[UnitCommand(1, "Attack at")]
+[UnitCommand(2, "󰓾")]
 struct CommandAttackAt
 {
     [Context("position3")] float3 position;
@@ -36,15 +36,15 @@ void receive()
             }
             else
             {
-                for (int i = 0; i < (&allies).length(); i++)
+                for (int i = 0; i < allies.length(); i++)
                 {
-                    float distanceSqr = distancesqr((&allies).raw()[i].position, packet.position);
+                    float distanceSqr = distancesqr(allies[i].position, packet.position);
                     if (distanceSqr < DistanceThresholdSq)
                     {
                         IndirectVerificationResponsePacket indirectResponsePacket = new IndirectVerificationResponsePacket;
                         indirectResponsePacket.header = PacketHeader.indirect_response;
-                        indirectResponsePacket.position = (&allies).raw()[i].position;
-                        indirectResponsePacket.expires = (&allies).raw()[i].expires;
+                        indirectResponsePacket.position = allies[i].position;
+                        indirectResponsePacket.expires = allies[i].expires;
                         wsend(&indirectResponsePacket as byte[]*, sizeof(IndirectVerificationResponsePacket), &direction, 0.1f);
                         return;
                     }
@@ -64,7 +64,10 @@ void receive()
             remove_unit_at(&enemies, unit.position);
             update_unit(&allies, unit);
             int bi = unit_index_at(&buildings, unit.position);
-            if (bi != -1) buildings[bi].placeholder = false;
+            if (bi != -1) {
+                buildings[bi].placeholder = false;
+                printf("building authenticated\n", []);
+            }
         }
         else if (v[0] == (byte)PacketHeader.enemy &&
                  receivedLength == sizeof(EnemyNotificationPacket))
@@ -80,11 +83,11 @@ void receive()
             unit.verification_sent_at = time();
             int j = update_unit(&enemies, unit);
 
-            for (int i = 0; i < (&allies).length(); i++)
+            for (int i = 0; i < allies.length(); i++)
             {
                 if (i != j)
                 {
-                    direction = (&allies).raw()[i].position;
+                    direction = allies[i].position;
                     tolocal(&direction);
                     normalise(&direction);
 
@@ -137,15 +140,15 @@ void receive()
             }
             else
             {
-                for (int i = 0; i < (&allies).length(); i++)
+                for (int i = 0; i < allies.length(); i++)
                 {
-                    float distanceSqr = distancesqr((&allies).raw()[i].position, packet.position);
+                    float distanceSqr = distancesqr(allies[i].position, packet.position);
                     if (distanceSqr < DistanceThresholdSq)
                     {
                         IndirectVerificationResponsePacket indirectResponsePacket = new IndirectVerificationResponsePacket;
                         indirectResponsePacket.header = PacketHeader.indirect_response;
-                        indirectResponsePacket.position = (&allies).raw()[i].position;
-                        indirectResponsePacket.expires = (&allies).raw()[i].expires;
+                        indirectResponsePacket.position = allies[i].position;
+                        indirectResponsePacket.expires = allies[i].expires;
                         send(&indirectResponsePacket as byte[]*, sizeof(IndirectVerificationResponsePacket), port);
                         return;
                     }
@@ -164,8 +167,12 @@ void receive()
             unit.verification_sent_at = time();
             remove_unit_at(&enemies, unit.position);
             update_unit(&allies, unit);
+            printf("bauth\n", []);
             int bi = unit_index_at(&buildings, packet.position);
-            if (bi != -1) buildings[bi].placeholder = false;
+            if (bi != -1) {
+                buildings[bi].placeholder = false;
+                printf("building authenticated\n", []);
+            }
         }
         else if (v[0] == (byte)PacketHeader.enemy &&
                  receivedLength == sizeof(EnemyNotificationPacket))
@@ -181,11 +188,11 @@ void receive()
             unit.verification_sent_at = time();
             int j = update_unit(&enemies, unit);
 
-            for (int i = 0; i < (&allies).length(); i++)
+            for (int i = 0; i < allies.length(); i++)
             {
                 if (i != j)
                 {
-                    var direction = (&allies).raw()[i].position;
+                    float3 direction = allies[i].position;
                     tolocal(&direction);
                     normalise(&direction);
 
@@ -217,6 +224,8 @@ List<Unit> enemies = new List<Unit>(4);
 List<Unit> allies = new List<Unit>(4);
 
 UIElement _container = new UIElement();
+_container.width = 0;
+_container.height = 0;
 _container._direction = UIDirection.VerticalReverse;
 _container.update();
 
@@ -244,9 +253,9 @@ List<Building> buildings = new List<Building>(4);
 {
     u8[] s0 = "Facility";
     u8[] s1 = "facility.vi";
-    float3 p = GPS.position + new float3(10f, 0f, 0f);
+    float3 p = GPS.position + new float3(7f, 0f, 0f);
     build_at(p, &s0, &s1);
-    var b = new Building;
+    Building b = new Building;
     b.type = 1;
     b.placeholder = true;
     b.position = p;
@@ -257,15 +266,15 @@ while (1)
 {
     receive();
 
-    (&_minimap).fill((byte)0);
-    (&_minimap).set(new float2(11f, 11f), (byte)0b_111_111_11);
+    _minimap.fill((byte)0);
+    _minimap.set(new float2(11f, 11f), (byte)0b_111_111_11);
 
-    for (int i = (&enemies).length() - 1; i >= 0; i--)
+    for (int i = enemies.length() - 1; i >= 0; i--)
     {
-        Unit* enemy = &(&enemies).raw()[i];
+        Unit& enemy = enemies[i];
         if (time() >= enemy.expires)
         {
-            (&enemies).remove(i);
+            enemies.remove(i);
         }
         else
         {
@@ -281,20 +290,20 @@ while (1)
         }
     }
 
-    for (int i = (&allies).length() - 1; i >= 0; i--)
+    for (int i = allies.length() - 1; i >= 0; i--)
     {
-        Unit* ally = &(&allies).raw()[i];
+        Unit& ally = allies[i];
         if (time() >= ally.expires)
         {
             try_send_verification_request(ally);
-            (&allies).remove(i);
+            allies.remove(i);
         }
         else
         {
             float3 p = ally.position;
             debug(p, Color.Green);
             tolocal(&p);
-            (&_minimap).set((new float2(p.x, p.z) * (0.5f * MinimapScale) + new float2(11f, 11f)), (byte)((int)(0b_111 * max(0f, ally.expires - time()) / 10f) << 2));
+            _minimap.set((new float2(p.x, p.z) * (0.5f * MinimapScale) + new float2(11f, 11f)), (byte)((int)(0b_111 * max(0f, ally.expires - time()) / 10f) << 2));
         }
     }
 
@@ -302,7 +311,7 @@ while (1)
 
     int commandId = dequeue_command(&_command);
 
-    if (commandId == 1)
+    if (commandId == 2)
     {
         CommandAttackAt* command = &_command as CommandAttackAt*;
         debug(command.position, Color.Red);
@@ -334,5 +343,5 @@ while (1)
         send(&p as byte[]*, sizeof(VerificationRequestPacket), (byte)0);
     }
 
-    (&_minimap).update();
+    _minimap.update();
 }

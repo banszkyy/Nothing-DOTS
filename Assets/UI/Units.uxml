@@ -2,7 +2,8 @@
     <ui:Template name="UnitButton" src="project://database/Assets/UI/UnitItem.uxml?fileID=9197481963319205126&amp;guid=d033446b04fa1ca8388d418c8e1d9694&amp;type=3#UnitItem"/>
     <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
     <ui:GroupBox text="Units" name="units-panel" class="panel" style="bottom: 0; left: 0; right: 0; position: absolute;">
-        <ui:ScrollView name="units-scrollview" scroll-deceleration-rate="0,135" elasticity="0,1" class="menulist">
+        <ui:ScrollView name="units-scrollview" scroll-deceleration-rate="0,135" elasticity="0,1" class="menulist" style="flex-direction: row;">
+            <ui:Instance template="UnitButton"/>
             <ui:Instance template="UnitButton"/>
         </ui:ScrollView>
     </ui:GroupBox>

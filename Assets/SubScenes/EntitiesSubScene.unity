@@ -463,6 +463,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Material: {fileID: 2100000, guid: 0c181eefe7454241c8743642f0e37686, type: 2}
+  PlaceholderMaterial: {fileID: 2100000, guid: e1038b4484b2a0ea8bae6de451e81c73, type: 2}
 --- !u!1 &804504556
 GameObject:
   m_ObjectHideFlags: 0
@@ -745,8 +746,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a6b1fc6ed6ecb787b2a7efd2ac5295e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VirtualPlayerSettingsAuthoring
-  Entries:
-  - Nickname: Silly
+  Entries: []
 --- !u!1 &1428346024
 GameObject:
   m_ObjectHideFlags: 0

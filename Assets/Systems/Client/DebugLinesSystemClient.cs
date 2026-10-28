@@ -8,6 +8,7 @@ using Unity.NetCode;
 partial struct DebugLinesSystemClient : ISystem
 {
     public const float Lifetime = 0.5f;
+    public bool IsEnabled;
 
     NativeArray<Entity>.ReadOnly Batches;
 
@@ -60,7 +61,7 @@ partial struct DebugLinesSystemClient : ISystem
             for (int i = 0; i < lines.Length; i++)
             {
                 if (lines[i].DieAt <= SystemAPI.Time.ElapsedTime) lines.RemoveAtSwapBack(i--);
-                else batches[lines[i].Color - 1].Buffer.Add(lines[i].Position);
+                else if (IsEnabled) batches[lines[i].Color - 1].Buffer.Add(lines[i].Position);
             }
 
             for (int i = 0; i < batches.Length; i++)

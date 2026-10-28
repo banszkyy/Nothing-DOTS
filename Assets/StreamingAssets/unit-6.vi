@@ -3,16 +3,16 @@ using "lib/move";
 using "lib/api";
 using "lib/protocol";
 
-[UnitCommand(1, "󰓾")]
-struct CommandAttackAt
-{
-    [Context("position3")] float3 position;
-}
-
-[UnitCommand(2, "󰍒")]
+[UnitCommand(1, "󰍒")]
 struct CommandMoveTo
 {
     [Context("position2")] float2 position;
+}
+
+[UnitCommand(2, "󰓾")]
+struct CommandAttackAt
+{
+    [Context("position3")] float3 position;
 }
 
 [UnitCommand(3, "󰹆")]
@@ -286,15 +286,15 @@ while (1)
 
     if (commandId == 1)
     {
-        CommandAttackAt* command = &_command as CommandAttackAt*;
-        currentUserTarget = command.position;
-        currentDestination = new float3;
-    }
-    else if (commandId == 2)
-    {
         CommandMoveTo* command = &_command as CommandMoveTo*;
         currentUserTarget = new float3;
         currentDestination = command.position;
+    }
+    else if (commandId == 2)
+    {
+        CommandAttackAt* command = &_command as CommandAttackAt*;
+        currentUserTarget = command.position;
+        currentDestination = new float3;
     }
     else if (commandId == 3)
     {

@@ -50,7 +50,7 @@ public static class QuadrantRayCast
     /// Source: javidx9
     /// </remarks>
     [BurstCompile]
-    public static bool RayCast(
+    public static bool Raycast(
         in NativeParallelHashMap<uint, NativeList<QuadrantEntity>>.ReadOnly map,
         in Ray ray,
         out Hit hit)

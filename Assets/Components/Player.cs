@@ -21,6 +21,6 @@ public struct Player : IComponentData
     [GhostField] public GameOutcome Outcome;
     [GhostField] public bool InCreative;
     [GhostField] public bool IsAdmin;
-    public bool IsCoreComputerSpawned;
+    public bool IsStartkitSpawned;
     public Guid Guid;
 }

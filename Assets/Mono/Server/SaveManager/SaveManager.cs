@@ -662,13 +662,6 @@ static class SaveManager
 
         return new()
         {
-            PrefabIdSerializer.ForComponent<CoreComputer>(
-                (writer, v) => { },
-                (reader, entityManager) =>
-                {
-                    return entityManager.Instantiate(prefabs.CoreComputer);
-                }
-            ),
             PrefabIdSerializer.ForComponent<BuildingPrefabInstance>(
                 (writer, v) =>
                 {
@@ -746,7 +739,7 @@ static class SaveManager
                 writer.Write(playerR.ConnectionState);
                 writer.Write(player.InCreative);
                 writer.Write(player.IsAdmin);
-                writer.Write(player.IsCoreComputerSpawned);
+                writer.Write(player.IsStartkitSpawned);
                 writer.Write(player.Nickname);
                 writer.Write(player.Outcome);
                 writer.Write(player.Resources);
@@ -774,7 +767,7 @@ static class SaveManager
                 writer.Write(playerV.Index);
                 writer.Write(player.InCreative);
                 writer.Write(player.IsAdmin);
-                writer.Write(player.IsCoreComputerSpawned);
+                writer.Write(player.IsStartkitSpawned);
                 writer.Write(player.Nickname);
                 writer.Write(player.Outcome);
                 writer.Write(player.Resources);
@@ -925,7 +918,7 @@ static class SaveManager
                 Player player = new()
                 {
                     Team = Player.UnassignedTeam,
-                    IsCoreComputerSpawned = false,
+                    IsStartkitSpawned = false,
                     Guid = default,
                     Nickname = default,
                 };
@@ -942,7 +935,7 @@ static class SaveManager
                 playerR.ConnectionState = connectionState;
                 player.InCreative = reader.ReadBool();
                 player.IsAdmin = reader.ReadBool();
-                player.IsCoreComputerSpawned = reader.ReadBool();
+                player.IsStartkitSpawned = reader.ReadBool();
                 player.Nickname = reader.ReadFixedString32();
                 player.Outcome = (GameOutcome)reader.ReadByte();
                 player.Resources = reader.ReadFloat();
@@ -968,7 +961,7 @@ static class SaveManager
                 Player player = new()
                 {
                     Team = Player.UnassignedTeam,
-                    IsCoreComputerSpawned = false,
+                    IsStartkitSpawned = false,
                     Guid = default,
                     Nickname = default,
                 };
@@ -978,7 +971,7 @@ static class SaveManager
                 playerV.Index = reader.ReadInt();
                 player.InCreative = reader.ReadBool();
                 player.IsAdmin = reader.ReadBool();
-                player.IsCoreComputerSpawned = reader.ReadBool();
+                player.IsStartkitSpawned = reader.ReadBool();
                 player.Nickname = reader.ReadFixedString32();
                 player.Outcome = (GameOutcome)reader.ReadByte();
                 player.Resources = reader.ReadFloat();

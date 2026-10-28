@@ -215,22 +215,37 @@ public partial struct FacilitySystemServer : ISystem
             Entity playerConnection = default;
             if (SystemAPI.TryGetComponent(playerEntity, out RealPlayer realPlayer))
             {
-                foreach (var (networkId, _entity) in
-                                SystemAPI.Query<RefRO<NetworkId>>()
-                                .WithEntityAccess())
-                {
-                    if (networkId.ValueRO.Value != realPlayer.ConnectionId) continue;
-                    playerConnection = _entity;
-                    break;
-                }
-
-                if (playerConnection != Entity.Null)
+                if (state.World.IsLocal())
                 {
                     if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
                     NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ResearchDoneRpc()
                     {
                         Name = finishedResearch.Name,
-                    }, playerConnection);
+                    });
+                }
+                else
+                {
+                    foreach (var (networkId, _entity) in
+                                    SystemAPI.Query<RefRO<NetworkId>>()
+                                    .WithEntityAccess())
+                    {
+                        if (networkId.ValueRO.Value != realPlayer.ConnectionId) continue;
+                        playerConnection = _entity;
+                        break;
+                    }
+
+                    if (playerConnection != Entity.Null)
+                    {
+                        if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+                        NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ResearchDoneRpc()
+                        {
+                            Name = finishedResearch.Name,
+                        }, playerConnection);
+                    }
+                    else
+                    {
+                        Debug.LogError(string.Format($"{DebugEx.ServerPrefix} Failed to notify player of finished research: No connection found"));
+                    }
                 }
             }
 

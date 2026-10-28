@@ -18,33 +18,36 @@ export type GameUnit = {
 
 function authenticate() {
     return new Promise<string>((resolve, reject) => {
+        const address = '127.0.0.1'
+        const port = 8051
+        log.debug(`[ExtClient] [TCP] Connecting to ${address}:${port}`)
         const socket = net.connect({
-            host: '127.0.0.1',
-            port: 8051,
+            host: address,
+            port: port,
         })
         socket.on('connect', () => {
-            log.info(`[ExtClient] [TCP] Connected`)
+            log.trace(`[ExtClient] [TCP] Connected to ${socket.remoteAddress}:${socket.remotePort}`)
             let connection = rpc.createMessageConnection(
                 new rpc.StreamMessageReader(socket),
                 new rpc.StreamMessageWriter(socket))
 
             connection.listen()
 
-            log.info(`[ExtClient] Authenticating ...`)
+            log.debug(`[ExtClient] Authenticating ...`)
             connection.sendRequest('authenticate')
                 .then(_token => {
-                    log.info(`[ExtClient] Received token: "${_token}"`)
+                    log.debug(`[ExtClient] Received token: "${_token}"`)
                     resolve(String(_token))
                 })
                 .catch(reject)
                 .finally(() => {
-                    log.info(`[ExtClient] Closing connection`)
+                    log.trace(`[ExtClient] [TCP] Ending connection ...`)
                     connection.end()
+                    log.trace(`[ExtClient] [TCP] Disposing connection ...`)
                     connection.dispose()
-                    log.info(`[ExtClient] [TCP] Ending socket`)
                     socket.end(() => {
                         socket.destroy()
-                        log.info(`[ExtClient] [TCP] Socket destroyed`)
+                        log.info(`[ExtClient] [TCP] Socket ended`)
                     })
                 })
         })
@@ -55,7 +58,7 @@ function authenticate() {
         socket.on('connectionAttempt', (ip, port, family) => log.trace(`[ExtClient] [TCP] Connection attempt to ${ip}:${port} ${family}`))
         socket.on('connectionAttemptFailed', (ip, port, family, error) => log.trace(`[ExtClient] [TCP] Connection attempt to ${ip}:${port} ${family} failed ${error}`))
         socket.on('connectionAttemptTimeout', (ip, port, family) => log.trace(`[ExtClient] [TCP] Connection attempt to ${ip}:${port} ${family} timed out`))
-        socket.on('close', () => log.info(`[ExtClient] [TCP] Closed`))
+        socket.on('close', () => log.info(`[ExtClient] [TCP] Socket closed`))
     })
 }
 
@@ -84,8 +87,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(vscode.window.registerUriHandler({
         handleUri(uri) {
+            log.trace(`Handling uri ${uri} ...`)
+
             const url = URL.parse(uri.toString(true))
             if (!url) {
+                log.warn(`Invalid uri ${uri}`)
                 vscode.window.showErrorMessage(`Invalid URI "${uri.toString()}"`)
                 return
             }
@@ -97,12 +103,14 @@ export function activate(context: vscode.ExtensionContext) {
                     const _token = url.searchParams.get('token')
 
                     if (!entity && !ghost) {
-                        vscode.window.showErrorMessage(`Invalid URI "${uri.toString()}": Parameter "entity" or "ghost" is required`)
+                        log.warn(`Invalid URI ${uri.toString()}: Parameter "entity" or "ghost" is required`)
+                        vscode.window.showErrorMessage(`Invalid URI ${uri.toString()}: Parameter "entity" or "ghost" is required`)
                         break
                     }
 
                     if (!_token) {
-                        vscode.window.showErrorMessage(`Invalid URI "${uri.toString()}": Parameter "token" is required`)
+                        log.warn(`Invalid URI ${uri.toString()}: Parameter "token" is required`)
+                        vscode.window.showErrorMessage(`Invalid URI ${uri.toString()}: Parameter "token" is required`)
                         break
                     }
 
@@ -111,7 +119,7 @@ export function activate(context: vscode.ExtensionContext) {
                         onAuthenticate()
                     }
 
-                    log.debug('[Debugger] Try to start debugging ...')
+                    log.debug(`[Debugger] Try to start debugging entity ${entity} ghost ${ghost} ...`)
 
                     debuggerClient.startDebugging(_token, entity, ghost)
                     break
@@ -120,6 +128,7 @@ export function activate(context: vscode.ExtensionContext) {
                     const _token = url.searchParams.get('token')
 
                     if (!_token) {
+                        log.warn(`Invalid URI "${uri.toString()}": Parameter "token" is required`)
                         vscode.window.showErrorMessage(`Invalid URI "${uri.toString()}": Parameter "token" is required`)
                         break
                     }

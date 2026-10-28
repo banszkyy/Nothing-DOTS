@@ -378,6 +378,8 @@ GameObject:
   - component: {fileID: 4010535767608004536}
   - component: {fileID: -1772278781146432612}
   - component: {fileID: 4063995465838529484}
+  - component: {fileID: 7944879640901424590}
+  - component: {fileID: 8594225398979844124}
   m_Layer: 8
   m_Name: FactoryPlaceholder
   m_TagString: Untagged
@@ -541,6 +543,35 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3.528996, y: 1.2949005, z: 3.3413317}
   m_Center: {x: -0.37085986, y: 0.64745027, z: -0.64341915}
+--- !u!114 &7944879640901424590
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5692528052949456400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f81c636cfc1f57af6b6e3f05c961f35d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlaceholderGenerator
+  Prefab: {fileID: 7887398088158380673, guid: 1272de8941c0e148d961ca7a6f39466d, type: 3}
+--- !u!114 &8594225398979844124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5692528052949456400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 852e8fe711a55e0b4a117f042be9a50d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WirePlaceholderAuthoring
+  PortPositions:
+  - x: -2.011
+    y: 1.8012
+    z: -0.374
 --- !u!1 &7667893622887189461
 GameObject:
   m_ObjectHideFlags: 0

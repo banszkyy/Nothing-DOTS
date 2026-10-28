@@ -8,7 +8,7 @@ public class ClientSimpleDiagnostic : DiagnosticAt
     public new ImmutableArray<ClientSimpleDiagnostic> SubErrors { get; }
 
     public ClientSimpleDiagnostic(uint id, DiagnosticsLevel level, string message, Position position, Uri file, ImmutableArray<ClientSimpleDiagnostic> suberrors)
-        : base(level, message, position, file, false, false, suberrors.As<Diagnostic>(), ImmutableArray<DiagnosticRelatedInformation>.Empty, DiagnosticTag.None)
+        : base(level, message, position, file, false, false, false, suberrors.As<Diagnostic>(), ImmutableArray<DiagnosticRelatedInformation>.Empty, DiagnosticTag.None)
     {
         Id = id;
         SubErrors = suberrors;

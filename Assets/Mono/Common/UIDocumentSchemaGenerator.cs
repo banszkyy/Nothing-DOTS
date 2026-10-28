@@ -16,7 +16,9 @@ class UIDocumentSchemaGenerator : MonoBehaviour
         string input = Path.Combine(Application.dataPath, "UI");
         string output = Path.Combine(Application.dataPath, "UI", "Models");
 
-        foreach (string? xmlFile in Directory.EnumerateFileSystemEntries(input, "*.uxml", SearchOption.TopDirectoryOnly))
+        List<string> generated = new();
+
+        foreach (string xmlFile in Directory.EnumerateFileSystemEntries(input, "*.uxml", SearchOption.TopDirectoryOnly))
         {
             XmlDocument doc = new();
             doc.Load(xmlFile);
@@ -85,7 +87,16 @@ class UIDocumentSchemaGenerator : MonoBehaviour
                     "ui:ProgressBar" => nameof(ProgressBar),
                     "ui:TabView" => nameof(TabView),
                     "ui:Foldout" => nameof(Foldout),
-                    _ => nameof(VisualElement),
+                    "ui:Toggle" => nameof(Toggle),
+                    "ui:Image" => nameof(Image),
+                    "ui:GroupBox" => nameof(GroupBox),
+                    "ui:VisualElement" => nameof(VisualElement),
+                    "ui:Instance" => nameof(VisualElement),
+                    _ => ((Func<string>)(() =>
+                    {
+                        Debug.LogWarning($"Unknown element name {e.Name}");
+                        return nameof(VisualElement);
+                    }))(),
                 };
 
                 namedElements.TryAdd(name, (propertyType, propertyName, e, null));
@@ -94,6 +105,7 @@ class UIDocumentSchemaGenerator : MonoBehaviour
             string className = $"{Path.GetFileNameWithoutExtension(xmlFile)}Schema";
 
             string outputFilename = Path.Combine(output, className + ".cs");
+            generated.Add(outputFilename);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputFilename));
             using FileStream f = File.Open(outputFilename, FileMode.Create, FileAccess.Write);
@@ -134,6 +146,13 @@ class UIDocumentSchemaGenerator : MonoBehaviour
             writer.WriteLine("    }");
             writer.WriteLine("}");
             writer.WriteLine();
+        }
+
+        foreach (string csFile in Directory.EnumerateFileSystemEntries(output, "*.cs", SearchOption.TopDirectoryOnly))
+        {
+            if (generated.Contains(csFile)) continue;
+            File.Delete(csFile);
+            if (File.Exists(csFile + ".meta")) File.Delete(csFile + ".meta");
         }
     }
 }

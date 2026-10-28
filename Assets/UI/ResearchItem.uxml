@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Button name="button-select" style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; flex-shrink: 1; min-width: 48px; min-height: 48px; max-width: 48px; max-height: 48px; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px;">
+        <ui:VisualElement picking-mode="Ignore">
+            <ui:VisualElement picking-mode="Ignore" style="flex-direction: row; font-size: 8px; position: absolute;">
+                <ui:Label text="\udb85\udc4e" parse-escape-sequences="true" picking-mode="Ignore" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; -unity-text-align: middle-left;"/>
+                <ui:Label text="0" name="label-resources" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; -unity-text-align: middle-right;"/>
+            </ui:VisualElement>
+            <ui:Label text="meo wmeowmeow" name="name-label" picking-mode="Ignore" style="position: absolute; right: 0; left: 0; bottom: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px; top: 0; text-overflow: clip; white-space: normal; overflow: hidden;"/>
+            <ui:Image name="thumbnail" picking-mode="Ignore" style="aspect-ratio: 1;"/>
+        </ui:VisualElement>
+    </ui:Button>
+</ui:UXML>

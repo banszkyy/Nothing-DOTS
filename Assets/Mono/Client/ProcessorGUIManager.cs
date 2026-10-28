@@ -53,11 +53,15 @@ public class ProcessorGUIManager : MonoBehaviour
 
             _ids.Add(uiElement.Id);
 
+            VisualElement desiredParent = uiElement.Parent == 0 ? _ui.rootVisualElement.Q("root") : _ui.rootVisualElement.Q(uiElement.Parent.ToString());
+            if (desiredParent is null)
+            {
+                Debug.LogWarning($"Desired parent is null");
+                continue;
+            }
+
             if (e is null)
             {
-                VisualElement desiredParent = uiElement.Parent == 0 ? _ui.rootVisualElement : _ui.rootVisualElement.Q(uiElement.Parent.ToString());
-                if (desiredParent is null) continue;
-
                 switch (uiElement.Type)
                 {
                     case UserUIElementType.Box:
@@ -106,11 +110,6 @@ public class ProcessorGUIManager : MonoBehaviour
                         throw new UnreachableException();
                 }
 
-                if (uiElement.Parent == 0)
-                {
-                    e.style.flexGrow = 1;
-                }
-
                 UpdateElement(e, in uiElement);
                 e.name = uiElement.Id.ToString();
                 desiredParent.Add(e);
@@ -118,6 +117,12 @@ public class ProcessorGUIManager : MonoBehaviour
             else
             {
                 if (!uiElement.IsDirty) continue;
+
+                if (e.parent != desiredParent)
+                {
+                    e.RemoveFromHierarchy();
+                    desiredParent.Add(e);
+                }
 
                 UpdateElement(e, in uiElement);
                 switch (uiElement.Type)

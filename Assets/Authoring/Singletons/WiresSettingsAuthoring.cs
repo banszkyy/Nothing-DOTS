@@ -6,6 +6,7 @@ using UnityEngine;
 class WiresSettingsAuthoring : MonoBehaviour
 {
     [SerializeField, NotNull] Material? Material = default;
+    [SerializeField, NotNull] Material? PlaceholderMaterial = default;
 
     class Baker : Baker<WiresSettingsAuthoring>
     {
@@ -15,6 +16,7 @@ class WiresSettingsAuthoring : MonoBehaviour
             AddComponentObject<WiresSettings>(entity, new()
             {
                 Material = authoring.Material,
+                PlaceholderMaterial = authoring.PlaceholderMaterial,
             });
         }
     }

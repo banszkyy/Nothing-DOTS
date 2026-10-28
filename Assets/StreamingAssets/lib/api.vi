@@ -268,7 +268,7 @@ export struct UIElement
     int height;
     private UIType _type;
 
-    export UIElement()
+    export init()
     {
         this._type = UIType.Box;
         this.width = 50;
@@ -302,7 +302,7 @@ export struct UILabel
     float3 color;
     char[15] text;
 
-    export UILabel()
+    export init()
     {
         this._type = UIType.Label;
         this.width = 50;
@@ -338,7 +338,7 @@ export struct UIImage
     i16 imgheight;
     byte[510] img;
 
-    export UIImage(i16 width, i16 height)
+    export init(i16 width, i16 height)
     {
         this._type = UIType.Image;
         this.width = 50;

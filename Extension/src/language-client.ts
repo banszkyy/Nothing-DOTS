@@ -76,12 +76,12 @@ export class LanguageClientManager implements Disposable {
             () => {
                 log.debug(`[Language] [TCP] Connecting to ${connectionOptions.host}:${connectionOptions.port}`)
                 const socket = net.connect(connectionOptions)
-                socket.on('connect', () => log.info(`[Language] [TCP] Connected`))
+                socket.on('connect', () => log.info(`[Language] [TCP] Connected to ${socket.remoteAddress}:${socket.remotePort}`))
                 socket.on('error', (error) => log.error(`[Language] [TCP] ${error}`))
                 socket.on('connectionAttempt', (ip, port, family) => log.trace(`[Language] [TCP] Connection attempt to ${ip}:${port} ${family}`))
                 socket.on('connectionAttemptFailed', (ip, port, family, error) => log.trace(`[Language] [TCP] Connection attempt to ${ip}:${port} ${family} failed ${error}`))
                 socket.on('connectionAttemptTimeout', (ip, port, family) => log.trace(`[Language] [TCP] Connection attempt to ${ip}:${port} ${family} timed out`))
-                socket.on('close', () => log.info(`[Language] [TCP] Closed`))
+                socket.on('close', () => log.info(`[Language] [TCP] Socket closed`))
                 return Promise.resolve({
                     writer: socket,
                     reader: socket,
@@ -157,5 +157,6 @@ export class LanguageClientManager implements Disposable {
         this.client?.dispose()
         this.outputChannel?.dispose()
         this.outputChannel.dispose()
+        log.error(`[Language] Disposed`)
     }
 }

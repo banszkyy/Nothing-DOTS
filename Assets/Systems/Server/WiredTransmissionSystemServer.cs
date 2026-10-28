@@ -86,6 +86,7 @@ partial struct WiredTransmissionSystemServer : ISystem
 
             while (openSet.TryDequeue(out EntityPortIdentifier next))
             {
+                if (SystemAPI.HasComponent<WirePlaceholder>(next.Entity)) continue;
                 DynamicBuffer<BufferedWire> buffer = SystemAPI.GetBuffer<BufferedWire>(next.Entity);
                 for (int i = 0; i < buffer.Length; i++)
                 {

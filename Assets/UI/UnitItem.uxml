@@ -1,10 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:Button name="button-select" style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; flex-shrink: 1; min-width: 64px; min-height: 64px; max-width: 64px; max-height: 64px;">
-        <ui:VisualElement picking-mode="Ignore" name="image" style="flex-shrink: 0; flex-grow: 1;">
-            <ui:Label text="Unit" name="label-name" style="flex-grow: 1; -unity-font-style: bold; -unity-text-align: middle-center;"/>
-            <ui:VisualElement style="flex-direction: row; font-size: 8px;">
-                <ui:Label text="Resources:" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; -unity-text-align: middle-left;"/>
-                <ui:Label text="0" name="label-resources" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; -unity-text-align: middle-right;"/>
+    <ui:Button name="button-select" style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; flex-shrink: 1; min-width: 48px; min-height: 48px; max-width: 48px; max-height: 48px; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px;">
+        <ui:VisualElement picking-mode="Ignore">
+            <ui:Image source="project://database/Assets/Thumbnails/Apc.png?fileID=2800000&amp;guid=3842f4e3d229cc1c794d45b93e61f61b&amp;type=3#Apc" name="thumbnail" picking-mode="Ignore" style="aspect-ratio: 1;"/>
+            <ui:VisualElement picking-mode="Ignore" style="flex-direction: row; font-size: 8px; position: absolute;">
+                <ui:Label text="\udb85\udc0b" parse-escape-sequences="true" picking-mode="Ignore" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; -unity-text-align: middle-left;"/>
+                <ui:Label text="0" name="label-resources" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; -unity-text-align: middle-right;"/>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:Button>

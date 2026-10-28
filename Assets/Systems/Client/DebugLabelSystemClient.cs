@@ -7,6 +7,7 @@ using UnityEngine;
 public partial class DebugLabelSystemClient : SystemBase
 {
     public const float Lifetime = 0.5f;
+    public bool IsEnabled;
 
     Transform? _canvas;
     readonly List<WorldLabel> _instances = new();
@@ -59,7 +60,7 @@ public partial class DebugLabelSystemClient : SystemBase
                 if (labels[i].DieAt >= SystemAPI.Time.ElapsedTime) labels.RemoveAtSwapBack(i--);
             }
 
-            for (int i = System.Math.Min(labels.Length, _instances.Count) - 1; i >= 0; i--)
+            for (int i = IsEnabled ? System.Math.Min(labels.Length, _instances.Count) - 1 : -1; i >= 0; i--)
             {
                 WorldLabel value = _instances[i];
 

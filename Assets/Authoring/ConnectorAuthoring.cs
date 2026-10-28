@@ -6,7 +6,7 @@ using UnityEngine;
 [AddComponentMenu("Authoring/Connector")]
 class ConnectorAuthoring : MonoBehaviour
 {
-    [SerializeField] Transform[] PortPositions = System.Array.Empty<Transform>();
+    [SerializeField] public Transform[] PortPositions = System.Array.Empty<Transform>();
 
     class Baker : Baker<ConnectorAuthoring>
     {

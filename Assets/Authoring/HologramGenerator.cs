@@ -56,32 +56,30 @@ class HologramGenerator : MonoBehaviour
 
         foreach (GameObject child in children)
         {
-            yield return null;
             DestroyImmediate(child, false);
+            yield return null;
         }
 
         foreach (UnityEngine.Collider collider in o.GetComponents<UnityEngine.Collider>())
         {
-            yield return null;
             DestroyImmediate(collider, false);
+            yield return null;
         }
-
-        yield return null;
 
         if (Prefab.TryGetComponent(out BoxCollider boxCollider))
         {
-            BoxCollider newBoxCollider = o.gameObject.AddComponent<BoxCollider>();
+            BoxCollider newBoxCollider = o.AddComponent<BoxCollider>();
             newBoxCollider.center = boxCollider.center;
             newBoxCollider.size = boxCollider.size;
+            yield return null;
         }
         else if (Prefab.TryGetComponent(out UnityEngine.SphereCollider sphereCollider))
         {
             UnityEngine.SphereCollider newSphereCollider = o.AddComponent<UnityEngine.SphereCollider>();
             newSphereCollider.center = sphereCollider.center;
             newSphereCollider.radius = sphereCollider.radius;
+            yield return null;
         }
-
-        yield return null;
 
         MeshRenderer[] renderers = Prefab.GetComponentsInChildren<MeshRenderer>(false);
         foreach (MeshRenderer renderer in renderers)
@@ -98,7 +96,7 @@ class HologramGenerator : MonoBehaviour
             newRenderer.sharedMaterial = Material;
 
             newObject.transform.SetPositionAndRotation(renderer.transform.position, renderer.transform.rotation);
-            newObject.transform.localScale = renderer.transform.localScale;
+            newObject.transform.localScale = renderer.transform.lossyScale;
             yield return null;
         }
 

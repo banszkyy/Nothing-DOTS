@@ -100,6 +100,7 @@ public partial class WireRendererSystemClient : SystemBase
 
     [NotNull] WiresSettings? Settings = null;
     readonly Dictionary<WireId, LineRenderer> Lines = new();
+    readonly Dictionary<WireId, LineRenderer> PlaceholderLines = new();
     [NotNull] ObjectPool<LineRenderer>? LinesPool = null;
 
     protected override void OnCreate()
@@ -109,7 +110,6 @@ public partial class WireRendererSystemClient : SystemBase
             createFunc: () =>
             {
                 LineRenderer line = new GameObject("Wire").AddComponent<LineRenderer>();
-                line.material = Settings.Material;
                 line.widthCurve = AnimationCurve.Constant(0f, 1f, 0.05f);
                 return line;
             },
@@ -232,18 +232,62 @@ public partial class WireRendererSystemClient : SystemBase
         ok:;
         }
 
-        foreach (var (connectorA, connectorPosA, wires, ghostA, entity) in SystemAPI.Query<RefRO<Connector>, RefRO<LocalTransform>, DynamicBuffer<BufferedWire>, RefRO<GhostInstance>>().WithEntityAccess())
+        foreach (KeyValuePair<WireId, LineRenderer> line in PlaceholderLines)
+        {
+            bool a = false;
+            bool b = false;
+
+            foreach (var (ghost, wires) in SystemAPI.Query<RefRO<GhostInstance>, DynamicBuffer<BufferedWire>>())
+            {
+                if (line.Key.EntityA.Equals(ghost.ValueRO))
+                {
+                    foreach (var wire in wires)
+                    {
+                        if (line.Key.Equals(wire))
+                        {
+                            a = true;
+                            if (b) goto ok;
+                        }
+                    }
+                }
+                else if (line.Key.EntityB.Equals(ghost.ValueRO))
+                {
+                    foreach (var wire in wires)
+                    {
+                        if (line.Key.Equals(wire))
+                        {
+                            b = true;
+                            if (a) goto ok;
+                        }
+                    }
+                }
+            }
+
+            if (!a || !b)
+            {
+                LinesPool.Release(line.Value);
+                PlaceholderLines.Remove(line.Key);
+                break;
+            }
+
+        ok:;
+        }
+
+        foreach (var (connectorA, connectorPosA, wires, ghostA, entityA) in SystemAPI.Query<RefRO<Connector>, RefRO<LocalTransform>, DynamicBuffer<BufferedWire>, RefRO<GhostInstance>>().WithEntityAccess())
         {
             foreach (BufferedWire wire in wires)
             {
                 if (!wire.GhostA.Equals(ghostA.ValueRO)) continue;
 
+                bool isPlaceholder = SystemAPI.HasComponent<WirePlaceholder>(entityA);
+
                 float3 startPosition = connectorPosA.ValueRO.TransformPoint(connectorA.ValueRO.PortPositions[wire.PortA]);
                 float3 endPosition = default;
 
-                foreach (var (connectorB, connectorPosB, ghostB) in SystemAPI.Query<RefRO<Connector>, RefRO<LocalTransform>, RefRO<GhostInstance>>())
+                foreach (var (connectorB, connectorPosB, ghostB, entityB) in SystemAPI.Query<RefRO<Connector>, RefRO<LocalTransform>, RefRO<GhostInstance>>().WithEntityAccess())
                 {
                     if (!wire.GhostB.Equals(ghostB.ValueRO)) continue;
+                    isPlaceholder = isPlaceholder || SystemAPI.HasComponent<WirePlaceholder>(entityB);
                     endPosition = connectorPosB.ValueRO.TransformPoint(connectorB.ValueRO.PortPositions[wire.PortB]);
                     break;
                 }
@@ -252,9 +296,11 @@ public partial class WireRendererSystemClient : SystemBase
 
                 WireId wireId = wire;
 
-                if (!Lines.TryGetValue(wireId, out LineRenderer? line) || line == null)
+                Dictionary<WireId, LineRenderer> _lines = isPlaceholder ? PlaceholderLines : Lines;
+                if (!_lines.TryGetValue(wireId, out LineRenderer? line) || line == null)
                 {
-                    line = Lines[wireId] = LinesPool.Get();
+                    line = _lines[wireId] = LinesPool.Get();
+                    line.material = isPlaceholder ? Settings.PlaceholderMaterial : Settings.Material;
                 }
 
                 Vector3[] points = GenerateWire(startPosition, endPosition);
@@ -269,6 +315,7 @@ public partial class WireRendererSystemClient : SystemBase
         Debug.Log($"{DebugEx.ClientPrefix} Destroying wires");
 
         Lines.Clear();
+        PlaceholderLines.Clear();
         LinesPool.Clear();
     }
 }

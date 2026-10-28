@@ -4,7 +4,7 @@ public struct PrefabDatabase : IComponentData
 {
     public Entity Player;
     public Entity VirtualPlayer;
-    public Entity CoreComputer;
+    public Entity PlayerInterface;
     public Entity Builder;
     public Entity Resource;
 }

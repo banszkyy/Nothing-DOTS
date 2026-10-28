@@ -442,9 +442,9 @@ MonoBehaviour:
   TurretRotationSpeed: 5
   CannonRotationSpeed: 3
   Spread: 0.003
-  BulletReload: 0.3
-  MagazineReload: 0
-  MagazineSize: 1
+  BulletReload: 0.2
+  MagazineReload: 2
+  MagazineSize: 8
 --- !u!114 &41737087432463705
 MonoBehaviour:
   m_ObjectHideFlags: 0

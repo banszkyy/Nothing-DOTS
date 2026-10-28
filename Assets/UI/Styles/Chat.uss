@@ -1,14 +1,14 @@
 
 .server-message Label {
-    color: rgb(255, 214, 77);
+    color: #ffd64d;
 }
 
 .system-message Label {
-    color: rgb(102, 167, 204);
+    color: #66a7cc;
 }
 
 .player-message Label {
-    color: rgb(255, 255, 255);
+    color: #ffffff;
 }
 
 .chat-message {
@@ -84,10 +84,10 @@
     border-bottom-width: 0;
     border-left-width: 0;
     background-color: #00000000;
-    color: rgba(255, 255, 255, 0.6);
+    color: #ffffff99;
 }
 
 .chat-send-button:enabled:hover {
-    color: rgb(255, 255, 255);
+    color: #ffffff;
     background-color: #00000000;
 }

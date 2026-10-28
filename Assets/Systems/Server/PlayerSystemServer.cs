@@ -116,7 +116,7 @@ public partial struct PlayerSystemServer : ISystem
                 commandBuffer.SetComponent<Player>(newPlayer, new()
                 {
                     Team = Player.UnassignedTeam,
-                    IsCoreComputerSpawned = false,
+                    IsStartkitSpawned = false,
                     Guid = guid,
                     Nickname = command.ValueRO.Nickname,
                 });
@@ -232,26 +232,26 @@ public partial struct PlayerSystemServer : ISystem
             }
             else
             {
-                if (!player.ValueRO.IsCoreComputerSpawned)
+                if (!player.ValueRO.IsStartkitSpawned)
                 {
-                    Debug.Log($"{DebugEx.ServerPrefix} Spawning core computer for player \"{player.ValueRO.Nickname}\" ({playerR.ValueRO.ConnectionState} {playerR.ValueRO.ConnectionId})");
+                    Debug.Log($"{DebugEx.ServerPrefix} Spawning startkit for player \"{player.ValueRO.Nickname}\" ({playerR.ValueRO.ConnectionState} {playerR.ValueRO.ConnectionId})");
 
                     for (int i = 0; i < spawns.Length; i++)
                     {
                         if (spawns[i].IsOccupied) continue;
                         spawns[i] = spawns[i] with { IsOccupied = true };
 
-                        Entity coreComputer = commandBuffer.Instantiate(prefabs.CoreComputer);
-                        commandBuffer.SetComponent<UnitTeam>(coreComputer, new()
+                        Entity playerInterface = commandBuffer.Instantiate(prefabs.PlayerInterface);
+                        commandBuffer.SetComponent<UnitTeam>(playerInterface, new()
                         {
                             Team = player.ValueRO.Team
                         });
-                        commandBuffer.SetComponent<LocalTransform>(coreComputer, LocalTransform.FromPosition(spawns[i].Position));
-                        commandBuffer.SetComponent<GhostOwner>(coreComputer, new()
+                        commandBuffer.SetComponent<LocalTransform>(playerInterface, LocalTransform.FromPosition(spawns[i].Position));
+                        commandBuffer.SetComponent<GhostOwner>(playerInterface, new()
                         {
                             NetworkId = playerR.ValueRO.ConnectionId,
                         });
-                        commandBuffer.AddComponent<ProcessorInitialization>(coreComputer, new()
+                        commandBuffer.AddComponent<ProcessorInitialization>(playerInterface, new()
                         {
                             SourceFile = new FileId("core-computer.vi", NetcodeEndPoint.Server)
                         });
@@ -274,10 +274,10 @@ public partial struct PlayerSystemServer : ISystem
                         goto spawned;
                     }
 
-                    Debug.LogError($"{DebugEx.ServerPrefix} Cannot spawn core computer for player \"{player.ValueRO.Nickname}\" ({playerR.ValueRO.ConnectionState} {playerR.ValueRO.ConnectionId})");
+                    Debug.LogError($"{DebugEx.ServerPrefix} Cannot spawn startkit for player \"{player.ValueRO.Nickname}\" ({playerR.ValueRO.ConnectionState} {playerR.ValueRO.ConnectionId})");
 
                 spawned:
-                    player.ValueRW.IsCoreComputerSpawned = true;
+                    player.ValueRW.IsStartkitSpawned = true;
                     player.ValueRW.Resources = 30;
                 }
 
@@ -297,21 +297,21 @@ public partial struct PlayerSystemServer : ISystem
                 Debug.Log($"{DebugEx.ServerPrefix} Assigning team {player.ValueRO.Team} to virtual player \"{player.ValueRO.Nickname}\"");
             }
 
-            if (!player.ValueRO.IsCoreComputerSpawned)
+            if (!player.ValueRO.IsStartkitSpawned)
             {
-                Debug.Log($"{DebugEx.ServerPrefix} Spawning core computer for virtual player \"{player.ValueRO.Nickname}\"");
+                Debug.Log($"{DebugEx.ServerPrefix} Spawning startkit for virtual player \"{player.ValueRO.Nickname}\"");
 
                 for (int i = 0; i < spawns.Length; i++)
                 {
                     if (spawns[i].IsOccupied) continue;
                     spawns[i] = spawns[i] with { IsOccupied = true };
 
-                    Entity coreComputer = commandBuffer.Instantiate(prefabs.CoreComputer);
-                    commandBuffer.SetComponent<UnitTeam>(coreComputer, new()
+                    Entity playerInterface = commandBuffer.Instantiate(prefabs.PlayerInterface);
+                    commandBuffer.SetComponent<UnitTeam>(playerInterface, new()
                     {
                         Team = player.ValueRO.Team
                     });
-                    commandBuffer.SetComponent<LocalTransform>(coreComputer, LocalTransform.FromPosition(spawns[i].Position));
+                    commandBuffer.SetComponent<LocalTransform>(playerInterface, LocalTransform.FromPosition(spawns[i].Position));
 
                     Entity builder = commandBuffer.Instantiate(prefabs.Builder);
                     commandBuffer.SetComponent<UnitTeam>(builder, new()
@@ -323,10 +323,10 @@ public partial struct PlayerSystemServer : ISystem
                     goto spawned;
                 }
 
-                Debug.LogError($"{DebugEx.ServerPrefix} Cannot spawn core computer for virtual player \"{player.ValueRO.Nickname}\"");
+                Debug.LogError($"{DebugEx.ServerPrefix} Cannot spawn startkit for virtual player \"{player.ValueRO.Nickname}\"");
 
             spawned:
-                player.ValueRW.IsCoreComputerSpawned = true;
+                player.ValueRW.IsStartkitSpawned = true;
                 player.ValueRW.Resources = 30;
             }
         }
@@ -359,7 +359,7 @@ public partial struct PlayerSystemServer : ISystem
             commandBuffer.SetComponent<Player>(newPlayer, new()
             {
                 Team = Player.UnassignedTeam,
-                IsCoreComputerSpawned = false,
+                IsStartkitSpawned = false,
                 Guid = guid,
                 Nickname = settings.Nickname,
             });

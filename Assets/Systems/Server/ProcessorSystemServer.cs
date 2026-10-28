@@ -194,7 +194,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
         public required NativeList<OwnedData<BufferedLine>>.ParallelWriter DebugLines;
         public required NativeList<OwnedData<BufferedWorldLabel>>.ParallelWriter WorldLabels;
         public required NativeList<EntityOwnedData<UserUIElement>>.ParallelWriter UIElements;
-        [ReadOnly] public required ComponentLookup<CoreComputer> QCoreComputer;
+        [ReadOnly] public required ComponentLookup<PlayerInterface> QPlayerInterface;
         [ReadOnly] public required ComponentLookup<Radar> QRadar;
         [ReadOnly] public required ComponentLookup<Facility> QFacility;
         [ReadOnly] public required ComponentLookup<Factory> QFactory;
@@ -512,7 +512,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
                 DebugLines = debugLines.AsParallelWriter(),
                 WorldLabels = worldLabels.AsParallelWriter(),
                 UIElements = uiElements.AsParallelWriter(),
-                QCoreComputer = SystemAPI.GetComponentLookup<CoreComputer>(true),
+                QPlayerInterface = SystemAPI.GetComponentLookup<PlayerInterface>(true),
                 QRadar = SystemAPI.GetComponentLookup<Radar>(true),
                 QFacility = SystemAPI.GetComponentLookup<Facility>(true),
                 QFactory = SystemAPI.GetComponentLookup<Factory>(true),
@@ -582,7 +582,7 @@ partial struct ProcessorJob : IJobEntity
         for (int i = 0; i < this.scopedExternalFunctions.Length; i++)
         {
             if ((this.scopedExternalFunctions[i].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.GUI.Prefix &&
-                !worldRef.QCoreComputer.HasComponent(entity))
+                !worldRef.QPlayerInterface.HasComponent(entity))
             {
                 continue;
             }

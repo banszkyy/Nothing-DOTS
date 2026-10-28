@@ -53,7 +53,7 @@ partial struct ProjectileSystemClient : ISystem
             Ray ray = new(lastPosition, direction, travelDistance, Layers.BuildingOrUnit);
 
             bool didHitTerrain = TerrainGenerator.Instance.Raycast(ray.Start, ray.Direction, math.distance(lastPosition, newPosition), out float terrainHit, out float3 normal);
-            bool didHitUnit = QuadrantRayCast.RayCast(map, ray, out Hit unitHit) && DamageQ.HasBuffer(unitHit.Entity.Entity);
+            bool didHitUnit = QuadrantRayCast.Raycast(map, ray, out Hit unitHit) && DamageQ.HasBuffer(unitHit.Entity.Entity);
 
             float distance;
             bool metalHit;

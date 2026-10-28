@@ -20,7 +20,7 @@ class TcpListenerManager : IDisposable
         {
             if (_client is null) return null;
             if (_client.Connected) return _client;
-            Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Disposing TCP client ({_client.Client.RemoteEndPoint})");
+            Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Disposing TCP client {_client.Client.RemoteEndPoint}");
             _client.Dispose();
             _client = null;
             return null;
@@ -50,15 +50,15 @@ class TcpListenerManager : IDisposable
         {
             try
             {
-                Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Accept TCP client on {Address}:{Port} ...");
+                Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Accepting next TCP client on {Address}:{Port} ...");
                 _client = _listener.AcceptTcpClient();
-                Debug.Log($"{DebugEx.AnyPrefix} [{_category}] TCP client connected ({_client.Client.RemoteEndPoint})");
+                Debug.Log($"{DebugEx.AnyPrefix} [{_category}] TCP client connected from {_client.Client.RemoteEndPoint}");
             }
             catch (SocketException socketException)
             {
                 if (socketException.Message == "interrupted")
                 {
-                    Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Listening stopped");
+                    Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Listening stopped on {Address}:{Port}");
                 }
                 else
                 {

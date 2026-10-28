@@ -198,6 +198,8 @@ GameObject:
   - component: {fileID: 2384997903409849443}
   - component: {fileID: -8525222059505600072}
   - component: {fileID: 7360989443790506341}
+  - component: {fileID: 8174923406597265629}
+  - component: {fileID: 1594531175835003710}
   m_Layer: 8
   m_Name: RouterPlaceholder
   m_TagString: Untagged
@@ -363,6 +365,41 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.85, y: 0.32, z: 0.85}
   m_Center: {x: 0, y: 0.16, z: 0}
+--- !u!114 &8174923406597265629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1289979656329170851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f81c636cfc1f57af6b6e3f05c961f35d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlaceholderGenerator
+  Prefab: {fileID: 1440773521679765917, guid: b2c99c52e725c77998d5576f3c8cfd5d, type: 3}
+--- !u!114 &1594531175835003710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1289979656329170851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 852e8fe711a55e0b4a117f042be9a50d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WirePlaceholderAuthoring
+  PortPositions:
+  - x: -0.22
+    y: 0.2982
+    z: -0.18400002
+  - x: 0
+    y: 0.2982
+    z: -0.18400002
+  - x: 0.22
+    y: 0.2982
+    z: -0.18400002
 --- !u!1 &1608704575114492454
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,21 +1,21 @@
 :root {
-    --error: rgb(255, 63, 25);
-    --warning: rgb(255, 160, 51);
-    --ok: rgb(69, 255, 122);
-    --foregroundPrimary: rgb(224, 222, 244);
-    --foregroundSecondary: rgb(144, 140, 170);
-    --windowBackground: rgb(0, 0, 0);
-    --windowBorder: rgb(68, 68, 68);
-    --widgetBackground: rgb(0, 0, 0);
-    --widgetBorder: rgb(0, 0, 0);
-    --unfocusedBackground: rgb(0, 0, 0);
-    --unfocusedBorder: rgb(68, 68, 68);
-    --focusedBackground: rgb(0, 0, 0);
-    --focusedForeground: rgb(255, 255, 255);
-    --focusedBorder: rgb(255, 255, 255);
-    --activeBackground: rgb(255, 255, 255);
-    --activeForeground: rgb(0, 0, 0);
-    --activeBorder: rgb(255, 255, 255);
+    --error: #ff3f19;
+    --warning: #ffa033;
+    --ok: #45ff7a;
+    --foregroundPrimary: #e0def4;
+    --foregroundSecondary: #908caa;
+    --windowBackground: #000000;
+    --windowBorder: #555555;
+    --widgetBackground: #000000;
+    --widgetBorder: #000000;
+    --unfocusedBackground: #000000;
+    --unfocusedBorder: #555555;
+    --focusedBackground: #000000;
+    --focusedForeground: #ffffff;
+    --focusedBorder: #ffffff;
+    --activeBackground: #ffffff;
+    --activeForeground: #000000;
+    --activeBorder: #ffffff;
     -unity-font-definition: url("project://database/Assets/UI/Fonts/UbuntuNerdFont-Regular.ttf?fileID=12800000&guid=6543d423e60b6f58e8760292a8f19e0e&type=3#UbuntuNerdFont-Regular");
 }
 
@@ -78,6 +78,10 @@ Button:enabled:focus {
 Button:enabled:active {
     background-color: var(--activeBackground);
     border-color: var(--activeBorder);
+    color: var(--activeForeground);
+}
+
+Button:enabled:active Label {
     color: var(--activeForeground);
 }
 
@@ -158,8 +162,8 @@ TextField > Label {
     border-bottom-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
-    background-color: rgb(0, 0, 0);
-    -unity-background-image-tint-color: rgb(48, 48, 48);
+    background-color: #000000;
+    -unity-background-image-tint-color: #303030;
 }
 
 .unity-scroller--vertical > #unity-low-button:hover,
@@ -264,7 +268,7 @@ TextField > Label {
     border-bottom-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
-    background-color: rgb(255, 0, 255);
+    background-color: #303030;
     margin-top: 0;
     margin-bottom: 0;
 }
@@ -280,13 +284,13 @@ TextField > Label {
 }
 
 Scroller #unity-tracker {
-    background-color: rgba(0, 0, 0, 0);
+    background-color: #00000000;
 }
 
 Scroller {
     border-left-width: 1px;
     background-color: var(--widgetBackground);
-    border-left-color: rgba(0, 0, 0, 0);
+    border-left-color: #00000000;
 }
 
 ProgressBar > #unity-progress-bar > .unity-progress-bar__background {
@@ -360,10 +364,10 @@ ProgressBar Label {
     border-top-width: 2px;
     border-left-width: 0;
     border-right-width: 0;
-    border-left-color: rgba(0, 0, 0, 0);
-    border-right-color: rgba(0, 0, 0, 0);
-    border-top-color: rgba(0, 0, 0, 0);
-    border-bottom-color: rgba(0, 0, 0, 0);
+    border-left-color: #00000000;
+    border-right-color: #00000000;
+    border-top-color: #00000000;
+    border-bottom-color: #00000000;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -379,10 +383,10 @@ ProgressBar Label {
     border-top-width: 2px;
     border-left-width: 0;
     border-right-width: 0;
-    border-left-color: rgba(0, 0, 0, 0);
-    border-right-color: rgba(0, 0, 0, 0);
+    border-left-color: #00000000;
+    border-right-color: #00000000;
     border-top-color: var(--focusedBorder);
-    border-bottom-color: rgba(0, 0, 0, 0);
+    border-bottom-color: #00000000;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -395,10 +399,10 @@ ProgressBar Label {
     border-top-width: 2px;
     border-left-width: 0;
     border-right-width: 0;
-    border-left-color: rgba(0, 0, 0, 0);
-    border-right-color: rgba(0, 0, 0, 0);
+    border-left-color: #00000000;
+    border-right-color: #00000000;
     border-top-color: var(--activeBorder);
-    border-bottom-color: rgba(0, 0, 0, 0);
+    border-bottom-color: #00000000;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -431,4 +435,54 @@ ProgressBar Label {
 
 #container-unit-quick-commands #unit-command-name {
     font-size: 20px;
+}
+
+.unity-toggle {
+    background-color: var(--unfocusedBackground);
+    border-width: 1px;
+    border-color: var(--unfocusedBorder);
+    color: var(--foregroundPrimary);
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.unity-toggle:enabled:hover,
+.unity-toggle:enabled:focus {
+    background-color: var(--focusedBackground);
+    border-color: var(--focusedBorder);
+    color: var(--focusedForeground);
+}
+
+.unity-toggle:enabled:active {
+    background-color: var(--activeBackground);
+    border-color: var(--activeBorder);
+    color: var(--activeForeground);
+}
+
+.unity-toggle > .unity-toggle__input {
+}
+
+.unity-toggle > Label {
+    min-width: unset;
+    margin: 0px;
+    padding: 0px;
+    align-self: center;
+}
+
+.unity-toggle__checkmark {
+    border-width: 0px;
+    background-color: transparent;
+    -unity-background-image-tint-color: #ffffff;
+}
+
+.hud-item {
+    margin: 0px 0px;
+    padding: 0px 4px;
+    background-color: #000000;
+}
+
+.hud-item Label {
+    align-self: center;
 }

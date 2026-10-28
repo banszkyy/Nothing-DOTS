@@ -7,6 +7,37 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
+using Unity.Rendering;
+
+public static class Led
+{
+    // Power of two so every periodic pattern in the shader divides it evenly (no seam on wrap).
+    public const float TimeWrap = 16384f;   // 4.5 h, float ulp ~2 ms at the top
+    public static float Wrap(float t)
+    {
+        t %= TimeWrap;
+        return t < 0 ? t + TimeWrap : t;
+    }
+}
+
+// ---- adapt to your existing ghost component ----
+public struct LedSync : IComponentData
+{
+    [GhostField] public byte ProcStatus, RadarStatus, NetStatus, UserStatus;
+    [GhostField] public ushort ProcBlinks, RadarBlinks, NetBlinks, UserBlinks;
+}
+
+// ---- client-only presentation state ----
+public struct LedClientState : IComponentData
+{
+    public bool Initialized;
+    public uint4 LastCounters;
+    public float4 Stamps;          // wrapped local time of last accepted blink, per channel
+}
+
+[MaterialProperty("_LedBlink")] public struct LedBlinkProp : IComponentData { public float4 Value; }
+[MaterialProperty("_LedStatus")] public struct LedStatusProp : IComponentData { public float4 Value; }
+public struct LedGlowLink : IComponentData { public Entity Glow; }
 
 struct StatusLED<T> where T : struct, Enum
 {

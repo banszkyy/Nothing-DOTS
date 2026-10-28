@@ -17,23 +17,24 @@ class UnitPlaceholderItem
 
 public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
 {
-    BufferedUnit SelectedUnit;
     [SerializeField, NotNull] AllPrefabs? Prefabs = default;
+
+    [Header("Holograms")]
+
     [SerializeField, SaintsField.ReadOnly, NotNull] GameObject? UnitHologram = default;
-
     [SerializeField, NotNull] Material? HologramMaterial = default;
-
-    [SerializeField, SaintsField.ReadOnly] bool IsValidPosition;
-
     [SerializeField] Color ValidHologramColor = Color.white;
     [SerializeField] Color InvalidHologramColor = Color.red;
     [SerializeField, Range(-10f, 10f)] float HologramEmission = 1.1f;
 
-    public bool IsPlacing => SelectedUnit.Prefab != default;
-
     [Header("UI")]
 
     [SerializeField, NotNull] VisualTreeAsset? UnitButton = default;
+
+
+    [SerializeField, SaintsField.ReadOnly] bool IsValidPosition;
+    BufferedUnit SelectedUnit;
+    public bool IsPlacing => SelectedUnit.Prefab != default;
 
     float refreshAt;
     float refreshedBySyncAt;
@@ -42,7 +43,9 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
 
     void RefreshUI()
     {
-        VisualElement container = ui.UnitsPanel.contentContainer;
+        if (!ui.IsVisible()) return;
+
+        VisualElement container = ui.UnitsScrollview.contentContainer;
         container.Clear();
 
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
@@ -55,6 +58,8 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
 
         container.SyncList<BufferedUnit, UnitItemSchema>(UnitsSystemClient.GetInstance(entityManager.WorldUnmanaged).Units, UnitButton, (item, element, recycled) =>
         {
+            UnitPrefab v = Prefabs.Units.First(v => v.Prefab.name == item.Name.ToString());
+
             element.Root.userData = item.Name;
 
             if (!recycled)
@@ -66,8 +71,10 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
                 };
             }
 
-            element.LabelName.text = item.Name.ToString();
             element.LabelResources.text = item.RequiredResources.ToString();
+            element.Thumbnail.image = v.Thumbnail;
+            element.Root.tooltip = item.Name.ToString();
+            Tooltips.Instance.Reregister(element.Root);
         });
     }
 

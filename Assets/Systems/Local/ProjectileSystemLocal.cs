@@ -55,7 +55,7 @@ partial struct ProjectileSystemLocal : ISystem
             DynamicBuffer<BufferedDamage> damage = default;
 
             bool didHitTerrain = terrainSystem.Raycast(ray.Start, ray.Direction, math.distance(lastPosition, newPosition), out float terrainHit, out float3 normal);
-            bool didHitUnit = QuadrantRayCast.RayCast(map, ray, out Hit unitHit) && DamageQ.TryGetBuffer(unitHit.Entity.Entity, out damage);
+            bool didHitUnit = QuadrantRayCast.Raycast(map, ray, out Hit unitHit) && DamageQ.TryGetBuffer(unitHit.Entity.Entity, out damage);
 
             float distance;
             bool metalHit;

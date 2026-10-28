@@ -30,7 +30,7 @@ public partial struct BuilderSystemServer : ISystem
             DebugEx.DrawLine(ray.Start, ray.End, Color.white, 0.2f, false);
 #endif
 
-            if (!QuadrantRayCast.RayCast(map, ray, out Hit hit))
+            if (!QuadrantRayCast.Raycast(map, ray, out Hit hit))
             { continue; }
 
 #if DEBUG_LINES

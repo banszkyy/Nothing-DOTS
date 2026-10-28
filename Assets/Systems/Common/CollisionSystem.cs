@@ -183,7 +183,7 @@ unsafe partial struct CollisionSystem : ISystem
                 for (int j = i + 1; j < quadrant.Length; j++)
                 {
                     QuadrantEntity* b = &quadrant.GetUnsafePtr()[j];
-                    HandleCollision(a, b, false);
+                    HandleCollision(a, b, false, ref state);
                 }
 
                 for (int x = -1; x <= 1; x++)
@@ -201,7 +201,7 @@ unsafe partial struct CollisionSystem : ISystem
                         for (int j = 0; j < otherQuadrant.Length; j++)
                         {
                             QuadrantEntity* b = &otherQuadrant.GetUnsafePtr()[j];
-                            HandleCollision(a, b, true);
+                            HandleCollision(a, b, true, ref state);
                         }
                     }
                 }
@@ -226,7 +226,7 @@ unsafe partial struct CollisionSystem : ISystem
 
     static readonly ProfilerMarker _handleCollision = new("CollisionSystem.HandleCollision");
     [BurstCompile]
-    static void HandleCollision(QuadrantEntity* a, QuadrantEntity* b, bool skipB)
+    void HandleCollision(QuadrantEntity* a, QuadrantEntity* b, bool skipB, ref SystemState state)
     {
         if (skipB && a->Collider.IsStatic) return;
         if (a->Collider.IsStatic && b->Collider.IsStatic) return;
@@ -277,7 +277,7 @@ unsafe partial struct CollisionSystem : ISystem
 
 
         normal.y = 0f;
-        depth = math.clamp(depth, 0f, 0.1f);
+        depth = math.clamp(depth, 0f, SystemAPI.Time.DeltaTime * 0.1f);
 
         if (a->Collider.IsStatic)
         {
