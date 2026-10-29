@@ -578,14 +578,14 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
         return hologramModels.gameObject;
     }
 
-    public void Setup(UIElementReference ui)
+    public void Setup(VisualElement ui)
     {
-        this.ui = new BuildingsSchema(ui.Element);
+        this.ui = new BuildingsSchema(ui);
         RefreshUI();
         syncAt = 0f;
     }
 
-    public void Cleanup(UIElementReference ui)
+    public void Cleanup()
     {
         SelectedBuilding = default;
         IsDestroying = false;

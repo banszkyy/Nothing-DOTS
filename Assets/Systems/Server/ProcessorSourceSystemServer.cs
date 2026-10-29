@@ -47,10 +47,6 @@ partial class ProcessorSourceSystemServer : SystemBase
                     case ProcessorCommand.Reset:
                         DisposeProcessorResources(World.Unmanaged, processorEntity);
                         ResetProcessor(ref processor.ValueRW);
-                        if (processor.ValueRO.DebugContext.IsBeingDebugged)
-                        {
-                            processor.ValueRW.DebugContext.IsContinueUnhandled = true;
-                        }
                         break;
                     case ProcessorCommand.Key:
                         if (processor.ValueRW.InputKey.Length >= processor.ValueRW.InputKey.Capacity)
@@ -272,7 +268,7 @@ partial class ProcessorSourceSystemServer : SystemBase
         processor.StdOutBuffer.Clear();
         processor.StdOutBufferCursor = 0;
         processor.Registers = processorState.Registers;
-        processor.Signal = processorState.Signal;
+        processor.Signal = processor.Signal == Signal.Halt ? Signal.Halt : processorState.Signal;
         processor.Crash = processorState.Crash;
     }
 }

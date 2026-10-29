@@ -27,12 +27,6 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
     {
         if (!ui.IsVisible()) return;
 
-        if (UIManager.Instance.GrapESC())
-        {
-            UIManager.Instance.CloseUI(this);
-            return;
-        }
-
         if (Time.time >= refreshAt ||
             refreshedBySyncAt != UnitsSystemClient.LastSynced.Data)
         {
@@ -62,9 +56,9 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
         ui.CurrentProgressbar.value = selectedFactory.CurrentProgress / selectedFactory.TotalProgress;
     }
 
-    public void Setup(UIElementReference ui, Entity factoryEntity)
+    public void Setup(VisualElement ui, Entity factoryEntity)
     {
-        this.ui = new(ui.Element);
+        this.ui = new(ui);
 
         selectedFactoryEntity = factoryEntity;
         RefreshUI(factoryEntity);
@@ -185,10 +179,11 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
         refreshAt = Time.time + .1f;
     }
 
-    public void Cleanup(UIElementReference ui)
+    public void Cleanup()
     {
         selectedFactoryEntity = Entity.Null;
         selectedFactory = default;
         refreshAt = float.PositiveInfinity;
+        this.ui = null;
     }
 }

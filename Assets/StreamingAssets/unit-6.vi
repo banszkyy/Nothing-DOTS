@@ -133,12 +133,6 @@ void Receive()
             remove_unit_at(&enemies, unit.position);
             update_unit(&allies, unit);
         }
-        else
-        {
-            print("INVSEQ ");
-            print(v[0]);
-            printline();
-        }
     }
 }
 

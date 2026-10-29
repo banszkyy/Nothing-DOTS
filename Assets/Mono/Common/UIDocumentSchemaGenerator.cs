@@ -18,7 +18,7 @@ class UIDocumentSchemaGenerator : MonoBehaviour
 
         List<string> generated = new();
 
-        foreach (string xmlFile in Directory.EnumerateFileSystemEntries(input, "*.uxml", SearchOption.TopDirectoryOnly))
+        foreach (string xmlFile in Directory.EnumerateFileSystemEntries(input, "*.uxml", SearchOption.AllDirectories))
         {
             XmlDocument doc = new();
             doc.Load(xmlFile);
@@ -91,7 +91,7 @@ class UIDocumentSchemaGenerator : MonoBehaviour
                     "ui:Image" => nameof(Image),
                     "ui:GroupBox" => nameof(GroupBox),
                     "ui:VisualElement" => nameof(VisualElement),
-                    "ui:Instance" => nameof(VisualElement),
+                    "ui:Instance" => nameof(TemplateContainer),
                     _ => ((Func<string>)(() =>
                     {
                         Debug.LogWarning($"Unknown element name {e.Name}");

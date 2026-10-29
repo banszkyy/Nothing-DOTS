@@ -74,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
         log.info(`Authenticated with token ${token}`)
         unitsTreeDataProvider.refresh()
         authenticateStatusItem.show()
-        authenticateStatusItem.text = `$(pass-filled) Authenticated`
+        authenticateStatusItem.text = `$(remote) Authenticated`
     }
 
     context.subscriptions.push(vscode.commands.registerCommand(`${utils.extensionId}.units.refresh`, () => {

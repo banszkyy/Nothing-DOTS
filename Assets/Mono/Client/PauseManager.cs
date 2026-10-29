@@ -42,9 +42,9 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
         }
     }
 
-    public void Setup(UIElementReference ui)
+    public void Setup(VisualElement ui)
     {
-        this.ui = new(ui.Element);
+        this.ui = new(ui);
         refreshAt = 0f;
 
         this.ui.ButtonExit.clicked += OnButtonExit;
@@ -119,7 +119,7 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
             playerE => !entityManager.TryGetComponentData<RealPlayer>(playerE, out var playerR) || playerR.ConnectionState is not PlayerConnectionState.Disconnected and not PlayerConnectionState.Server);
     }
 
-    public void Cleanup(UIElementReference ui)
+    public void Cleanup()
     {
         refreshAt = float.PositiveInfinity;
         this.ui.ButtonExit.clicked -= OnButtonExit;

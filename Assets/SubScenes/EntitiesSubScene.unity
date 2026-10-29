@@ -1029,7 +1029,7 @@ MonoBehaviour:
   - {x: -10, y: 0, z: 10}
   - {x: 10, y: 0, z: 10}
   - {x: 10, y: 0, z: -10}
-  CoreComputer: {fileID: 4988928766331271095, guid: 0691a3b3c438f1b17982bff2e95e5d91,
+  CoreComputer: {fileID: 1440773521679765917, guid: 0373fc840fddbd4af831272644bab389,
     type: 3}
   Builder: {fileID: 2099412289264216910, guid: dcfcb0932d225e2e58109005d1661adf, type: 3}
 --- !u!1 &2036629938

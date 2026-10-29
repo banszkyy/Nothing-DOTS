@@ -112,7 +112,10 @@ public class ThumbnailGenerator : MonoBehaviour
         foreach ((string path, IHaveThumbnail item) in generated)
         {
             item.Thumbnail = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            EditorUtility.SetDirty((Object)item);
         }
+
+        AssetDatabase.SaveAssets();
 #endif
     }
 

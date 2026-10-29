@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: PlayerInterface
   m_EditorClassIdentifier: 
   Prefab: {fileID: 1440773521679765917, guid: 0373fc840fddbd4af831272644bab389, type: 3}
+  Thumbnail: {fileID: 2800000, guid: fcf987ac317dde9c3a41d8f60323f96b, type: 3}
   PlaceholderPrefab: {fileID: 1289979656329170851, guid: 94859c6ca9232f7fe9c37b60ea6c0234,
     type: 3}
   HologramPrefab: {fileID: 1289979656329170851, guid: c5aff935f5aafefb48cc6d83fad2771e,

@@ -35,10 +35,15 @@ public class Tooltips : Singleton<Tooltips>
     {
         if (visualElement is null) return;
 
-        if (isChild || visualElement.tooltip is not null)
+        if (isChild || !string.IsNullOrEmpty(visualElement.tooltip))
         {
             visualElement.RegisterCallback<MouseEnterEvent>(OnElementMouseEnter);
             visualElement.RegisterCallback<MouseLeaveEvent>(OnElementMouseLeave);
+
+            if (targetVisualElement == visualElement)
+            {
+                SetTooltip(visualElement.tooltip, visualElement);
+            }
         }
 
         foreach (VisualElement item in visualElement.Children())

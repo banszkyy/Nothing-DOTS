@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Web;
 using LanguageCore;
 using LanguageCore.Runtime;
 using Unity.Entities;
@@ -15,59 +13,6 @@ using Unity.NetCode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
-
-[Flags]
-enum TerminalColor : byte
-{
-    Black = 0b_0000,
-    Blue = 0b_0001,
-    Green = 0b_0010,
-    Cyan = 0b_0011,
-    Red = 0b_0100,
-    Magenta = 0b_0101,
-    Yellow = 0b_0110,
-    White = 0b_0111,
-    BrightBlack = 0b_1000,
-    BrightBlue = 0b_1001,
-    BrightGreen = 0b_1010,
-    BrightCyan = 0b_1011,
-    BrightRed = 0b_1100,
-    BrightMagenta = 0b_1101,
-    BrightYellow = 0b_1110,
-    BrightWhite = 0b_1111,
-}
-
-[Flags]
-enum TerminalMode : byte
-{
-    None = 0b_0000_0000,
-    Bold = 0b_0000_0001,
-    Dim = 0b_0000_0010,
-    Italic = 0b_0000_0100,
-    Underline = 0b_0000_1000,
-    Blinking = 0b_0001_0000,
-    Inverse = 0b_0010_0000,
-    Hidden = 0b_0100_0000,
-    Strikethrough = 0b_1000_0000,
-}
-
-readonly struct TerminalCharacter
-{
-    public readonly char Character;
-    public readonly TerminalMode Mode;
-    public readonly TerminalColor Color;
-    public TerminalColor Foreground => (TerminalColor)((int)Color & 0b1111);
-    public TerminalColor Background => (TerminalColor)((int)Color >> 4);
-
-    public TerminalCharacter(char character, TerminalMode mode, TerminalColor color)
-    {
-        Character = character;
-        Mode = mode;
-        Color = color;
-    }
-
-    public override string ToString() => Character.ToString();
-}
 
 public class TerminalRenderer
 {
@@ -377,16 +322,15 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
     [SerializeField, NotNull] Texture2D? DiagnosticsHintIcon = default;
     [SerializeField, NotNull] Texture2D? DiagnosticsOptimizationNoticeIcon = default;
     [SerializeField, NotNull] VisualTreeAsset? LogItem = default;
-    ProcessorSchema? ui;
+    [NotNull] ProcessorSchema? ui = default;
 
     TerminalSubscriptionClient? terminalSubscription;
-    readonly StringBuilder _terminalBuilder = new();
-    readonly TerminalRenderer _terminalRenderer = new();
+    TerminalView? term;
     readonly Queue<byte> StandardInput = new();
+    ulong _renderedStdoutOffset;
     byte[]? _memory;
     ProgressRecord<(int, int)>? _memoryDownloadProgress;
     Awaitable<RemoteFile>? _memoryDownloadTask;
-    string? _scheduledSource;
     float _terminalCursorBlinkRestart;
     UnitLogSystemClient.UnitLog? _unitLog;
     int? _localConnectionId;
@@ -395,12 +339,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
     void Update()
     {
         if (!ui.IsVisible()) return;
-
-        if (UIManager.Instance.GrapESC())
-        {
-            UIManager.Instance.CloseUI(this);
-            return;
-        }
 
         if (Time.time >= refreshAt || !selectingFile.IsDefault)
         {
@@ -416,9 +354,9 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         }
     }
 
-    public void Setup(UIElementReference _ui, Entity unitEntity)
+    public void Setup(VisualElement _ui, Entity unitEntity)
     {
-        ui = new(_ui.Element);
+        ui = new(_ui);
 
         selectedUnitEntity = unitEntity;
         refreshAt = Time.time + .2f;
@@ -429,7 +367,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         _memoryDownloadProgress = null;
         // try { _memoryDownloadTask?.Cancel(); } catch { }
         _memoryDownloadTask = null;
-        _scheduledSource = null;
 
         if (ConnectionManager.ClientOrDefaultWorld.IsLocal() || ConnectionManager.ClientOrDefaultWorld.IsServer())
         {
@@ -450,11 +387,16 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui.ScrollLogs.style.display = DisplayStyle.None;
         ui.FilesContainer.style.display = DisplayStyle.None;
         ui.PanelHeap.style.display = DisplayStyle.None;
+        ui.CrashLabel.style.display = DisplayStyle.None;
 
-        ui.LabelTerminal.text = string.Empty;
+        ui.ScrollTerminal.Clear();
         ui.ScrollFiles.Clear();
         ui.ScrollProgresses.Clear();
         ui.ScrollDiagnostics.Clear();
+
+        term = new TerminalView(ui.ScrollTerminal);
+        _renderedStdoutOffset = 0;
+
         ui.LabelBasePath.text = FileChunkManagerSystem.BasePath;
 
         {
@@ -511,8 +453,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 Entity = world.EntityManager.GetComponentData<GhostInstance>(unitEntity),
                 IsHotReload = false,
             });
-
-            _scheduledSource = ui.InputSourcePath.value;
         });
 
         ui.ButtonHotreload.clickable = new Clickable(() =>
@@ -536,8 +476,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 Entity = world.EntityManager.GetComponentData<GhostInstance>(unitEntity),
                 IsHotReload = true,
             });
-
-            _scheduledSource = ui.InputSourcePath.value;
         });
 
         ui.ButtonReset.clickable = new Clickable(() =>
@@ -624,7 +562,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             }
         });
 
-        ui.LabelTerminal.RegisterCallback<FocusInEvent>(e =>
+        ui.ScrollTerminal.RegisterCallback<FocusInEvent>(e =>
         {
             _terminalCursorBlinkRestart = Time.time;
         });
@@ -868,17 +806,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
         Processor processor = entityManager.GetComponentData<Processor>(unitEntity);
 
-        ui.PanelDebug.style.display = processor.DebugContext.IsBeingDebugged ? DisplayStyle.Flex : DisplayStyle.None;
-        ui.ButtonStartDebug.style.display = processor.DebugContext.IsBeingDebugged ? DisplayStyle.None : DisplayStyle.Flex;
-        ui.ButtonStartDebug.SetEnabled(!processor.DebugContext.IsBeingDebugged);
-
-        ui.ButtonLock.text = processor.IsVersionLocked ? "\uf023" : "\uf2fc";
-        ui.ButtonLock.tooltip = processor.IsVersionLocked ? "Unlock Source" : "Lock Source";
-
-        ui.ButtonHaltContinue.text = processor.Signal == Signal.Halt ? "\udb81\udc0a" : "\udb80\udfe4";
-
-        ui.ButtonStartDebug.SetEnabled(!processor.IsVersionLocked);
-
         if (_memoryDownloadProgress is null && !processor.IsVersionLocked && Time.unscaledTime - _memoryLastCheck > 5f)
         {
             _memoryLastCheck = Time.unscaledTime;
@@ -912,9 +839,22 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             return;
         }
 
+        ui.PanelDebug.style.display = processor.DebugContext.IsBeingDebugged ? DisplayStyle.Flex : DisplayStyle.None;
+        ui.ButtonStartDebug.SetEnabled(!processor.DebugContext.IsBeingDebugged && !processor.IsVersionLocked);
+
+        ui.ButtonLock.text = processor.IsVersionLocked ? "\uf023" : "\uf2fc";
+        ui.ButtonLock.tooltip = processor.IsVersionLocked ? "Unlock Source" : "Lock Source";
+        Tooltips.Instance.Reregister(ui.ButtonLock);
+        ui.SourceLockIcon.style.display = processor.IsVersionLocked ? DisplayStyle.Flex : DisplayStyle.None;
+
+        ui.ButtonHaltContinue.text = processor.Signal == Signal.Halt ? "\udb81\udc0a" : "\udb80\udfe4";
+        ui.ButtonHaltContinue.tooltip = processor.Signal == Signal.Halt ? "Resume Processor" : "Halt Processor";
+        Tooltips.Instance.Reregister(ui.ButtonHaltContinue);
+
         bool isBottom = true; // ui.scrollTerminal.scrollOffset == ui.labelTerminal.layout.max - ui.scrollTerminal.contentViewport.layout.size;
 
         ReadOnlySpan<byte> stdout = ReadOnlySpan<byte>.Empty;
+        ulong stdoutOffset = 0;
 
         if (ConnectionManager.ClientOrDefaultWorld.IsClient())
         {
@@ -933,6 +873,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             else
             {
                 stdout = terminalSubscription.Data.AsReadOnly().AsReadOnlySpan();
+                stdoutOffset = terminalSubscription.Offset;
             }
         }
         else
@@ -940,11 +881,25 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             unsafe
             {
                 stdout = new ReadOnlySpan<byte>(processor.StdOutBuffer.GetUnsafePtr(), processor.StdOutBuffer.Length);
+                stdoutOffset = processor.StdOutBufferCursor;
             }
         }
 
-        _terminalBuilder.Clear();
-        _terminalRenderer.Rerender(stdout, _terminalBuilder);
+        if (_renderedStdoutOffset > stdoutOffset)
+        {
+            _renderedStdoutOffset = 0;
+            term.Reset();
+        }
+
+        int stdoutTailLength = Math.Max(0, Math.Min(stdout.Length, (int)(stdoutOffset - _renderedStdoutOffset)));
+        ReadOnlySpan<byte> stdoutTail = stdout[^stdoutTailLength..];
+        _renderedStdoutOffset = stdoutOffset;
+
+        if (!stdoutTail.IsEmpty)
+        {
+            term.Write(stdoutTail);
+            term.Flush();
+        }
 
         void SetStatus(string icon, string label, string? className)
         {
@@ -967,125 +922,125 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
         if (processor.SourceFile == default)
         {
-            if (_scheduledSource != null)
-            {
-                SetStatus("\udb86\udd78", "Scheduled ...", null);
-            }
-            else
-            {
-                SetStatus("\udb84\udcd3", "No source", null);
-            }
+            SetStatus("\udb84\udcd3", "No source", null);
+
             ui.ScrollProgresses.Clear();
+            ui.ScrollDiagnostics.Clear();
+            ui.ScrollProgresses.style.display = DisplayStyle.None;
             ui.ScrollDiagnostics.style.display = DisplayStyle.None;
+            ui.PanelHeap.style.display = DisplayStyle.None;
+            ui.ButtonStartDebug.SetEnabled(false);
         }
         else
         {
-            TryGetSouce(in processor, out ICompiledSource? source);
-
-            _scheduledSource = null;
-            const string SpinnerChars = "-\\|/";
-            char spinner = SpinnerChars[(int)(MonoTime.Now * 8f) % SpinnerChars.Length];
-
-            void SyncDiagnosticItems(VisualElement container, IEnumerable<Diagnostic> diagnostics, DiagnosticsLevel parentLevel)
+            if (TryGetSouce(in processor, out ICompiledSource? source))
             {
-                container.SyncList<Diagnostic, TerminalDiagnosticsItemSchema>(
-                    diagnostics
-                        .Where(v => v.Level is not DiagnosticsLevel.OptimizationNotice and not DiagnosticsLevel.FailedOptimization)
-                        .ToArray(),
-                    DiagnosticsItem,
-                    (item, element, recycled) =>
-                    {
-                        element.Root.userData = item;
-                        DiagnosticsLevel fixedLevel = item.Level > parentLevel ? item.Level : parentLevel;
-
-                        element.DiagnosticIcon.style.backgroundImage = fixedLevel switch
+                void SyncDiagnosticItems(VisualElement container, IEnumerable<Diagnostic> diagnostics, DiagnosticsLevel parentLevel)
+                {
+                    container.SyncList<Diagnostic, TerminalDiagnosticsItemSchema>(
+                        diagnostics
+                            .Where(v => v.Level is not DiagnosticsLevel.OptimizationNotice and not DiagnosticsLevel.FailedOptimization)
+                            .ToArray(),
+                        DiagnosticsItem,
+                        (item, element, recycled) =>
                         {
-                            DiagnosticsLevel.Error => new StyleBackground(DiagnosticsErrorIcon),
-                            DiagnosticsLevel.Warning => new StyleBackground(DiagnosticsWarningIcon),
-                            DiagnosticsLevel.Information => new StyleBackground(DiagnosticsInfoIcon),
-                            DiagnosticsLevel.Hint => new StyleBackground(DiagnosticsHintIcon),
-                            DiagnosticsLevel.OptimizationNotice => new StyleBackground(DiagnosticsOptimizationNoticeIcon),
-                            DiagnosticsLevel.FailedOptimization => new StyleBackground(DiagnosticsWarningIcon),
-                            _ => new StyleBackground(DiagnosticsInfoIcon),
-                        };
+                            element.Root.userData = item;
+                            DiagnosticsLevel fixedLevel = item.Level > parentLevel ? item.Level : parentLevel;
 
-                        element.DiagnosticLabel.text = item.Message;
-
-                        if (item is DiagnosticAt diagnosticAt)
-                        {
-                            string? localPath = null;
-                            bool isExternal = diagnosticAt.File.Scheme == "netcode";
-                            if (diagnosticAt.File.Scheme == "netcode" && diagnosticAt.File.Host == _localConnectionId.ToString())
+                            element.DiagnosticIcon.style.backgroundImage = fixedLevel switch
                             {
-                                isExternal = false;
-                                localPath = FileChunkManagerSystem.ResolveFile(diagnosticAt.File.PathAndQuery);
-                                //element.DiagnosticButtonVscode.style.display = DisplayStyle.Flex;
-                                //var b = element.DiagnosticButtonVscode;
-                                //element.DiagnosticButtonVscode.clickable = new Clickable(() =>
-                                //{
-                                //    Application.OpenURL($"vscode://file/{HttpUtility.UrlPathEncode(localPath)}:{diagnosticAt.Position.Range.Start.ToStringMin()}");
-                                //});
+                                DiagnosticsLevel.Error => new StyleBackground(DiagnosticsErrorIcon),
+                                DiagnosticsLevel.Warning => new StyleBackground(DiagnosticsWarningIcon),
+                                DiagnosticsLevel.Information => new StyleBackground(DiagnosticsInfoIcon),
+                                DiagnosticsLevel.Hint => new StyleBackground(DiagnosticsHintIcon),
+                                DiagnosticsLevel.OptimizationNotice => new StyleBackground(DiagnosticsOptimizationNoticeIcon),
+                                DiagnosticsLevel.FailedOptimization => new StyleBackground(DiagnosticsWarningIcon),
+                                _ => new StyleBackground(DiagnosticsInfoIcon),
+                            };
+
+                            element.DiagnosticLabel.text = item.Message;
+
+                            if (item is DiagnosticAt diagnosticAt)
+                            {
+                                string? localPath = null;
+                                bool isExternal = diagnosticAt.File.Scheme == "netcode";
+                                if (diagnosticAt.File.Scheme == "netcode" && diagnosticAt.File.Host == _localConnectionId.ToString())
+                                {
+                                    isExternal = false;
+                                    localPath = FileChunkManagerSystem.ResolveFile(diagnosticAt.File.PathAndQuery);
+                                    //element.DiagnosticButtonVscode.style.display = DisplayStyle.Flex;
+                                    //var b = element.DiagnosticButtonVscode;
+                                    //element.DiagnosticButtonVscode.clickable = new Clickable(() =>
+                                    //{
+                                    //    Application.OpenURL($"vscode://file/{HttpUtility.UrlPathEncode(localPath)}:{diagnosticAt.Position.Range.Start.ToStringMin()}");
+                                    //});
+                                }
+                                element.DiagnosticLocationRemote.style.display = isExternal ? DisplayStyle.Flex : DisplayStyle.None;
+                                element.DiagnosticLocation.style.display = DisplayStyle.Flex;
+                                element.DiagnosticLocation.text = $"{(localPath is null ? null : localPath.StartsWith(FileChunkManagerSystem.BasePath) ? Path.GetRelativePath(FileChunkManagerSystem.BasePath, localPath) : localPath) ?? diagnosticAt.File.ToString()}:{diagnosticAt.Position.Range.Start.ToStringMin()}";
                             }
-                            element.DiagnosticLocationRemote.style.display = isExternal ? DisplayStyle.Flex : DisplayStyle.None;
-                            element.DiagnosticLocation.style.display = DisplayStyle.Flex;
-                            element.DiagnosticLocation.text = $"{(localPath is null ? null : localPath.StartsWith(FileChunkManagerSystem.BasePath) ? Path.GetRelativePath(FileChunkManagerSystem.BasePath, localPath) : localPath) ?? diagnosticAt.File.ToString()}:{diagnosticAt.Position.Range.Start.ToStringMin()}";
-                        }
-                        else
-                        {
-                            element.DiagnosticLocationRemote.style.display = DisplayStyle.None;
-                            element.DiagnosticLocation.style.display = DisplayStyle.None;
-                            element.DiagnosticLocation.text = string.Empty;
-                        }
+                            else
+                            {
+                                element.DiagnosticLocationRemote.style.display = DisplayStyle.None;
+                                element.DiagnosticLocation.style.display = DisplayStyle.None;
+                                element.DiagnosticLocation.text = string.Empty;
+                            }
 
-                        if (item.SubErrors.Any())
-                        {
-                            SyncDiagnosticItems(element.DiagnosticFoldout, item.SubErrors, fixedLevel);
-                        }
-                        else
-                        {
-                            element.DiagnosticFoldout.style.display = DisplayStyle.None;
-                        }
-                    });
-            }
-
-            if (source != null && source.Status == CompilationStatus.Done)
-            {
-                SyncDiagnosticItems(ui.ScrollDiagnostics, source.Diagnostics, default);
-
-                ui.ScrollDiagnostics.style.display = selectingFile.IsDefaultOrEmpty && source.Diagnostics.Any(v => v.Level == DiagnosticsLevel.Error) ? DisplayStyle.Flex : DisplayStyle.None;
-            }
-            else
-            {
-                ui.ScrollDiagnostics.Clear();
-
-                if (processor.IsVersionLocked)
-                {
-                    VisualElement element = DiagnosticsItem.Instantiate();
-                    ui.ScrollDiagnostics.Add(element);
-                    TerminalDiagnosticsItemSchema schema = new();
-                    schema.Q(element);
-                    schema.DiagnosticIcon.style.backgroundImage = new StyleBackground(DiagnosticsInfoIcon);
-                    schema.DiagnosticLabel.text = "Diagnostics not available on locked source";
-                    schema.DiagnosticFoldout.style.display = DisplayStyle.None;
-                    schema.DiagnosticLocationRemote.style.display = DisplayStyle.None;
-                    schema.DiagnosticLocation.style.display = DisplayStyle.None;
-                    schema.DiagnosticLocation.text = string.Empty;
+                            if (item.SubErrors.Any())
+                            {
+                                SyncDiagnosticItems(element.DiagnosticFoldout, item.SubErrors, fixedLevel);
+                            }
+                            else
+                            {
+                                element.DiagnosticFoldout.style.display = DisplayStyle.None;
+                            }
+                        });
                 }
-            }
 
-            if (source != null && source.Status != CompilationStatus.Done && !float.IsNaN(source.Progress))
-            {
-                ui.ScrollProgresses.SyncList(source.SubFiles.ToArray(), ProgressItem, (file, element, recycled) =>
+                if (source.Status == CompilationStatus.Done && selectingFile.IsEmpty)
                 {
-                    ProgressBar progressBar = element.Q<ProgressBar>();
-                    progressBar.title = file.Key.Name.ToString();
-                    progressBar.value = file.Value.Progress.Total == 0 ? 0f : (float)file.Value.Progress.Current / (float)file.Value.Progress.Total;
-                });
+                    SyncDiagnosticItems(ui.ScrollDiagnostics, source.Diagnostics, default);
+
+                    ui.ScrollDiagnostics.style.display = selectingFile.IsDefaultOrEmpty && source.Diagnostics.Any(static v => v.Level == DiagnosticsLevel.Error) ? DisplayStyle.Flex : DisplayStyle.None;
+                }
+                else
+                {
+                    ui.ScrollDiagnostics.Clear();
+                    ui.ScrollDiagnostics.style.display = DisplayStyle.None;
+                }
+
+                //if (ui.ScrollProgresses.visible && ui.ScrollProgresses.resolvedStyle.display != DisplayStyle.None && selectingFile.IsEmpty)
+                //{
+                //    if (source.Status != CompilationStatus.Done && !float.IsNaN(source.Progress))
+                //    {
+                //        ui.ScrollProgresses.SyncList(source.SubFiles.ToArray(), ProgressItem, (file, element, recycled) =>
+                //        {
+                //            ProgressBar progressBar = element.Q<ProgressBar>();
+                //            progressBar.title = file.Key.Name.ToString();
+                //            progressBar.value = file.Value.Progress.Total == 0 ? 0f : (float)file.Value.Progress.Current / file.Value.Progress.Total;
+                //        });
+                //    }
+                //    else
+                //    {
+                //        ui.ScrollProgresses.Clear();
+                //    }
+                //}
+
+                ui.ButtonStartDebug.SetEnabled(!processor.DebugContext.IsBeingDebugged && source.IsSuccess);
             }
             else
             {
+                source = null;
+
                 ui.ScrollProgresses.Clear();
+                ui.ScrollDiagnostics.Clear();
+                ui.ScrollProgresses.style.display = DisplayStyle.None;
+                ui.ScrollDiagnostics.style.display = DisplayStyle.None;
+
+                ui.ButtonStartDebug.SetEnabled(false);
             }
+
+            ui.CrashLabel.style.display = DisplayStyle.None;
 
             switch (source == null ? CompilationStatus.None : source.Status)
             {
@@ -1119,17 +1074,17 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 {
                     if (!processor.IsVersionLocked && source is null)
                     {
-                        SetStatus("\udb80\udeb1", "Remote source ...", null);
+                        SetStatus("\udb80\udeb1", "Remote source", null);
                         break;
                     }
 
                     if (source is not null && !source.IsSuccess)
                     {
-                        SetStatus("\udb80\udd59", "Compile failed ...", "error");
+                        SetStatus("\udb80\udd59", "Compile failed", "error");
                         break;
                     }
 
-                    if (ui.LabelTerminal.visible && ui.LabelTerminal.panel.focusController.focusedElement == ui.LabelTerminal)
+                    if (ui.ScrollTerminal.visible && ui.ScrollTerminal.panel.focusController.focusedElement == ui.ScrollTerminal)
                     {
                         foreach (byte c in Encoding.UTF8.GetBytes(Input.inputString))
                         {
@@ -1158,15 +1113,15 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                 _terminalCursorBlinkRestart = Time.time;
                             }
 
-                            const float BlinkInterval = 1f;
-                            if (ui.LabelTerminal.panel.focusController.focusedElement == ui.LabelTerminal && (Time.time - _terminalCursorBlinkRestart) % BlinkInterval < BlinkInterval * 0.5f)
-                            {
-                                _terminalBuilder.Append("<mark=#ffffffff>_</mark>");
-                            }
-                            else
-                            {
-                                _terminalBuilder.Append("<color=black>_</color>");
-                            }
+                            //const float BlinkInterval = 1f;
+                            //if (ui.ScrollTerminal.panel.focusController.focusedElement == ui.ScrollTerminal && (Time.time - _terminalCursorBlinkRestart) % BlinkInterval < BlinkInterval * 0.5f)
+                            //{
+                            //    _terminalBuilder.Append("<mark=#ffffffff>_</mark>");
+                            //}
+                            //else
+                            //{
+                            //    _terminalBuilder.Append("<color=black>_</color>");
+                            //}
                             break;
                         case Signal.UserCrash:
                             SetStatus("\udb80\udc28", "User-crashed", "error");
@@ -1218,15 +1173,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                     }
                                 }
                             }
-                            else
-                            {
-                                string? message = HeapUtils.GetString(_memory, processor.Crash);
-                                _terminalBuilder.AppendLine();
-                                _terminalBuilder.Append("<color=red>");
-                                _terminalBuilder.Append(message ?? "null");
-                                _terminalBuilder.Append("</color>");
-                                _terminalBuilder.AppendLine();
-                            }
                             break;
                         case Signal.StackOverflow:
                             SetStatus("\udb80\udc28", "Crashed", "error");
@@ -1249,17 +1195,20 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
                     if (isErrored)
                     {
-                        _terminalBuilder.AppendLine();
-                        _terminalBuilder.Append("<color=red>");
-                        if (TryGetRuntimeException(ref processor, _memory, out RuntimeException? error))
+                        if (processor.Signal == Signal.UserCrash && false)
                         {
-                            _terminalBuilder.Append(error);
+                            string? message = HeapUtils.GetString(_memory, processor.Crash);
+                            ui.CrashLabel.text = message ?? "null";
+                        }
+                        else if (TryGetRuntimeException(ref processor, _memory, out RuntimeException? error))
+                        {
+                            ui.CrashLabel.text = error.ToString(false, false);
                         }
                         else
                         {
-                            _terminalBuilder.Append(ProcessorState.GetSimpleRuntimeErrorMessage(processor.Signal, processor.Crash));
+                            ui.CrashLabel.text = ProcessorState.GetSimpleRuntimeErrorMessage(processor.Signal, processor.Crash);
                         }
-                        _terminalBuilder.AppendLine("</color>");
+                        ui.CrashLabel.style.display = DisplayStyle.Flex;
                     }
                     break;
                 }
@@ -1267,17 +1216,15 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             }
         }
 
-        if (ui.LabelTerminal.visible)
+        if (ui.ScrollTerminal.visible && ui.ScrollTerminal.resolvedStyle.display != DisplayStyle.None)
         {
-            ui.LabelTerminal.text = _terminalBuilder.ToString();
-
             if (isBottom)
             {
-                ui.ScrollTerminal.scrollOffset = ui.LabelTerminal.layout.max - ui.ScrollTerminal.contentViewport.layout.size;
+                ui.ScrollTerminal.scrollOffset = new Vector2(0f, float.MaxValue);
             }
         }
 
-        if (ui.ScrollLogs.visible && false)
+        if (ui.ScrollLogs.visible && ui.ScrollLogs.resolvedStyle.display != DisplayStyle.None)
         {
             if (_unitLog is null)
             {
@@ -1318,6 +1265,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                         case LogPieceType.Transmission_WirelessOut: { var v = UnitLog_Transmission_WirelessOut.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
                         case LogPieceType.Transmission_WirelessIn: { var v = UnitLog_Transmission_WirelessIn.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
                         case LogPieceType.ProcessorSignal: { var v = UnitLog_ProcessorSignal.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
+                        case LogPieceType.Unknown0:
+                        case LogPieceType.Unknown1:
                         default: Debug.LogError($"Invalid log piece type {(int)type}"); goto skip;
                     }
                 }
@@ -1447,7 +1396,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         }
     }
 
-    public void Cleanup(UIElementReference _ui)
+    public void Cleanup()
     {
         selectedUnitEntity = Entity.Null;
         refreshAt = float.PositiveInfinity;
@@ -1458,13 +1407,15 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         _memoryDownloadProgress = null;
         // try { _memoryDownloadTask?.Cancel(); } catch { }
         _memoryDownloadTask = null;
-        _scheduledSource = null;
         _memoryLastCheck = 0f;
         if (terminalSubscription != null && ConnectionManager.ClientOrDefaultWorld.IsClient())
         {
             ConnectionManager.ClientOrDefaultWorld.GetSystem<TerminalSystemClient>().Unsubscribe(terminalSubscription.Ghost);
             terminalSubscription = null;
         }
+
+        term = null;
+        _renderedStdoutOffset = 0;
 
         ui.ButtonSelect.clickable = null;
         ui.ButtonCompile.clickable = null;
@@ -1474,7 +1425,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui.ButtonReset.clickable = null;
         ui.ButtonStopDebug.clickable = null;
         ui.ButtonStartDebug.clickable = null;
-        ui.LabelTerminal.text = string.Empty;
+        ui.ScrollTerminal.Clear();
         EndFileSelection();
+        ui = null;
     }
 }

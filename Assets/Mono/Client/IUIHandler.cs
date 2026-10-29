@@ -1,14 +1,16 @@
+using UnityEngine.UIElements;
+
 public interface IUISetup<TContext>
 {
-    void Setup(UIElementReference ui, TContext context);
+    void Setup(VisualElement ui, TContext context);
 }
 
 public interface IUISetup
 {
-    void Setup(UIElementReference ui);
+    void Setup(VisualElement ui);
 }
 
 public interface IUICleanup
 {
-    void Cleanup(UIElementReference ui);
+    void Cleanup();
 }

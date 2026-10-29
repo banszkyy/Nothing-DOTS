@@ -161,9 +161,9 @@ public class ProcessorGUIManager : MonoBehaviour
                                 {
                                     byte p = ((byte*)Unsafe.AsPointer(ref uiElement.Meta.Image.Image))[x + (y * uiElement.Meta.Image.Width)];
                                     img.SetPixel(x, y, new Color(
-                                        (float)((p >> 5) & 0b111) / (float)0b111,
-                                        (float)((p >> 2) & 0b111) / (float)0b111,
-                                        (float)((p >> 0) & 0b011) / (float)0b011,
+                                        (float)((p >> 5) & 0b111) / 0b111,
+                                        (float)((p >> 2) & 0b111) / 0b111,
+                                        (float)((p >> 0) & 0b011) / 0b011,
                                         1f
                                     ));
                                 }

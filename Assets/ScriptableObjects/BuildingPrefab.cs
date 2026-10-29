@@ -1,4 +1,5 @@
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 
@@ -13,6 +14,6 @@ class BuildingPrefab : ScriptableObject, IHaveThumbnail
     [SerializeField, Min(0f)] public float RequiredResources = default;
     [SerializeField] public ResearchMetadata? RequiredResearch = default;
 
-    GameObject? IHaveThumbnail.Prefab => Prefab;
-    Texture2D? IHaveThumbnail.Thumbnail { get => Thumbnail; set => Thumbnail = value; }
+    GameObject IHaveThumbnail.Prefab => Prefab != null ? Prefab : throw new NullReferenceException();
+    Texture2D IHaveThumbnail.Thumbnail { get => Thumbnail != null ? Thumbnail : throw new NullReferenceException(); set => Thumbnail = value; }
 }

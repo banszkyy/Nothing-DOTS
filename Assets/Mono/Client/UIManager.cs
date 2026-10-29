@@ -10,38 +10,44 @@ using UnityEngine.UIElements;
 public struct UIElementReference : IEquatable<UIElementReference>
 {
     [SerializeField, NotNull] public UIDocument? Document;
-    [SerializeField, NotNull] public string? ElementName;
+    [SerializeField] public string? ElementName;
 
-    public VisualElement? ElementOrNull
+    public UIElementReference(UIDocument document, string? elementName = null)
+    {
+        Document = document;
+        ElementName = elementName;
+    }
+
+    public readonly VisualElement? ElementOrNull
     {
         get
         {
             if (Document == null || !Document.isActiveAndEnabled || string.IsNullOrEmpty(ElementName)) return null;
             if (Document.rootVisualElement == null) return null;
-            return Document.rootVisualElement.Q(ElementName) ?? throw new Exception($"Element #{ElementName} wasn't found on {Document}");
+            return string.IsNullOrEmpty(ElementName) ? Document.rootVisualElement : (Document.rootVisualElement.Q(ElementName) ?? throw new Exception($"Element #{ElementName} wasn't found on {Document}"));
         }
     }
 
-    public VisualElement Element
+    public readonly VisualElement Element
     {
         get
         {
             if (Document == null || !Document.isActiveAndEnabled || string.IsNullOrEmpty(ElementName)) throw new InvalidOperationException($"UI is null");
             if (Document.rootVisualElement == null) throw new InvalidOperationException($"UI wasn't opened yet");
-            return Document.rootVisualElement.Q(ElementName) ?? throw new Exception($"Element #{ElementName} wasn't found on {Document}");
+            return string.IsNullOrEmpty(ElementName) ? Document.rootVisualElement : (Document.rootVisualElement.Q(ElementName) ?? throw new Exception($"Element #{ElementName} wasn't found on {Document}"));
         }
     }
 
     public bool IsVisible
     {
-        get => ElementOrNull?.resolvedStyle.display == DisplayStyle.Flex;
+        readonly get => ElementOrNull?.resolvedStyle.display == DisplayStyle.Flex;
         set => Element.style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
-    public override bool Equals(object? obj) => obj is UIElementReference other && Equals(other);
-    public bool Equals(UIElementReference other) => other.Document == Document && other.ElementName == ElementName;
+    public override readonly bool Equals(object? obj) => obj is UIElementReference other && Equals(other);
+    public readonly bool Equals(UIElementReference other) => other.Document == Document && other.ElementName == ElementName;
 
-    public override int GetHashCode() => HashCode.Combine(Document, ElementName);
+    public override readonly int GetHashCode() => HashCode.Combine(Document, ElementName);
 
     public static bool operator ==(UIElementReference left, UIElementReference right) => left.Equals(right);
     public static bool operator !=(UIElementReference left, UIElementReference right) => !left.Equals(right);
@@ -63,7 +69,7 @@ public class UIManager : Singleton<UIManager>
         public UISetup Setup<TManager, TContext>(TManager manager, TContext context)
             where TManager : IUISetup<TContext>
         {
-            manager.Setup(UI, context);
+            manager.Setup(UI.Element, context);
             if (manager is IUICleanup cleanup)
             {
                 Manager.OpenedUIs.TryAdd(UI, new List<IUICleanup>());
@@ -75,7 +81,7 @@ public class UIManager : Singleton<UIManager>
         public UISetup Setup<TManager>(TManager manager)
             where TManager : IUISetup
         {
-            manager.Setup(UI);
+            manager.Setup(UI.Element);
             if (manager is IUICleanup cleanup)
             {
                 Manager.OpenedUIs.TryAdd(UI, new List<IUICleanup>());
@@ -93,16 +99,19 @@ public class UIManager : Singleton<UIManager>
             => Setup(Singleton<TManager>.Instance, context);
     }
 
-    [Header("Documents")]
+    [Header("Menus")]
 
     [SerializeField, NotNull] public UIElementReference MainMenu = default;
     [SerializeField, NotNull] public UIElementReference NetworkStatus = default;
     [SerializeField, NotNull] public UIElementReference Unit = default;
-    [SerializeField, NotNull] public UIElementReference Factory = default;
-    [SerializeField, NotNull] public UIElementReference Facility = default;
     [SerializeField, NotNull] public UIElementReference Pause = default;
     [SerializeField, NotNull] public UIElementReference Buildings = default;
     [SerializeField, NotNull] public UIElementReference Units = default;
+
+    [Header("Views")]
+    [SerializeField, NotNull] public VisualTreeAsset? Processor = default;
+    [SerializeField, NotNull] public VisualTreeAsset? Factory = default;
+    [SerializeField, NotNull] public VisualTreeAsset? Facility = default;
 
     ImmutableArray<UIElementReference>? _uis = default;
 
@@ -110,8 +119,6 @@ public class UIManager : Singleton<UIManager>
         MainMenu,
         NetworkStatus,
         Unit,
-        Factory,
-        Facility,
         Pause,
         Buildings,
         Units
@@ -190,11 +197,11 @@ public class UIManager : Singleton<UIManager>
         {
             foreach (IUICleanup item in cleanup)
             {
-                item.Cleanup(ui);
+                item.Cleanup();
             }
             OpenedUIs.Remove(ui);
         }
-        ui.Document.rootVisualElement?.focusController.focusedElement?.Blur();
+        ui.Document!.rootVisualElement?.focusController.focusedElement?.Blur();
         ui.IsVisible = false;
     }
 

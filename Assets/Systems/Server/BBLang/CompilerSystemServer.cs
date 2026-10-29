@@ -340,7 +340,8 @@ public partial class CompilerSystemServer : SystemBase
         );
     }
 
-    static unsafe void CompileSourceTask((FileId File, bool Force, CompiledSourceServer Source, CancellationToken CancellationToken) args)
+    [IgnoredByDeepProfiler]
+    static void CompileSourceTask((FileId File, bool Force, CompiledSourceServer Source, CancellationToken CancellationToken) args)
     {
         using ProfilerMarker.AutoScope _m = _markerCompiler.Auto();
 

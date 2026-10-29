@@ -8,9 +8,9 @@ public class MainMenuManager : Singleton<MainMenuManager>, IUISetup
 {
     [DontSerialize] public string? ConnectionError;
 
-    public void Setup(UIElementReference _ui)
+    public void Setup(VisualElement _ui)
     {
-        MainMenuSchema ui = new(_ui.Element);
+        MainMenuSchema ui = new(_ui);
 
         ui.ButtonSingleplayer.clicked += () =>
         {

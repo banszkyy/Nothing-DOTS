@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Extractor
   m_EditorClassIdentifier: 
   Prefab: {fileID: 1994654560244389388, guid: 96c2ae6375ccd7bb295e39d979453df5, type: 3}
+  Thumbnail: {fileID: 2800000, guid: 346957b4dd9c137c7be3d5a209fdeb08, type: 3}
   PlaceholderPrefab: {fileID: 5692528052949456400, guid: 34e06bfcef0d0a3778699aadf714c718,
     type: 3}
   HologramPrefab: {fileID: 7887398088158380673, guid: 193359d2645c50b2e95f512ae91d0e0e,

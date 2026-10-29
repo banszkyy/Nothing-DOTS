@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Factory
   m_EditorClassIdentifier: 
   Prefab: {fileID: 7887398088158380673, guid: 1272de8941c0e148d961ca7a6f39466d, type: 3}
+  Thumbnail: {fileID: 2800000, guid: 4f09ec804576ca061949062a2c0fd46b, type: 3}
   PlaceholderPrefab: {fileID: 5692528052949456400, guid: cb861de155031b97d85d7359716a9579,
     type: 3}
   HologramPrefab: {fileID: 7887398088158380673, guid: 09f03e05c189b21969db6274a9140693,

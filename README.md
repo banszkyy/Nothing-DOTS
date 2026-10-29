@@ -1,4 +1,4 @@
-# RTS for programmers
+# RTS for Programmers
 
 ![Unity 6](https://img.shields.io/badge/Unity%206-100000?style=for-the-badge&logo=unity&logoColor=white)
 
@@ -50,14 +50,23 @@ Multiplayer RTS combat game with programming. You have to write scripts for all 
 
 After compilation the processor starts automatically
 
-> [!CAUTION]
-> All the units that also have this script uploaded, will also restart and will use the newly compiled program.
+### Version Locking
+
+All the units that also have this script uploaded, will also restart and will use the newly compiled program. To prevent this, you can lock a unit's script to never update when the script changes.
+
+1. Open the unit's menu
+2. Navigate to Processor > Source
+3. Click on the lock button ("Lock Source", with a lock icon)
 
 ### Hot Reload
 
 > [!CAUTION]
 > The compiler will not check for possible conflicts, so the processor can also just crash. In this case, you have to restart the processor manually.
 > A successful hot-reload happens when the compiled code's size didn't change - like changing a numeric literal.
+
+1. Open the unit's menu
+2. Navigate to Processor > Source
+3. Click on the hot reload button ("Hot Reload", with a fire/flame icon)
 
 ### LED Indicators
 
@@ -79,7 +88,7 @@ There's a VSCode extension that allows you to debug any of your unit.
 3. Click on the debug button ("Debug", with a bug icon)
 4. VSCode will automatically open and will attach to the game, debugging your unit
 
-### IMPORTANT NOTICES
+#### IMPORTANT NOTICES
 
 The game actively listents on the following ports:
 - 8052 - Extension Host (LSP Server)
@@ -88,7 +97,7 @@ The game actively listents on the following ports:
 Currently debugging only works locally (singleplayer, or host mode).
 In the future, you'll have to expose specific port ranges (with port-forwarding, for example).
 
-### Not Important Notices
+#### Not Important Notices
 
 Normally you can pause/continue/restart any unit with the corresponding buttons.
 When you're debugging a unit, the behavior changes in expected ways:
@@ -109,7 +118,7 @@ The availability depends on the unit type.
 ## Cheats
 
 > [!NOTE]
-> These are only avaliable if you're an **admin**.
+> These are only avaliable if you're an **admin** (you're the host, or in singleplayer mode).
 
 - `/creative` : Enters creative mode (buildings & units can be placed down immediately without consuming resources)
 - `/research all|<string>` : Researches all or the specified technology instantly

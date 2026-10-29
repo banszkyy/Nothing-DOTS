@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Computer
   m_EditorClassIdentifier: 
   Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48, type: 3}
+  Thumbnail: {fileID: 2800000, guid: 079e8f36c9f924a42bfdcffb353cc29e, type: 3}
   PlaceholderPrefab: {fileID: 1289979656329170851, guid: ce827bbd8e1b11de784cd9ebe9fcbd34,
     type: 3}
   HologramPrefab: {fileID: 1289979656329170851, guid: 2b9330d212a4c7f7aa5d1b815c348bf4,

@@ -316,7 +316,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
     {
         if (Protocol.IsRunning && _isDisconnected)
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol");
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Disconnected");
             Protocol.Stop();
         }
 
@@ -328,6 +328,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
         EntityManager e = ConnectionManager.ServerOrDefaultWorld.EntityManager;
         if (!e.Exists(_entity))
         {
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Entity destroyed");
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
             Protocol.SendEvent(new TerminatedEvent());
             _entity = Entity.Null;
@@ -338,6 +339,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
         if (!processor.DebugContext.IsBeingDebugged)
         {
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Processor isn't being debugged");
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
             Protocol.SendEvent(new TerminatedEvent());
             _entity = Entity.Null;
@@ -346,6 +348,9 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
         if (!processor.Source.Code.IsCreated)
         {
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Processor has no code");
+            processor.DebugContext.IsBeingDebugged = false;
+            e.SetComponentData(_entity, processor);
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
             Protocol.SendEvent(new TerminatedEvent());
             _entity = Entity.Null;
@@ -354,6 +359,9 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
         if (processor.Registers.CodePointer == processor.Source.Code.Length)
         {
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Processor finished");
+            processor.DebugContext.IsBeingDebugged = false;
+            e.SetComponentData(_entity, processor);
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 0 });
             Protocol.SendEvent(new TerminatedEvent());
             _entity = Entity.Null;

@@ -1,0 +1,26 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="Factory Queue Item" src="project://database/Assets/UI/ResearchItem.uxml?fileID=9197481963319205126&amp;guid=639ea71bc65e9bde0b15d90ab41d401a&amp;type=3#ResearchItem"/>
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
+    <ui:VisualElement style="flex-grow: 1; flex-direction: column;">
+        <ui:VisualElement>
+            <ui:ProgressBar name="current-progressbar" high-value="1" low-value="0" style="margin-bottom: 0; margin-top: 0;"/>
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+                <ui:VisualElement name="current-container" style="background-color: rgb(0, 52, 137);">
+                    <ui:Instance template="Factory Queue Item"/>
+                </ui:VisualElement>
+                <ui:ScrollView name="queue-scrollview" mode="Horizontal" style="flex-direction: row;">
+                    <ui:Instance template="Factory Queue Item"/>
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 1;">
+            <ui:Label text="\ueaf4" parse-escape-sequences="true" style="margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; padding-right: 0; padding-left: 0; margin-right: 0; margin-left: 0; -unity-text-align: middle-center; font-size: 12px; -unity-font-style: bold;"/>
+            <ui:ScrollView horizontal-scroller-visibility="Hidden" name="available-scrollview" style="flex-grow: 1;">
+                <ui:VisualElement style="flex-grow: 1; flex-direction: row; flex-wrap: wrap;">
+                    <ui:Instance template="Factory Queue Item"/>
+                    <ui:Instance template="Factory Queue Item"/>
+                </ui:VisualElement>
+            </ui:ScrollView>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

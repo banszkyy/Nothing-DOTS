@@ -295,14 +295,14 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
         return hologramModels.gameObject;
     }
 
-    public void Setup(UIElementReference ui)
+    public void Setup(VisualElement ui)
     {
-        this.ui = new(ui.Element);
+        this.ui = new(ui);
         syncAt = 0f;
         RefreshUI();
     }
 
-    public void Cleanup(UIElementReference ui)
+    public void Cleanup()
     {
         SelectedUnit = default;
         if (UnitHologram != null) Destroy(UnitHologram);

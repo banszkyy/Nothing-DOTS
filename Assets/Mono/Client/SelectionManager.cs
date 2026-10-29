@@ -349,68 +349,10 @@ public class SelectionManager : Singleton<SelectionManager>
 
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
 
-        if (entityManager.HasComponent<Factory>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.Factory)
-                .Setup(FactoryManager.Instance, entity)
-                .Setup(TerminalManager.Instance, entity);
-            return true;
-        }
-
-        if (entityManager.HasComponent<Facility>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.Facility)
-                .Setup(FacilityManager.Instance, entity)
-                .Setup(TerminalManager.Instance, entity);
-            return true;
-        }
-
-        if (entityManager.HasComponent<Unit>(entity))
+        if (entityManager.HasComponent<Processor>(entity) || entityManager.HasComponent<Factory>(entity) || entityManager.HasComponent<Facility>(entity))
         {
             UIManager.Instance.OpenUI(UIManager.Instance.Unit)
-                .Setup(TerminalManager.Instance, entity);
-            return true;
-        }
-
-        if (entityManager.HasComponent<Builder>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.Unit)
-                .Setup(TerminalManager.Instance, entity);
-            return true;
-        }
-
-        if (entityManager.HasComponent<CoreComputer>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.Unit)
-                .Setup(TerminalManager.Instance, entity);
-            return true;
-        }
-
-        if (entityManager.HasComponent<PlayerInterface>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.Unit)
-                .Setup(TerminalManager.Instance, entity);
-            return true;
-        }
-
-        if (entityManager.HasComponent<Transporter>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.Unit)
-                .Setup(TerminalManager.Instance, entity);
-            return true;
-        }
-
-        if (entityManager.HasComponent<Extractor>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.Unit)
-                .Setup(TerminalManager.Instance, entity);
-            return true;
-        }
-
-        if (entityManager.HasComponent<Building>(entity))
-        {
-            UIManager.Instance.OpenUI(UIManager.Instance.Unit)
-                .Setup(TerminalManager.Instance, entity);
+                .Setup(UnitMenuManager.Instance, entity);
             return true;
         }
 

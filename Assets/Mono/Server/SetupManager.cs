@@ -389,11 +389,11 @@ public class SetupManager : Singleton<SetupManager>
 
     static void ApplyUnit(EntityManager entityManager, Entity entity, BaseUnitSetup unitSetup)
     {
-        if (entityManager.HasComponent<Processor>(entity))
+        if (entityManager.HasComponent<Processor>(entity) && !string.IsNullOrWhiteSpace(unitSetup.Script))
         {
             entityManager.ModifyComponent(entity, (ref Processor v) =>
             {
-                v.SourceFile = new FileId($"./{unitSetup.Script}", NetcodeEndPoint.Server);
+                v.SourceFile = new FileId(unitSetup.Script, NetcodeEndPoint.Server);
             });
         }
 

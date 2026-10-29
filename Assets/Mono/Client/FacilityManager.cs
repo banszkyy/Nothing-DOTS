@@ -28,12 +28,6 @@ public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUI
     {
         if (!ui.IsVisible()) return;
 
-        if (UIManager.Instance.GrapESC())
-        {
-            UIManager.Instance.CloseUI(this);
-            return;
-        }
-
         if (Time.time >= refreshAt ||
             refreshedBySyncAt != ResearchSystemClient.LastSynced.Data)
         {
@@ -63,9 +57,9 @@ public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUI
         ui.CurrentProgressbar.value = selected.CurrentProgress / selected.Current.ResearchTime;
     }
 
-    public void Setup(UIElementReference ui, Entity entity)
+    public void Setup(VisualElement ui, Entity entity)
     {
-        this.ui = new(ui.Element);
+        this.ui = new(ui);
 
         syncAt = Math.Min(syncAt, Time.time + 0.5f);
 
@@ -226,10 +220,11 @@ public class FacilityManager : Singleton<FacilityManager>, IUISetup<Entity>, IUI
         syncAt = Math.Min(syncAt, Time.time + 0.5f);
     }
 
-    public void Cleanup(UIElementReference ui)
+    public void Cleanup()
     {
         selectedEntity = Entity.Null;
         selected = default;
         refreshAt = float.PositiveInfinity;
+        this.ui = null;
     }
 }

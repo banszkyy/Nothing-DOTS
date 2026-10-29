@@ -1,28 +1,16 @@
-.terminal {
-    background-color: #000000;
-    flex-shrink: 0;
-    flex-grow: 1;
-    flex-basis: 100px;
-    display: flex;
-    border-left-color: #00000000;
-    border-right-color: #00000000;
-    border-top-color: #00000000;
-    border-bottom-color: #00000000;
-    border-top-width: 2px;
-    border-right-width: 2px;
-    border-bottom-width: 2px;
-    border-left-width: 2px;
-}
-
-.terminal:enabled:focus {
-    border-left-color: var(--focusedBorder);
-    border-right-color: var(--focusedBorder);
-    border-top-color: var(--focusedBorder);
-    border-bottom-color: var(--focusedBorder);
-    border-top-width: 2px;
-    border-right-width: 2px;
-    border-bottom-width: 2px;
-    border-left-width: 2px;
+.terminal Label {
+    background-color: #00000000;
+    flex-basis: auto;
+    margin: 0px;
+    padding: 0px; 
+    margin-bottom: -4px;
+    font-size: 12px;
+    border-radius: 0px;
+    border-width: 0px;
+    -unity-paragraph-spacing: -24px;
+    white-space: normal;
+    -unity-text-align: lower-left;
+    -unity-font-definition: url("project://database/Assets/UI/Fonts/RobotoMono-Medium.ttf?fileID=12800000&guid=571b113ec7a2c61919ddf63237f557d4&type=3#RobotoMono-Medium");
 }
 
 .diagnostics-item {
@@ -95,14 +83,15 @@
 }
 
 .heap-block.heap-block-used {
-    border-left-color: #b7b3d2;
-    border-right-color: #b7b3d2;
-    border-top-color: #b7b3d2;
-    border-bottom-color: #b7b3d2;
+    background-color: #464646;
+    border-left-color: #464646;
+    border-right-color: #464646;
+    border-top-color: #464646;
+    border-bottom-color: #464646;
 }
 
 .heap-block.heap-block-used Label {
-    color: #b7b3d2;
+    color: #cbcbcb;
 
 }
 
