@@ -300,6 +300,8 @@ sealed class TerminalBuffer
 
     void Ground(char ch)
     {
+        DebugEx.Assert(_line != null);
+
         switch (ch)
         {
             case '\u001b': _state = ParseState.Escape; break;

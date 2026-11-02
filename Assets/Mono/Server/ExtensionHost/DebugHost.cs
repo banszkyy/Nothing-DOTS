@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using DebugServer;
 using LanguageCore;
@@ -60,7 +59,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
         _manager = manager;
     }
 
-    unsafe bool GetProcessor([NotNullWhen(true)] out ReadOnlyProcessorState processor)
+    bool GetProcessor([NotNullWhen(true)] out ReadOnlyProcessorState processor)
     {
         processor = default;
 
@@ -70,10 +69,15 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
         Processor _processor = e.GetComponentData<Processor>(_entity);
         if (_processor.Source != _originalSource) return false;
 
+        DynamicBuffer<ProcessorMemoryBuffer> mem = e.GetBuffer<ProcessorMemoryBuffer>(_entity);
+
         processor = new ReadOnlyProcessorState(
-            ProcessorSystemServer.BytecodeInterpreterSettings,
+            new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
+            {
+                MemorySize = mem.Length,
+            },
             _processor.Registers,
-            new Span<byte>(Unsafe.AsPointer(ref _processor.Memory), global::Processor.TotalMemorySize),
+            mem.AsSpan(),
             _processor.Source.Code.AsSpan(),
             _processor.Source.GeneratedFunctions.AsSpan(),
             _processor.Crash,
@@ -328,7 +332,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
         EntityManager e = ConnectionManager.ServerOrDefaultWorld.EntityManager;
         if (!e.Exists(_entity))
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Entity destroyed");
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Ending session - Entity destroyed");
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
             Protocol.SendEvent(new TerminatedEvent());
             _entity = Entity.Null;
@@ -339,7 +343,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
         if (!processor.DebugContext.IsBeingDebugged)
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Processor isn't being debugged");
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Ending session - Processor isn't being debugged");
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
             Protocol.SendEvent(new TerminatedEvent());
             _entity = Entity.Null;
@@ -348,7 +352,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
         if (!processor.Source.Code.IsCreated)
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Processor has no code");
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Ending session - Processor has no code");
             processor.DebugContext.IsBeingDebugged = false;
             e.SetComponentData(_entity, processor);
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
@@ -359,7 +363,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
         if (processor.Registers.CodePointer == processor.Source.Code.Length)
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Processor finished");
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Ending session - Processor finished");
             processor.DebugContext.IsBeingDebugged = false;
             e.SetComponentData(_entity, processor);
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 0 });
@@ -538,10 +542,8 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                             data = Convert.ToBase64String(log.Data.ToArray()),
                             meta = new
                             {
-                                source = new { log.Metadata.Source.x, log.Metadata.Source.y, log.Metadata.Source.z },
-                                direction = new { log.Metadata.Direction.x, log.Metadata.Direction.y, log.Metadata.Direction.z },
-                                cosAngle = log.Metadata.CosAngle,
-                                angle = log.Metadata.Angle,
+                                //direction = new { log.Metadata.LocalDirection.x, log.Metadata.LocalDirection.y, log.Metadata.LocalDirection.z },
+                                //angle = log.Metadata.Angle,
                             },
                         }));
                         break;
@@ -556,7 +558,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                             data = Convert.ToBase64String(log.Data.ToArray()),
                             meta = new
                             {
-                                source = new { log.Metadata.Source.x, log.Metadata.Source.y, log.Metadata.Source.z },
+                                //localDirection = new { log.Metadata.LocalDirection.x, log.Metadata.LocalDirection.y, log.Metadata.LocalDirection.z },
                             },
                         }));
                         break;
@@ -582,7 +584,8 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
             GatherInformation();
 
             List<CallTraceItem> stacktrace = new();
-            DebugUtils.TraceStack(global::Processor.GetMemorySpan(ref processor), processor.Registers.BasePointer, DebugInformation.StackOffsets, stacktrace);
+            ReadOnlySpan<byte> memory = e.GetBuffer<ProcessorMemoryBuffer>(_entity, true).AsReadOnlySpan();
+            DebugUtils.TraceStack(memory, processor.Registers.BasePointer, DebugInformation.StackOffsets, stacktrace);
             FunctionInformation function = DebugInformation.GetFunctionInformation(processor.Registers.CodePointer);
             if (!DebugInformation.TryGetSourceLocation(processor.Registers.CodePointer, out SourceCodeLocation sourceLocation))
             {
@@ -673,7 +676,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                                             UniqueIds uniqueIds = new();
                                             unsafe
                                             {
-                                                res.Append(ToVariable(variable.Address, variable.Type, new ReadOnlySpan<byte>(Unsafe.AsPointer(ref processor.Memory.Memory), global::Processor.TotalMemorySize), variable.Name, ref uniqueIds).Value);
+                                                res.Append(ToVariable(variable.Address, variable.Type, memory, variable.Name, ref uniqueIds).Value);
                                             }
                                         }
 
@@ -912,7 +915,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
     {
         if (Protocol.IsRunning)
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol");
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Disposing");
             Protocol.Stop();
         }
 

@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -278,6 +280,7 @@ public static partial class DebugEx
             float currentAngle = directionAngle + i;
             float3 point = new(math.cos(currentAngle), direction.y, math.sin(currentAngle));
             point *= distance;
+            point += origin;
             Debug.DrawLine(prevPoint, point, color, duration, depthTest);
             prevPoint = point;
         }
@@ -285,16 +288,60 @@ public static partial class DebugEx
 #endif
     }
 
-    public static void Label(Vector3 position, string text)
+    public static void DrawCone(Vector3 origin, Vector3 direction, float height, float angleRadians, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
-        UnityEditor.SceneView view = UnityEditor.SceneView.currentDrawingSceneView;
-        Vector3 screenPos = view.camera.WorldToScreenPoint(position);
-        Vector2 size = GUI.skin.label.CalcSize(new GUIContent(text));
+        direction.Normalize();
 
-        UnityEditor.Handles.BeginGUI();
-        GUI.Label(new Rect(screenPos.x - (size.x / 2), -screenPos.y + view.position.height + 4, size.x, size.y), text);
-        UnityEditor.Handles.EndGUI();
+        int N = Mathf.Max(8, Mathf.CeilToInt(angleRadians * (Mathf.Rad2Deg / 10f)));
+        int M = Mathf.Max(1, Mathf.CeilToInt(height * 0.4f));
+
+        float radius = height * Mathf.Tan(angleRadians);
+
+        Vector3 right = Vector3.Cross(direction, Vector3.up).normalized;
+
+        if (right.sqrMagnitude < 0.001f) right = Vector3.Cross(direction, Vector3.forward).normalized;
+
+        Vector3 up = Vector3.Cross(direction, right).normalized;
+
+        Vector3 baseCenter = origin + direction * height;
+
+        for (int i = 0; i < N; i++)
+        {
+            float angle = 2f * Mathf.PI * i / N;
+
+            Vector3 radial = right * Mathf.Cos(angle) + up * Mathf.Sin(angle);
+
+            Vector3 basePoint = baseCenter + radial * radius;
+
+            Debug.DrawLine(origin, basePoint, color, duration, depthTest);
+        }
+
+        for (int j = 1; j <= M; j++)
+        {
+            float t = (float)j / M;
+
+            Vector3 circleCenter = origin + direction * (height * t);
+            float circleRadius = radius * t;
+
+            for (int i = 0; i < N; i++)
+            {
+                float a1 = 2f * Mathf.PI * i / N;
+                float a2 = 2f * Mathf.PI * (i + 1) / N;
+
+                Vector3 p1 = circleCenter + (right * Mathf.Cos(a1) + up * Mathf.Sin(a1)) * circleRadius;
+
+                Vector3 p2 = circleCenter + (right * Mathf.Cos(a2) + up * Mathf.Sin(a2)) * circleRadius;
+
+                Debug.DrawLine(p1, p2, color, duration, depthTest);
+            }
+        }
 #endif
+    }
+
+    [Conditional("DEBUG")]
+    public static void Assert([DoesNotReturnIf(false)] bool condition)
+    {
+        if (!condition) throw new Exception($"Assertion condition is false");
     }
 }

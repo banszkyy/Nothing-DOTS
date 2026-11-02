@@ -4,7 +4,7 @@ using UnityEngine;
 [AddComponentMenu("Authoring/Collider")]
 public class ColliderAuthoring : MonoBehaviour
 {
-    [SerializeField] bool IsStatic = default;
+    [SerializeField] internal bool IsStatic = default;
 
     class Baker : Baker<ColliderAuthoring>
     {

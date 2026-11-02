@@ -80,6 +80,7 @@
     border-right-width: 1px;
     border-bottom-width: 1px;
     border-left-width: 1px;
+    overflow: hidden;
 }
 
 .heap-block.heap-block-used {
@@ -92,7 +93,6 @@
 
 .heap-block.heap-block-used Label {
     color: #cbcbcb;
-
 }
 
 .heap-block.heap-block-free {
@@ -104,6 +104,18 @@
 
 .heap-block.heap-block-free Label {
     color: #636363;
+}
+
+.heap-block.heap-block-stack {
+    background-color: #175163;
+    border-left-color: #175163;
+    border-right-color: #175163;
+    border-top-color: #175163;
+    border-bottom-color: #175163;
+}
+
+.heap-block.heap-block-stack Label {
+    color: #e6e6e6;
 }
 
 .heap-block Label {
@@ -121,4 +133,37 @@
 
 #diagnostic-foldout > #unity-content {
     margin-left: 16px;
+}
+
+#wrapper.overall-indicator-debugging {
+    border-color: #0091ff;
+}
+
+#wrapper.overall-indicator-debugging #panel-status {
+    background-color: #0091ff;
+}
+
+#wrapper.overall-indicator-halted {
+    border-color: var(--warning);
+}
+
+#wrapper.overall-indicator-halted #panel-status {
+    background-color: var(--warning);
+}
+
+#wrapper.overall-indicator-error {
+    border-color: var(--error);
+}
+
+#wrapper.overall-indicator-error #panel-status {
+    background-color: var(--error);
+}
+
+#wrapper.overall-indicator-debugging #panel-status #icon-status,
+#wrapper.overall-indicator-debugging #panel-status #label-status,
+#wrapper.overall-indicator-halted #panel-status #icon-status,
+#wrapper.overall-indicator-halted #panel-status #label-status,
+#wrapper.overall-indicator-error #panel-status #icon-status,
+#wrapper.overall-indicator-error #panel-status #label-status {
+    color: #000000;
 }

@@ -84,6 +84,7 @@ class NetcodeBootstrap : ClientServerBootstrap
                 Entity newPlayer = LocalWorld.EntityManager.Instantiate(prefabs.Player);
                 LocalWorld.EntityManager.SetComponentData<Player>(newPlayer, new()
                 {
+                    IsStartkitSpawned = true,
                     Team = Player.UnassignedTeam,
                 });
                 LocalWorld.EntityManager.SetComponentData<RealPlayer>(newPlayer, new()
@@ -262,9 +263,10 @@ class NetcodeBootstrap : ClientServerBootstrap
                 Entity newPlayer = StagingWorld.EntityManager.Instantiate(prefabs.Player);
                 StagingWorld.EntityManager.SetComponentData<Player>(newPlayer, new()
                 {
+                    IsStartkitSpawned = true,
                     Team = Player.UnassignedTeam,
                 });
-                LocalWorld.EntityManager.SetComponentData<RealPlayer>(newPlayer, new()
+                StagingWorld.EntityManager.SetComponentData<RealPlayer>(newPlayer, new()
                 {
                     ConnectionId = 0,
                     ConnectionState = PlayerConnectionState.Local,

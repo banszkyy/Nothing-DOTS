@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using LanguageCore;
 using LanguageCore.Runtime;
@@ -322,8 +321,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
     [SerializeField, NotNull] Texture2D? DiagnosticsHintIcon = default;
     [SerializeField, NotNull] Texture2D? DiagnosticsOptimizationNoticeIcon = default;
     [SerializeField, NotNull] VisualTreeAsset? LogItem = default;
-    [NotNull] ProcessorSchema? ui = default;
 
+    [NotNull] ProcessorSchema? ui = default;
     TerminalSubscriptionClient? terminalSubscription;
     TerminalView? term;
     readonly Queue<byte> StandardInput = new();
@@ -381,7 +380,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             _localConnectionId = null;
         }
 
-        ui.PanelDebug.style.display = DisplayStyle.None;
         ui.ScrollDiagnostics.style.display = DisplayStyle.None;
         ui.ScrollProgresses.style.display = DisplayStyle.None;
         ui.ScrollLogs.style.display = DisplayStyle.None;
@@ -523,29 +521,30 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             });
         });
 
-        ui.ButtonStopDebug.clickable = new Clickable(() =>
-        {
-            World world = ConnectionManager.ClientOrDefaultWorld;
-            NetcodeUtils.CreateRPC(world.Unmanaged, new StopDebugRequestRpc()
-            {
-                Entity = world.EntityManager.GetComponentData<GhostInstance>(unitEntity),
-            });
-        });
-
-        ui.ButtonStartDebug.SetEnabled(true);
-        ui.ButtonStartDebug.clickable = new Clickable(() =>
+        ui.ButtonDebug.SetEnabled(true);
+        ui.ButtonDebug.clickable = new Clickable(() =>
         {
             Processor processor = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Processor>(unitEntity);
+            World world = ConnectionManager.ClientOrDefaultWorld;
+
+            if (processor.DebugContext.IsBeingDebugged)
+            {
+                NetcodeUtils.CreateRPC(world.Unmanaged, new StopDebugRequestRpc()
+                {
+                    Entity = world.EntityManager.GetComponentData<GhostInstance>(unitEntity),
+                });
+                ui.ButtonDebug.SetEnabled(false);
+                return;
+            }
 
             if (processor.IsVersionLocked)
             {
                 return;
             }
 
-            World world = ConnectionManager.ClientOrDefaultWorld;
             if (world.IsLocal())
             {
-                ui.ButtonStartDebug.SetEnabled(false);
+                ui.ButtonDebug.SetEnabled(false);
                 Application.OpenURL($"vscode://banszky.nothingame/debug?entity={ExtensionHostUtils.Stringify(unitEntity)}&token={default(Guid)}");
             }
             else
@@ -557,7 +556,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                     return;
                 }
                 SpawnedGhost ghost = world.EntityManager.GetComponentData<GhostInstance>(unitEntity);
-                ui.ButtonStartDebug.SetEnabled(false);
+                ui.ButtonDebug.SetEnabled(false);
                 Application.OpenURL($"vscode://banszky.nothingame/debug?ghost={ExtensionHostUtils.Stringify(ghost)}&token={guid}");
             }
         });
@@ -565,6 +564,18 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui.ScrollTerminal.RegisterCallback<FocusInEvent>(e =>
         {
             _terminalCursorBlinkRestart = Time.time;
+        });
+
+        ui.ButtonAnalyzeHeap.SetEnabled(false);
+        ui.ButtonAnalyzeHeap.clickable = new Clickable(() =>
+        {
+            Processor processor = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<Processor>(unitEntity);
+            World world = ConnectionManager.ClientOrDefaultWorld;
+
+            if (_memoryDownloadProgress is null && !processor.IsVersionLocked && Time.unscaledTime - _memoryLastCheck > 5f)
+            {
+                RefreshMemoryUsage(unitEntity);
+            }
         });
 
         RefreshUI(unitEntity);
@@ -594,7 +605,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui.FilesContainer.style.display = DisplayStyle.None;
     }
 
-    void RefreshMemoryUsage(Entity unitEntity)
+    unsafe void RefreshMemoryUsage(Entity unitEntity)
     {
         if (!ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
         {
@@ -610,16 +621,21 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             return;
         }
 
-        if (!ConnectionManager.ClientOrDefaultWorld.GetSystem<CompilerSystemServer>().CompiledSources.TryGetValue(processor.SourceFile, out var source))
+        if (!ConnectionManager.ClientOrDefaultWorld.GetSystem<CompilerSystemServer>().CompiledSources.TryGetValue(processor.SourceFile, out CompiledSourceServer? source))
         {
             ui.PanelHeap.style.display = DisplayStyle.None;
             return;
         }
 
+        DynamicBuffer<ProcessorMemoryBuffer> memory = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetBuffer<ProcessorMemoryBuffer>(unitEntity, true);
+
         BytecodeProcessor bytecodeProcessor = new(
-            ProcessorSystemServer.BytecodeInterpreterSettings,
+            new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
+            {
+                MemorySize = memory.Length,
+            },
             source.Generated.Code,
-            processor.Memory.Memory.ToBytes(),
+            new Span<byte>(memory.GetUnsafeReadOnlyPtr(), memory.Length).ToArray(),
             source.Generated.DebugInfo,
             source.Compiled.ExternalFunctions,
             source.GeneratedFunctions?.ToArray().AsImmutableArrayUnsafe() ?? default
@@ -629,32 +645,38 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
         try
         {
-            if (!HeapUtils.AnalyzeMemorySync(bytecodeProcessor, source.Generated.ExposedFunctions, out blocks, out string? error))
+            if (!HeapUtils.AnalyzeMemorySyncSafe(bytecodeProcessor, source.Generated.ExposedFunctions, out blocks, out string? error))
             {
-                ui.PanelHeap.style.display = DisplayStyle.None;
-                return;
+                blocks = ImmutableArray<HeapUtils.HeapBlock>.Empty;
+                Debug.LogWarning(error);
             }
         }
         catch (Exception ex)
         {
             if (ex is not RuntimeException) Debug.LogException(ex);
-            ui.PanelHeap.style.display = DisplayStyle.None;
-            return;
+            else Debug.LogWarning(ex);
+            blocks = ImmutableArray<HeapUtils.HeapBlock>.Empty;
         }
 
         ui.HeapObjectsContainer.Clear();
 
-        int totalMemory = blocks.Sum(v => v.Size);
-        if (totalMemory == 0)
+        int totalMemory = memory.Length;
+        int heapTotalMemory = blocks.Sum(v => v.Size);
+        int stackTotalMemory = Math.Max(0, totalMemory - processor.Registers.StackPointer);
+        int internals = Math.Max(0, totalMemory - stackTotalMemory - heapTotalMemory);
+
+        if (heapTotalMemory == 0 && stackTotalMemory == 0)
         {
+            Debug.LogWarning($"Empty memory");
             ui.PanelHeap.style.display = DisplayStyle.None;
             return;
         }
 
         ui.PanelHeap.style.display = DisplayStyle.Flex;
 
-        foreach (HeapUtils.HeapBlock block in blocks)
+        for (int i = 0; i < blocks.Length; i++)
         {
+            HeapUtils.HeapBlock block = blocks[i];
             VisualElement e = new();
             ui.HeapObjectsContainer.Add(e);
 
@@ -663,9 +685,39 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
             e.AddToClassList("heap-block");
             e.AddToClassList(block.IsUsed ? "heap-block-used" : "heap-block-free");
-            e.style.flexBasis = new StyleLength(new Length(block.Size * 100f / totalMemory, LengthUnit.Percent));
+            e.style.flexBasis = new StyleLength(new Length(((!block.IsUsed && i + 1 == blocks.Length) ? block.Size - stackTotalMemory : block.Size) * 100f / totalMemory, LengthUnit.Percent));
 
-            l.text = $"{block.Size} bytes";
+            l.text = $"{block.Size}B";
+        }
+
+        if (internals > 0)
+        {
+            VisualElement e = new();
+            ui.HeapObjectsContainer.Add(e);
+
+            Label l = new();
+            e.Add(l);
+
+            e.AddToClassList("heap-block");
+            e.AddToClassList("heap-block-free");
+            e.style.flexBasis = new StyleLength(new Length(internals * 100f / totalMemory, LengthUnit.Percent));
+
+            l.text = $"{stackTotalMemory}B";
+        }
+
+        if (stackTotalMemory > 0)
+        {
+            VisualElement e = new();
+            ui.HeapObjectsContainer.Add(e);
+
+            Label l = new();
+            e.Add(l);
+
+            e.AddToClassList("heap-block");
+            e.AddToClassList("heap-block-stack");
+            e.style.flexBasis = new StyleLength(new Length(stackTotalMemory * 100f / totalMemory, LengthUnit.Percent));
+
+            l.text = $"{stackTotalMemory}B";
         }
 
         Tooltips.Instance.Reregister(ui.HeapObjectsContainer);
@@ -676,6 +728,13 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         "error",
         "warning",
         "success",
+    };
+
+    static readonly string[] OverallIndicatorClasses = new string[]
+    {
+        "overall-indicator-error",
+        "overall-indicator-halted",
+        "overall-indicator-debugging",
     };
 
     static bool ReadKey(out char c)
@@ -726,10 +785,13 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         return true;
     }
 
-    static unsafe ProcessorState MakeProcessorState(ref Processor processor, Span<byte> memory) => new(
-        ProcessorSystemServer.BytecodeInterpreterSettings,
+    static ProcessorState MakeProcessorState(ref Processor processor, Span<byte> memory) => new(
+        new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
+        {
+            MemorySize = memory.Length,
+        },
         processor.Registers,
-        memory.IsEmpty ? new Span<byte>(Unsafe.AsPointer(ref processor.Memory.Memory), 2048) : memory,
+        memory,
         processor.Source.Code.AsSpan(),
         processor.Source.GeneratedFunctions.AsSpan()
     )
@@ -805,11 +867,20 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
     {
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
         Processor processor = entityManager.GetComponentData<Processor>(unitEntity);
+        ReadOnlySpan<byte> localMemory = entityManager.GetBuffer<ProcessorMemoryBuffer>(unitEntity, true).AsReadOnlySpan();
 
-        if (_memoryDownloadProgress is null && !processor.IsVersionLocked && Time.unscaledTime - _memoryLastCheck > 5f)
+        if (_memoryDownloadProgress is null && !processor.IsVersionLocked)
         {
-            _memoryLastCheck = Time.unscaledTime;
-            RefreshMemoryUsage(unitEntity);
+            ui.ButtonAnalyzeHeap.SetEnabled(true);
+            if (Time.unscaledTime - _memoryLastCheck > 5f)
+            {
+                _memoryLastCheck = Time.unscaledTime;
+                RefreshMemoryUsage(unitEntity);
+            }
+        }
+        else
+        {
+            ui.ButtonAnalyzeHeap.SetEnabled(false);
         }
 
         if (!selectingFile.IsEmpty)
@@ -839,11 +910,29 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             return;
         }
 
-        ui.PanelDebug.style.display = processor.DebugContext.IsBeingDebugged ? DisplayStyle.Flex : DisplayStyle.None;
-        ui.ButtonStartDebug.SetEnabled(!processor.DebugContext.IsBeingDebugged && !processor.IsVersionLocked);
+        void SetOverallIndicator(string? className)
+        {
+            foreach (var v in OverallIndicatorClasses)
+            {
+                if (v == className)
+                {
+                    ui.Wrapper.EnableInClassList(v, true);
+                }
+                else
+                {
+                    ui.Wrapper.EnableInClassList(v, false);
+                }
+            }
+        }
 
-        ui.ButtonLock.text = processor.IsVersionLocked ? "\uf023" : "\uf2fc";
-        ui.ButtonLock.tooltip = processor.IsVersionLocked ? "Unlock Source" : "Lock Source";
+        SetOverallIndicator(processor.DebugContext.IsBeingDebugged ? "overall-indicator-debugging" : null);
+        ui.ButtonDebug.SetEnabled(processor.DebugContext.IsBeingDebugged || !processor.IsVersionLocked);
+        ui.ButtonDebug.text = processor.DebugContext.IsBeingDebugged ? "\udb82\ude30" : "\udb80\udce4";
+        ui.ButtonDebug.tooltip = processor.DebugContext.IsBeingDebugged ? "Stop Debugging" : "Start Debugging";
+        Tooltips.Instance.Reregister(ui.ButtonDebug);
+
+        ui.ButtonLock.text = processor.IsVersionLocked ? "\uf2fc" : "\uf023";
+        ui.ButtonLock.tooltip = processor.IsVersionLocked ? "Unlock Source Version" : "Lock Source Version";
         Tooltips.Instance.Reregister(ui.ButtonLock);
         ui.SourceLockIcon.style.display = processor.IsVersionLocked ? DisplayStyle.Flex : DisplayStyle.None;
 
@@ -887,6 +976,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
         if (_renderedStdoutOffset > stdoutOffset)
         {
+            DebugEx.Assert(term != null);
+
             _renderedStdoutOffset = 0;
             term.Reset();
         }
@@ -897,6 +988,8 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
         if (!stdoutTail.IsEmpty)
         {
+            DebugEx.Assert(term != null);
+
             term.Write(stdoutTail);
             term.Flush();
         }
@@ -929,7 +1022,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             ui.ScrollProgresses.style.display = DisplayStyle.None;
             ui.ScrollDiagnostics.style.display = DisplayStyle.None;
             ui.PanelHeap.style.display = DisplayStyle.None;
-            ui.ButtonStartDebug.SetEnabled(false);
+            ui.ButtonDebug.SetEnabled(processor.DebugContext.IsBeingDebugged);
         }
         else
         {
@@ -1026,7 +1119,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 //    }
                 //}
 
-                ui.ButtonStartDebug.SetEnabled(!processor.DebugContext.IsBeingDebugged && source.IsSuccess);
+                ui.ButtonDebug.SetEnabled(processor.DebugContext.IsBeingDebugged || source.IsSuccess);
             }
             else
             {
@@ -1037,7 +1130,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 ui.ScrollProgresses.style.display = DisplayStyle.None;
                 ui.ScrollDiagnostics.style.display = DisplayStyle.None;
 
-                ui.ButtonStartDebug.SetEnabled(false);
+                ui.ButtonDebug.SetEnabled(processor.DebugContext.IsBeingDebugged);
             }
 
             ui.CrashLabel.style.display = DisplayStyle.None;
@@ -1081,6 +1174,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                     if (source is not null && !source.IsSuccess)
                     {
                         SetStatus("\udb80\udd59", "Compile failed", "error");
+                        if (!processor.DebugContext.IsBeingDebugged) SetOverallIndicator("overall-indicator-error");
                         break;
                     }
 
@@ -1124,13 +1218,13 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                             //}
                             break;
                         case Signal.UserCrash:
-                            SetStatus("\udb80\udc28", "User-crashed", "error");
+                            SetStatus("\udb80\udd5a", "User-crashed", "error");
                             isErrored = true;
                             if (_memory is null)
                             {
                                 if (ConnectionManager.ClientOrDefaultWorld.Unmanaged.IsLocal())
                                 {
-                                    _memory = processor.Memory.Memory.ToBytes();
+                                    _memory = localMemory.ToArray();
                                 }
                                 else
                                 {
@@ -1168,25 +1262,26 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                         }
                                         else
                                         {
-                                            SetStatus("\udb80\udc28", "User-crashed (loading memory)", "error");
+                                            SetStatus("\udb80\udd5a", "User-crashed (loading memory)", "error");
                                         }
                                     }
                                 }
                             }
                             break;
                         case Signal.StackOverflow:
-                            SetStatus("\udb80\udc28", "Crashed", "error");
+                            SetStatus("\udb80\udd5a", "Crashed", "error");
                             isErrored = true;
                             break;
                         case Signal.Halt:
-                            SetStatus("\udb80\udfe5", "Halted", "warning");
+                            SetStatus("\udb80\udfe6", "Halted", "warning");
+                            if (!processor.DebugContext.IsBeingDebugged) SetOverallIndicator("overall-indicator-halted");
                             break;
                         case Signal.UndefinedExternalFunction:
-                            SetStatus("\udb80\udc28", "Crashed", "error");
+                            SetStatus("\udb80\udd5a", "Crashed", "error");
                             isErrored = true;
                             break;
                         case Signal.PointerOutOfRange:
-                            SetStatus("\udb80\udc28", "Crashed", "error");
+                            SetStatus("\udb80\udd5a", "Crashed", "error");
                             isErrored = true;
                             break;
                         default:
@@ -1209,6 +1304,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                             ui.CrashLabel.text = ProcessorState.GetSimpleRuntimeErrorMessage(processor.Signal, processor.Crash);
                         }
                         ui.CrashLabel.style.display = DisplayStyle.Flex;
+                        if (!processor.DebugContext.IsBeingDebugged) SetOverallIndicator("overall-indicator-error");
                     }
                     break;
                 }
@@ -1335,10 +1431,10 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                         header = v.Header;
                         element.LogIcon.text = $"\uf519";
                         element.LogSummaryLabel.text = $"Transmission Out (Wireless)";
-                        element.LogDetailsLabel.text =
-                            $"Angle: {v.Metadata.Angle}\n" +
-                            $"Direction: {v.Metadata.Direction}\n" +
-                            $"Data: {string.Join(" ", v.Data.ToArray().Select(v => Convert.ToString(v, 16).PadLeft(2, '0')))}";
+                        //element.LogDetailsLabel.text =
+                        //    $"Angle: {v.Metadata.Angle}\n" +
+                        //    $"Direction: {v.Metadata.LocalDirection}\n" +
+                        //    $"Data: {string.Join(" ", v.Data.ToArray().Select(v => Convert.ToString(v, 16).PadLeft(2, '0')))}";
                         break;
                     case UnitLog_Transmission_WirelessIn v:
                         header = v.Header;
@@ -1423,8 +1519,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui.ButtonHaltContinue.clickable = null;
         ui.ButtonHaltContinue.text = "\udb80\udfe4";
         ui.ButtonReset.clickable = null;
-        ui.ButtonStopDebug.clickable = null;
-        ui.ButtonStartDebug.clickable = null;
+        ui.ButtonDebug.clickable = null;
         ui.ScrollTerminal.Clear();
         EndFileSelection();
         ui = null;

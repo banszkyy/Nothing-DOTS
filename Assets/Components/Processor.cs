@@ -76,12 +76,45 @@ struct BlinkingLED
     }
 }
 
-[StructLayout(LayoutKind.Explicit)]
-struct ProcessorMemory
+struct BlinkingStatusLED
 {
-    [FieldOffset(0)] public FixedBytes2048 Memory;
-    [FieldOffset(Processor.MappedMemoryStart)] public MappedMemory MappedMemory;
+    [GhostField(SendData = false)] public Entity Entity;
+    [GhostField(SendData = false)] public float LastBlinked;
+    [GhostField(SendData = false)] public uint LastBlinkedLocal;
+    [GhostField] public byte Status;
+    [GhostField] public uint LastBlinkedNet;
+
+    public BlinkingStatusLED(Entity led)
+    {
+        Entity = led;
+    }
+
+    public void Blink(byte status)
+    {
+        LastBlinkedNet = unchecked(LastBlinkedNet + 1);
+        Status = status;
+    }
+
+    public bool ReceiveBlink(out byte status)
+    {
+        if (LastBlinkedLocal != LastBlinkedNet)
+        {
+            LastBlinkedLocal = LastBlinkedNet;
+            LastBlinked = Math.Max(LastBlinkedNet, MonoTime.Now);
+            status = Status;
+            return true;
+        }
+        status = default;
+        return false;
+    }
 }
+
+//[StructLayout(LayoutKind.Explicit)]
+//struct ProcessorMemory
+//{
+//    [FieldOffset(0)] public FixedBytes2048 Memory;
+//    [FieldOffset(Processor.MappedMemoryStart)] public MappedMemory MappedMemory;
+//}
 
 readonly struct AttributeMeta : IEquatable<AttributeMeta>
 {
@@ -138,13 +171,13 @@ public enum ProcessorStatus : byte
 
 struct Processor : IComponentData
 {
-    public const int TotalMemorySize = 2048;
-    public const int HeapSize = 512;
-    public const int StackSize = 1024;
+    //public const int TotalMemorySize = 2048;
+    //public const int HeapSize = 512;
+    //public const int StackSize = 1024;
 
-    public const int UserMemorySize = StackSize + HeapSize;
-    public const int MappedMemoryStart = UserMemorySize;
-    public const int MappedMemorySize = TotalMemorySize - UserMemorySize;
+    //public const int UserMemorySize = StackSize + HeapSize;
+    //public const int MappedMemoryStart = UserMemorySize;
+    //public const int MappedMemorySize = TotalMemorySize - UserMemorySize;
 
     [GhostField] public FileId SourceFile;
     public long CompiledSourceVersion;
@@ -154,8 +187,9 @@ struct Processor : IComponentData
     [GhostField] public bool IsVersionLocked;
 
     public int CyclesPerTick;
+    public int MemorySize;
+    public float3 WirelessTransmissionPoint;
     public Registers Registers;
-    public ProcessorMemory Memory;
     public HotFunctions HotFunctions;
     [GhostField] public int Crash;
     [GhostField] public Signal Signal;
@@ -178,7 +212,7 @@ struct Processor : IComponentData
     public FixedList512Bytes<byte> StdOutBuffer;
 
     [GhostField] public StatusLED<ProcessorStatus> StatusLED;
-    [GhostField] public BlinkingLED NetworkReceiveLED;
+    [GhostField] public BlinkingStatusLED NetworkReceiveLED;
     [GhostField] public BlinkingLED NetworkSendLED;
     [GhostField] public BlinkingLED RadarLED;
     [GhostField] public BlinkingLED USBLED;
@@ -186,7 +220,7 @@ struct Processor : IComponentData
     public float3 USBPosition;
     public quaternion USBRotation;
 
-    public static unsafe nint GetMemoryPtr(ref Processor processor) => (nint)Unsafe.AsPointer(ref processor.Memory.Memory);
-    public static unsafe Span<byte> GetMemorySpan(ref Processor processor) => new(Unsafe.AsPointer(ref processor.Memory.Memory), 2048);
-    public static unsafe ReadOnlySpan<byte> GetMemorySpan(Processor processor) => new(Unsafe.AsPointer(ref processor.Memory.Memory), 2048);
+    //public static unsafe nint GetMemoryPtr(ref Processor processor) => (nint)Unsafe.AsPointer(ref processor.Memory.Memory);
+    //public static unsafe Span<byte> GetMemorySpan(ref Processor processor) => new(Unsafe.AsPointer(ref processor.Memory.Memory), 2048);
+    //public static unsafe ReadOnlySpan<byte> GetMemorySpan(Processor processor) => new(Unsafe.AsPointer(ref processor.Memory.Memory), 2048);
 }

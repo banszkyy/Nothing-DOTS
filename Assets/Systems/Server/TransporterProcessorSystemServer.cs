@@ -22,10 +22,10 @@ partial struct TransporterProcessorSystemServer : ISystem
         PrefabDatabase prefabDatabase = SystemAPI.GetSingleton<PrefabDatabase>();
         EntityCommandBuffer commandBuffer = default;
 
-        foreach (var (processor, transporter, transform, localTransform) in
-            SystemAPI.Query<RefRW<Processor>, RefRW<Transporter>, RefRO<LocalToWorld>, RefRO<LocalTransform>>())
+        foreach (var (processor, memory, transporter, transform, localTransform) in
+            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Transporter>, RefRO<LocalToWorld>, RefRO<LocalTransform>>())
         {
-            ref MappedMemory mapped = ref processor.ValueRW.Memory.MappedMemory;
+            ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
             mapped.Transporter.CurrentLoad = transporter.ValueRO.CurrentLoad;
 

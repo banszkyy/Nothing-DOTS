@@ -9,10 +9,10 @@ partial struct VehicleProcessorSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        foreach (var (processor, vehicle) in
-            SystemAPI.Query<RefRO<Processor>, RefRW<Vehicle>>())
+        foreach (var (processor, memory, vehicle) in
+            SystemAPI.Query<RefRO<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Vehicle>>())
         {
-            ref readonly MappedMemory mapped = ref processor.ValueRO.Memory.MappedMemory;
+            ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
             vehicle.ValueRW.Input = new float2(
                 mapped.Vehicle.InputSteer / 128f,

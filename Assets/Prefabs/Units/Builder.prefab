@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: -3592630536043200174}
   - component: {fileID: -3786353531507201079}
   - component: {fileID: 6928833227782787097}
+  - component: {fileID: -4996036761609665221}
   m_Layer: 6
   m_Name: Builder
   m_TagString: Untagged
@@ -119,6 +120,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CyclesPerTick: 200
+  MemorySize: 1024
+  TransmissionPoint: {fileID: 0}
   StatusLED: {fileID: 3173658921993021080}
   NetworkReceiveLED: {fileID: 5129821567522278720}
   NetworkSendLED: {fileID: 3415335607067529806}
@@ -246,6 +249,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1578c6f4703a07a5a2ba978c753907e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-4996036761609665221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2099412289264216910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c38d94b8a67d15ee88843604cfecc9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VehicleAuthoring
+  MaxSpeed: 10
+  Acceleration: 0.4
+  Steering: 50
 --- !u!1 &2337461011409878972
 GameObject:
   m_ObjectHideFlags: 0

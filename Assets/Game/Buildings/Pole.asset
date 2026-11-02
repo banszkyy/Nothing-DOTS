@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Pole
   m_EditorClassIdentifier: 
   Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630, type: 3}
-  Thumbnail: {fileID: 2800000, guid: bc54718b59845ef168d68c81d12d9875, type: 3}
-  PlaceholderPrefab: {fileID: 5692528052949456400, guid: d24cb30880c12f30791b06ed648e032a,
+  Thumbnail: {fileID: 2800000, guid: a4d5b94ef7313f383b13c26abacca3b0, type: 3}
+  PlaceholderPrefab: {fileID: 1648439890711016561, guid: d53df667c3b217dd7be14efc513cdfb3,
     type: 3}
-  HologramPrefab: {fileID: 7887398088158380673, guid: 6eb9a00ba47a31ef9bc5e0497a725023,
+  HologramPrefab: {fileID: 7979260313631496498, guid: 288a9700206b05154a7b8e59ec709ee9,
     type: 3}
   ConstructionTime: 1
   RequiredResources: 1

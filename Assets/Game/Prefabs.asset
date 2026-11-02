@@ -23,17 +23,19 @@ MonoBehaviour:
   Units:
   - {fileID: 11400000, guid: fbda40a2b4c99e1c9bc6f96f362b3124, type: 2}
   - {fileID: 11400000, guid: 8dda5381af209590391709b98011e95c, type: 2}
+  - {fileID: 11400000, guid: 9ab659032931ebf1e86ad0e6ad25c488, type: 2}
   - {fileID: 11400000, guid: e0f18b7107699b5539cd55dc90db54bd, type: 2}
   - {fileID: 11400000, guid: e2b9043e7f8756d9c914380e76e03b77, type: 2}
   Buildings:
   - {fileID: 11400000, guid: 16902f19e2053636ea4ce7c1fd7f6ccc, type: 2}
+  - {fileID: 11400000, guid: 653c3a2c8529e246d86bf79e65367783, type: 2}
   - {fileID: 11400000, guid: 3ecf600c37977c6e6ac20c3d2957888c, type: 2}
   - {fileID: 11400000, guid: f7f8bc1d5374c9afd928976d8b7f02b7, type: 2}
-  - {fileID: 11400000, guid: debe93196177db0ad82efba7b1d99f4a, type: 2}
-  - {fileID: 11400000, guid: 48f962cb34be8ea53a988cfec48260c1, type: 2}
-  - {fileID: 11400000, guid: 52f9e7c941b34e9a9a4530d03c394592, type: 2}
-  - {fileID: 11400000, guid: 653c3a2c8529e246d86bf79e65367783, type: 2}
   - {fileID: 11400000, guid: 684f3dcf70fc1bf88b243d76f67abede, type: 2}
+  - {fileID: 11400000, guid: 48f962cb34be8ea53a988cfec48260c1, type: 2}
+  - {fileID: 11400000, guid: debe93196177db0ad82efba7b1d99f4a, type: 2}
+  - {fileID: 11400000, guid: bc7bf6ea286ca28e691abfa9387c5c30, type: 2}
+  - {fileID: 11400000, guid: 52f9e7c941b34e9a9a4530d03c394592, type: 2}
   Projectiles:
   - {fileID: 11400000, guid: 1657b32a4c8f3b33b849550d48ea391b, type: 2}
   - {fileID: 11400000, guid: d4f919d59d79be04f9a5f75733be5019, type: 2}
@@ -41,3 +43,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fc0eaeb66b6434378a662ecb6f621d31, type: 2}
   - {fileID: 11400000, guid: 547b479e188c49eac87f7d2f2bb19aeb, type: 2}
   - {fileID: 11400000, guid: dbfa5352568e5092fb1251aec01debb5, type: 2}
+  viewDirection: {x: 1, y: 1.2, z: -1}
+  fieldOfView: 30
+  padding: 1.1
+  background: {r: 0, g: 0, b: 0, a: 0}
+  resolution: 512
+  HologramMaterial: {fileID: 2100000, guid: e1038b4484b2a0ea8bae6de451e81c73, type: 2}

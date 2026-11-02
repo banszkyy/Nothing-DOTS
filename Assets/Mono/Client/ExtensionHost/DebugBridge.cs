@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Threading;
 using System.Net;
+using System;
+using System.Threading.Tasks;
 
 class DebugBridge : MonoBehaviour
 {
@@ -28,7 +30,7 @@ class DebugBridge : MonoBehaviour
                 _ = Bridge.DisposeAsync().AsTask().ContinueWith((task) =>
                 {
                     Debug.Log($"{DebugEx.ClientPrefix} [ExtDebugBridge] Bridge disposed");
-                });
+                }, TaskScheduler.Default);
                 Bridge = null;
             }
         }
@@ -45,7 +47,7 @@ class DebugBridge : MonoBehaviour
                 _ = Bridge.DisposeAsync().AsTask().ContinueWith((task) =>
                 {
                     Debug.Log($"{DebugEx.ClientPrefix} [ExtDebugBridge] Bridge disposed");
-                });
+                }, TaskScheduler.Default);
                 Bridge = null;
             }
         }
@@ -54,7 +56,7 @@ class DebugBridge : MonoBehaviour
         {
             Debug.Log($"{DebugEx.ClientPrefix} [ExtDebugBridge] Creating server");
 
-            Stream = RpcStreamManagerSystem.GetInstance(ConnectionManager.ClientWorld).CreateStream(new FileId("bbl_ext_dap_meow", NetcodeEndPoint.Server));
+            Stream = RpcStreamManagerSystem.GetInstance(ConnectionManager.ClientWorld ?? throw new NullReferenceException()).CreateStream(new FileId("bbl_ext_dap_meow", NetcodeEndPoint.Server));
         }
 
         if (Listener.ConnectedClient is not null && Stream is not null && Bridge is null)
@@ -77,7 +79,7 @@ class DebugBridge : MonoBehaviour
             _ = Bridge.DisposeAsync().AsTask().ContinueWith((task) =>
             {
                 Debug.Log($"{DebugEx.ClientPrefix} [ExtDebugBridge] Bridge disposed");
-            });
+            }, TaskScheduler.Default);
             Bridge = null;
         }
 

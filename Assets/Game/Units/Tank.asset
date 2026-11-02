@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Tank
   m_EditorClassIdentifier: 
   Prefab: {fileID: 2198220952844499968, guid: 96ae8eafcc6aa2ba89fcb75290eebf31, type: 3}
-  Thumbnail: {fileID: 2800000, guid: 22e0fbd0a01949f9f8ecdd13419a6cc6, type: 3}
-  HologramPrefab: {fileID: 7887398088158380673, guid: 2b872014036108a10ade3a79e06ba207,
+  Thumbnail: {fileID: 2800000, guid: 8ba9f8a7b1ad7216e9472a8334a6cb87, type: 3}
+  HologramPrefab: {fileID: 7120277102045032537, guid: a8a8102a99edba35b84728d18bfa6634,
     type: 3}
   ProductionTime: 1
   RequiredResources: 1

@@ -54,8 +54,12 @@ partial struct ProcessorSystemClient : ISystem
             if (processor.ValueRO.NetworkReceiveLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.NetworkReceiveLED.Entity).ValueRW.Value =
-                    processor.ValueRW.NetworkReceiveLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
+                    processor.ValueRW.NetworkReceiveLED.ReceiveBlink(out byte status) ?
+                    (status switch
+                    {
+                        2 => new float4(1f, 0f, 0f, 1f) * LedIntensity,
+                        _ => new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity,
+                    }) :
                     default;
             }
 

@@ -22,10 +22,10 @@ partial struct ExtractorProcessorSystemServer : ISystem
         PrefabDatabase prefabDatabase = SystemAPI.GetSingleton<PrefabDatabase>();
         EntityCommandBuffer commandBuffer = default;
 
-        foreach (var (processor, extractor, transform, localTransform) in
-            SystemAPI.Query<RefRW<Processor>, RefRW<Extractor>, RefRO<LocalToWorld>, RefRO<LocalTransform>>())
+        foreach (var (processor, memory, extractor, transform, localTransform) in
+            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Extractor>, RefRO<LocalToWorld>, RefRO<LocalTransform>>())
         {
-            ref MappedMemory mapped = ref processor.ValueRW.Memory.MappedMemory;
+            ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
             if (mapped.Extractor.InputExtract != 0)
             {

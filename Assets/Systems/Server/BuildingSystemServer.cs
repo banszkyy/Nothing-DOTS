@@ -1,5 +1,6 @@
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
@@ -529,6 +530,15 @@ public partial struct BuildingSystemServer : ISystem
         {
             NetworkId = networkId.Value,
         });
+        if (SystemAPI.TryGetComponent(newEntity, out Processor proc))
+        {
+            DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(newEntity);
+            memory.ResizeUninitialized(proc.MemorySize);
+            unsafe
+            {
+                UnsafeUtility.MemClear(memory.GetUnsafePtr(), memory.Length);
+            }
+        }
 
         return true;
     }

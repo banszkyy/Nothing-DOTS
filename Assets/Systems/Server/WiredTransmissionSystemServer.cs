@@ -136,7 +136,7 @@ partial struct WiredTransmissionSystemServer : ISystem
                 RefRW<Processor> other = processorComponentQ.GetRefRW(connector.Entity);
                 if (!other.ValueRO.Source.Code.IsCreated || other.ValueRO.Signal != LanguageCore.Runtime.Signal.None) continue;
 
-                other.ValueRW.NetworkReceiveLED.Blink();
+                other.ValueRW.NetworkReceiveLED.Blink(1);
 
 #if DEBUG_LINES
                 float3 p = SystemAPI.GetComponentRO<LocalTransform>(connector.Entity).ValueRO.TransformPoint(SystemAPI.GetComponentRO<Connector>(connector.Entity).ValueRO.PortPositions[connector.Port]);

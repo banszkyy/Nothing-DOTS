@@ -29,11 +29,13 @@ public partial class CompilerSystemServer : SystemBase
     {
         Optimizations = OptimizationSettings.All,
         Cache = CompilerCache,
+        ExternalConstants = ImmutableArray.Create(
+            new ExternalConstant("memory_start", ProcessorSystemServer.UserMemoryStart)
+        )
     };
 
     public static readonly MainGeneratorSettings GeneratorSettings = new(MainGeneratorSettings.Default)
     {
-        StackSize = ProcessorSystemServer.BytecodeInterpreterSettings.StackSize,
         //ILGeneratorSettings = new LanguageCore.IL.Generator.ILGeneratorSettings()
         //{
         //    AllowCrash = false,
@@ -76,7 +78,7 @@ public partial class CompilerSystemServer : SystemBase
                     case CompilationStatus.Secuedued:
                         source.Status = CompilationStatus.Compiling;
                         CancellationTokenSource cancellationTokenSource = new();
-                        Tasks.Add((Task.Factory.StartNew(static v => CompileSourceTask(((FileId, bool, CompiledSourceServer, CancellationToken))v), (file, false, source, cancellationTokenSource.Token))
+                        Tasks.Add((Task.Factory.StartNew(static v => CompileSourceTask(((FileId, bool, CompiledSourceServer, CancellationToken))v), (file, false, source, cancellationTokenSource.Token), cancellationTokenSource.Token, TaskCreationOptions.None, TaskScheduler.Default)
                             .ContinueWith(task =>
                             {
                                 if (task.IsCanceled || (task.Exception is not null && task.Exception.InnerExceptions.Count == 1 && task.Exception.InnerExceptions[0] is TaskCanceledException))
@@ -137,7 +139,11 @@ public partial class CompilerSystemServer : SystemBase
             }
 
             Debug.Log($"{DebugEx.ServerPrefix} Waiting for {Tasks.Count} compilation tasks to finish ...");
+#pragma warning disable VSTHRD002
+#pragma warning disable VSTHRD003
             Task.WaitAll(Tasks.Select(v => v.Item1).ToArray(), 10000);
+#pragma warning restore VSTHRD003
+#pragma warning restore VSTHRD002
 
             Debug.Log($"{DebugEx.ServerPrefix} Compilation tasks completed");
         }

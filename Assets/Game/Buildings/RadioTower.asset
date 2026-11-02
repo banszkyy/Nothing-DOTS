@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c5059b74c5d5a06ca2840c66ed1fda0, type: 3}
+  m_Name: RadioTower
+  m_EditorClassIdentifier: 
+  Prefab: {fileID: 1440773521679765917, guid: d4fc572603c70bac2a0edfe0708a3b4b, type: 3}
+  Thumbnail: {fileID: 2800000, guid: 6cbf18cab51fd33b4bf3e7b4e0294c87, type: 3}
+  PlaceholderPrefab: {fileID: 3998943777047039739, guid: a17330f2b1f371a85b53b53906c8ee80,
+    type: 3}
+  HologramPrefab: {fileID: 486340281266413461, guid: 160831c6aa643e824b71e35bfb142c12,
+    type: 3}
+  ConstructionTime: 1
+  RequiredResources: 1
+  RequiredResearch: {fileID: 0}

@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Facility
   m_EditorClassIdentifier: 
   Prefab: {fileID: 9140697471898167478, guid: 2d0850f7884f35ca8b4ae63ab65740df, type: 3}
-  Thumbnail: {fileID: 2800000, guid: a468e976544d8ae21a9f5cde619f1fb9, type: 3}
-  PlaceholderPrefab: {fileID: 7709171237079450168, guid: 84df1b710470abc2db4908b254f78fc0,
+  Thumbnail: {fileID: 2800000, guid: 172ce2b8a38e3ecb488166877ead5be4, type: 3}
+  PlaceholderPrefab: {fileID: 549391250874313252, guid: 9e316b866129640dda01b4523aa79ba9,
     type: 3}
-  HologramPrefab: {fileID: 7887398088158380673, guid: 841357fac3a20639f9ec495041562827,
+  HologramPrefab: {fileID: 5761362367633426030, guid: 95c6bbfcc17befbd9ba5d96cc4f5125c,
     type: 3}
   ConstructionTime: 1
   RequiredResources: 1

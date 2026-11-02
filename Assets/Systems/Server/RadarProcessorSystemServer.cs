@@ -12,10 +12,10 @@ partial struct RadarProcessorSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        foreach (var (processor, radar) in
-            SystemAPI.Query<RefRW<Processor>, RefRW<Radar>>())
+        foreach (var (processor, memory, radar) in
+            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Radar>>())
         {
-            ref MappedMemory mapped = ref processor.ValueRW.Memory.MappedMemory;
+            ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
             if (!float.IsFinite(mapped.Radar.RadarDirection)) continue;
 

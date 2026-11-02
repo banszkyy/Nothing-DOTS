@@ -151,7 +151,6 @@ Transform:
   m_Children:
   - {fileID: 722635784}
   - {fileID: 1000078655}
-  - {fileID: 322545212}
   m_Father: {fileID: 1001118307}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &42151242
@@ -249,7 +248,7 @@ Transform:
   m_GameObject: {fileID: 78294156}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.73, y: 0, z: -7.12}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -271,92 +270,100 @@ MonoBehaviour:
   Units:
   - Prefab: {fileID: 1289979656329170851, guid: 9a341ad25308cd27d8c38c9c9143c6fb,
       type: 3}
-    Script: radar-1.vi
+    Script: radar.vi
     Team: 1
     Enabled: 1
     Spawn:
-      x: 8.163315
-      y: 0.31123734
+      x: 0.8209028
+      y: 7.6438694
   - Prefab: {fileID: 8427767388040926130, guid: cc59288c4e704e5c696de44ebc0bbb67,
       type: 3}
     Script: 
     Team: 1
     Enabled: 1
     Spawn:
-      x: -5.2052374
-      y: 3.8112168
-  - Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48,
-      type: 3}
-    Script: pc.vi
-    Team: 1
-    Enabled: 0
-    Spawn:
-      x: 0.9639473
-      y: 7.277996
-  - Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48,
-      type: 3}
-    Script: fun.vi
-    Team: 1
-    Enabled: 0
-    Spawn:
-      x: 0.9639473
-      y: 7.277996
-  - Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
-      type: 3}
-    Script: 
-    Team: 1
-    Enabled: 0
-    Spawn:
-      x: -5.052018
-      y: -1.5336633
-  - Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
-      type: 3}
-    Script: 
-    Team: 1
-    Enabled: 0
-    Spawn:
-      x: 3.8841224
-      y: -5.647637
-  - Prefab: {fileID: 1545415078347206922, guid: c2395e1ecfb567654aaff922a1397630,
-      type: 3}
-    Script: 
-    Team: 1
-    Enabled: 0
-    Spawn:
-      x: -0.87289417
-      y: -2.533619
+      x: 5.6387854
+      y: 0.42526555
   - Prefab: {fileID: 1287691938842737703, guid: b686aecd0774a0eb98551c108a20bb36,
       type: 3}
     Script: 
     Team: 0
-    Enabled: 0
+    Enabled: 1
     Spawn:
-      x: -3.5823903
-      y: -0.008090019
+      x: 4.0745807
+      y: -3.4665556
   - Prefab: {fileID: 2198220952844499968, guid: 96ae8eafcc6aa2ba89fcb75290eebf31,
       type: 3}
-    Script: unit-6.vi
+    Script: 
     Team: 1
     Enabled: 1
     Spawn:
-      x: -2.08148
-      y: 0.26084647
+      x: 3.5500383
+      y: 0.2533423
   - Prefab: {fileID: 1440773521679765917, guid: b2c99c52e725c77998d5576f3c8cfd5d,
       type: 3}
-    Script: test.vi
+    Script: 
     Team: 1
-    Enabled: 0
+    Enabled: 1
     Spawn:
-      x: 3.44
-      y: 7.79
+      x: 1.7074406
+      y: 0.2554555
   - Prefab: {fileID: 9140697471898167478, guid: 2d0850f7884f35ca8b4ae63ab65740df,
       type: 3}
-    Script: facility.vi
+    Script: 
+    Team: 1
+    Enabled: 1
+    Spawn:
+      x: 0.6688123
+      y: -7.1431036
+  - Prefab: {fileID: 1440773521679765917, guid: d4fc572603c70bac2a0edfe0708a3b4b,
+      type: 3}
+    Script: server.vi
+    Team: 1
+    Enabled: 1
+    Spawn:
+      x: -21.437702
+      y: 2.9274063
+  - Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48,
+      type: 3}
+    Script: client.vi
     Team: 1
     Enabled: 0
     Spawn:
-      x: -3.96
-      y: 1.67
+      x: -8.928775
+      y: 2.107893
+  - Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48,
+      type: 3}
+    Script: client.vi
+    Team: 1
+    Enabled: 0
+    Spawn:
+      x: -10.797996
+      y: -1.2411768
+  - Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48,
+      type: 3}
+    Script: client.vi
+    Team: 1
+    Enabled: 1
+    Spawn:
+      x: -5.2254915
+      y: 5.510104
+  - Prefab: {fileID: 1440773521679765917, guid: d85fde38f63c042bfa3d4c4d23646b48,
+      type: 3}
+    Script: authenticator.vi
+    Team: 1
+    Enabled: 1
+    Spawn:
+      x: -4.708014
+      y: 0.018801212
+  - Prefab: {fileID: 8427767388040926130, guid: 34c51fd79f79439198245f0739e2a6d4,
+      type: 3}
+    Script: jammer.vi
+    Team: 1
+    Enabled: 1
+    Spawn:
+      x: 10.495483
+      y: 0.5822334
   SpawnRandomUnits_: 0
   RandomUnits:
   - Prefab: {fileID: 1287691938842737703, guid: b686aecd0774a0eb98551c108a20bb36,
@@ -366,7 +373,7 @@ MonoBehaviour:
     Enabled: 0
     Count: 50
     Density: 50
-    Start: {x: 0, y: -1.7503147}
+    Start: {x: -1.1416454, y: -2.2955537}
     End: {x: 0, y: 0}
     RandomRotation: 1
     RandomPosition: 1
@@ -745,56 +752,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1880b8efb7272f20582b8f9b6bc7299f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &322545211
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 322545212}
-  - component: {fileID: 322545213}
-  m_Layer: 0
-  m_Name: ThumbnailGenerator
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &322545212
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 322545211}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 13680550}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &322545213
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 322545211}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7b62af196784c76ceb04bd66a32d94b4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ThumbnailGenerator
-  Prefabs: {fileID: 11400000, guid: 9fbd3be61b1b911759f2e0e4d52dafb8, type: 2}
-  viewDirection: {x: 1, y: 1.2, z: -1}
-  fieldOfView: 30
-  padding: 1.1
-  background: {r: 0, g: 0, b: 0, a: 0}
-  resolution: 512
 --- !u!1 &340358334
 GameObject:
   m_ObjectHideFlags: 0
@@ -936,6 +893,7 @@ MonoBehaviour:
   HologramEmission: 1
   UnitButton: {fileID: 9197481963319205126, guid: d033446b04fa1ca8388d418c8e1d9694,
     type: 3}
+  Tooltip: {fileID: 9197481963319205126, guid: 0ca814cdbc0b0a09c952fa63716ef8aa, type: 3}
   IsValidPosition: 0
 --- !u!1 &513005737
 GameObject:
@@ -1435,6 +1393,7 @@ MonoBehaviour:
     type: 3}
   DestroyingBlob: {fileID: 1255222290}
   WireConnectorBlob: {fileID: 1905869802}
+  Tooltip: {fileID: 9197481963319205126, guid: 0ca814cdbc0b0a09c952fa63716ef8aa, type: 3}
 --- !u!1 &776417373
 GameObject:
   m_ObjectHideFlags: 0
@@ -2229,6 +2188,7 @@ MonoBehaviour:
   Prefabs: {fileID: 11400000, guid: 9fbd3be61b1b911759f2e0e4d52dafb8, type: 2}
   UI_UnitItem: {fileID: 9197481963319205126, guid: d033446b04fa1ca8388d418c8e1d9694,
     type: 3}
+  Tooltip: {fileID: 9197481963319205126, guid: 0ca814cdbc0b0a09c952fa63716ef8aa, type: 3}
 --- !u!1 &1096127999
 GameObject:
   m_ObjectHideFlags: 0
@@ -2651,7 +2611,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1323827596
 Transform:
   m_ObjectHideFlags: 0

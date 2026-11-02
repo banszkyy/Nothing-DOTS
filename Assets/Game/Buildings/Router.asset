@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Router
   m_EditorClassIdentifier: 
   Prefab: {fileID: 1440773521679765917, guid: b2c99c52e725c77998d5576f3c8cfd5d, type: 3}
-  Thumbnail: {fileID: 2800000, guid: 73d1840e8b7e485bc9b4db4470f1ebda, type: 3}
-  PlaceholderPrefab: {fileID: 1289979656329170851, guid: 1d6c56b14b2bcc05db291bd6a40620b1,
+  Thumbnail: {fileID: 2800000, guid: b19083bde0c83d78f968ced3e4734e16, type: 3}
+  PlaceholderPrefab: {fileID: 8638219327362258042, guid: 0305a43bf86d42bcfbc84fc32550f34e,
     type: 3}
-  HologramPrefab: {fileID: 1289979656329170851, guid: 93eba80d10b50526192c98c506a5cf61,
+  HologramPrefab: {fileID: 6414176305241929240, guid: ba157c06b7a019f728491ce6e3b14a10,
     type: 3}
   ConstructionTime: 1
   RequiredResources: 1

@@ -6,7 +6,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Transforms;
-using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -34,6 +33,7 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
     [SerializeField, NotNull] VisualTreeAsset? BuildingButton = default;
     [SerializeField, NotNull] RectTransform? DestroyingBlob = default;
     [SerializeField, NotNull] RectTransform? WireConnectorBlob = default;
+    [SerializeField, NotNull] VisualTreeAsset? Tooltip = default;
 
     BufferedBuilding SelectedBuilding = default;
     [NotNull] GameObject? BuildingHologram = default;
@@ -98,7 +98,7 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
             element.Root.tooltip = item.Name.ToString();
             element.Thumbnail.image = b.Thumbnail;
             element.LabelResources.text = item.RequiredResources.ToString();
-            Tooltips.Instance.Reregister(element.Root);
+            Tooltips.Instance.Reregister(element.Root, Tooltip, tooltipContent => UnitStatManager.Populate(b, tooltipContent, Prefabs.Buildings));
         },
         startIndex: 1);
     }

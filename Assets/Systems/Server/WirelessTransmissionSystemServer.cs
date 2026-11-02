@@ -1,5 +1,5 @@
 #if UNITY_EDITOR && EDITOR_DEBUG
-#define _DEBUG_LINES
+#define DEBUG_LINES
 #endif
 
 using System;
@@ -10,6 +10,19 @@ using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Transforms;
 
+[InternalBufferCapacity(4)]
+public struct RxPacket : IBufferElementData
+{
+    public float3 Direction;
+    public sbyte MarginDb;
+}
+
+public struct SendRequest
+{
+    public float3 Aim;
+    public byte BeamHalvings;
+}
+
 [BurstCompile]
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
 partial struct WirelessTransmissionSystemServer : ISystem
@@ -17,6 +30,8 @@ partial struct WirelessTransmissionSystemServer : ISystem
     public const float TransmissionRadius = 100f;
 
     ComponentLookup<Processor> processorComponentQ;
+    ComponentLookup<Radio> radioComponentQ;
+    ComponentLookup<LocalTransform> transformComponentQ;
     BufferLookup<BufferedLogPiece> logsBufferQ;
 
     static readonly ProfilerMarker _CellVisibilityCheck = new(ProfilerCategory.Scripts, "TransmissionSystem.CellVisibilityCheck");
@@ -25,7 +40,10 @@ partial struct WirelessTransmissionSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnCreate(ref SystemState state)
     {
+        state.RequireForUpdate<RadioEnvironment>();
         processorComponentQ = state.GetComponentLookup<Processor>(false);
+        radioComponentQ = state.GetComponentLookup<Radio>(true);
+        transformComponentQ = state.GetComponentLookup<LocalTransform>(true);
         logsBufferQ = state.GetBufferLookup<BufferedLogPiece>(false);
     }
 
@@ -33,10 +51,14 @@ partial struct WirelessTransmissionSystemServer : ISystem
     void ISystem.OnUpdate(ref SystemState state)
     {
         processorComponentQ.Update(ref state);
+        radioComponentQ.Update(ref state);
+        transformComponentQ.Update(ref state);
         logsBufferQ.Update(ref state);
 
-        foreach (var (processor, transform, logBuffer, log, entity) in
-            SystemAPI.Query<RefRW<Processor>, RefRO<LocalTransform>, DynamicBuffer<BufferedLogPiece>, RefRW<LogPieces>>()
+        var radioEnvironment = SystemAPI.GetSingleton<RadioEnvironment>();
+
+        foreach (var (processor, radio, transform, logBuffer, log, entity) in
+            SystemAPI.Query<RefRW<Processor>, RefRO<Radio>, RefRO<LocalTransform>, DynamicBuffer<BufferedLogPiece>, RefRW<LogPieces>>()
             .WithEntityAccess())
         {
             if (processor.ValueRW.OutgoingTransmissions.Length == 0) continue;
@@ -47,41 +69,52 @@ partial struct WirelessTransmissionSystemServer : ISystem
 
             new UnitLog_Transmission_WirelessOut(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex, transmission.Metadata.Wireless, transmission.Data).Write(logBuffer);
 
+            float3 sourcePoint = transform.ValueRO.TransformPoint(processor.ValueRO.WirelessTransmissionPoint);
+
             NativeParallelHashMap<uint, NativeList<QuadrantEntity>>.ReadOnly map = QuadrantSystem.GetMap(state.WorldUnmanaged);
-            Cell grid = Cell.ToGrid(transform.ValueRO.Position);
+            Cell grid = Cell.ToGrid(sourcePoint);
 
             processor.ValueRW.NetworkSendLED.Blink();
 
 #if DEBUG_LINES
-            if (!transmission.Direction.Equals(default))
+            float beamDeg = math.clamp(transmission.Metadata.Wireless.BeamHalvings, radio.ValueRO.MinBeamHalvings, math.min(radio.ValueRO.MaxBeamHalvings, GainDb.Length - 1));
+            if (!transmission.Metadata.Wireless.Aim.Equals(float3.zero) && beamDeg < 180f)
             {
-                float3 globalDirection = transform.ValueRO.TransformDirection(transmission.Direction);
-                DebugEx.DrawLine(
-                    transmission.Source,
-                    globalDirection * Unit.TransmissionRadius,
-                    Color.cyan,
-                    1f,
-                    false
-                );
-                DebugEx.DrawFOV(
-                    transmission.Source,
+                float3 globalDirection = transform.ValueRO.TransformDirection(transmission.Metadata.Wireless.Aim);
+                //DebugEx.DrawLine(
+                //    sourcePoint,
+                //    globalDirection * TransmissionRadius,
+                //    Color.cyan,
+                //    1f,
+                //    true
+                //);
+                DebugEx.DrawCone(
+                    sourcePoint,
                     globalDirection,
-                    transmission.Angle,
-                    Unit.TransmissionRadius,
+                    TransmissionRadius,
+                    beamDeg,
                     Color.cyan,
                     1f,
-                    false);
+                    true);
             }
             else
             {
-                DebugEx.DrawSphere(
-                    transmission.Source,
-                    Unit.TransmissionRadius,
+                DebugEx.DrawPoint(
+                    sourcePoint,
+                    TransmissionRadius,
                     Color.cyan,
                     1f,
-                    false);
+                    true);
+                DebugEx.DrawSphere(
+                    sourcePoint,
+                    TransmissionRadius,
+                    Color.cyan,
+                    1f,
+                    true);
             }
 #endif
+
+            //float cosAngle = math.abs(math.cos(transmission.Metadata.Wireless.Angle));
 
             int diff = (int)(TransmissionRadius / Cell.Size * 0.5f + 2f);
 
@@ -94,32 +127,8 @@ partial struct WirelessTransmissionSystemServer : ISystem
                     if (!map.TryGetValue(p.key, out NativeList<QuadrantEntity> cell)) continue;
                     if (cell.Length == 0) continue;
 
-                    /*
-                    using (var marker = _CellVisibilityCheck.Auto())
-                    {
-                        if (PointSquareDistance(position, Cell.TL(p), Cell.BR(p)) + 3f > Unit.TransmissionRadius)
-                        {
-                            Cell.Draw(p, Color.gray3, 1f);
-                            continue;
-                        }
-                        else if (!transmission.Direction.Equals(default) &&
-                            (x != 0 || z != 0) &&
-                            !IsSquareVisible(
-                                position,
-                                direction,
-                                transmission.Angle,
-                                Cell.TL(p),
-                                Cell.BR(p),
-                                Unit.TransmissionRadius))
-                        {
-                            Cell.Draw(p, Color.gray3, 1f);
-                            continue;
-                        }
-                    }
-                    */
-
-#if DEBUG_LINES
-                    Cell.Draw(p, 1f);
+#if _DEBUG_LINES
+                    //Cell.Draw(p, 1f);
 #endif
 
                     using (var marker = _CellOperation.Auto())
@@ -127,46 +136,64 @@ partial struct WirelessTransmissionSystemServer : ISystem
                         for (int i = 0; i < cell.Length; i++)
                         {
                             if (cell[i].Entity == entity) continue;
+                            if (!processorComponentQ.HasComponent(cell[i].Entity)) continue;
+                            if (!radioComponentQ.HasComponent(cell[i].Entity)) continue;
+                            RefRW<Processor> other = processorComponentQ.GetRefRW(cell[i].Entity);
+                            RefRO<Radio> otherRadio = radioComponentQ.GetRefRO(cell[i].Entity);
+                            RefRO<LocalTransform> otherTransform = transformComponentQ.GetRefRO(cell[i].Entity);
 
-                            float3 entityLocalPosition = transform.ValueRO.InverseTransformPoint(cell[i].Position);
+                            float3 receiverPoint = otherTransform.ValueRO.TransformPoint(other.ValueRO.WirelessTransmissionPoint);
+                            float3 receiveVector = sourcePoint - receiverPoint;
+                            float3 receiveDirection = math.normalize(receiveVector);
 
-                            if (math.lengthsq(entityLocalPosition) > (TransmissionRadius * TransmissionRadius))
+                            int obstructions = 0;
+
+                            SendRequest req = new()
                             {
-#if DEBUG_LINES
-                                DebugEx.DrawSphere(cell[i].Position, 1f, Color.red, 1f, false);
-#endif
+                                Aim = transmission.Metadata.Wireless.Aim,
+                                BeamHalvings = transmission.Metadata.Wireless.BeamHalvings,
+                            };
+
+                            if (!TryDeliver(radio.ValueRO, transform.ValueRO.InverseTransformPoint(sourcePoint), req, radio.ValueRO, transform.ValueRO.InverseTransformPoint(receiverPoint), radioEnvironment, obstructions, 0f, out var pkt))
+                            {
                                 continue;
                             }
 
-                            if (!transmission.Metadata.Wireless.Direction.Equals(default))
+                            float noiseMw = math.pow(10f, (otherRadio.ValueRO.SensitivityDbm - radioEnvironment.RequiredSnrDb) / 10f);
+                            float jamMw = 0f;
+
+                            foreach (var (jammer, jammerTransform) in
+                                SystemAPI.Query<RefRO<RadioJammer>, RefRO<LocalTransform>>())
                             {
-                                float dot = math.abs(math.dot(transmission.Metadata.Wireless.Direction, math.normalize(entityLocalPosition)));
-                                if (dot < transmission.Metadata.Wireless.CosAngle)
-                                {
-#if DEBUG_LINES
-                                    //DebugEx.DrawLine(transmission.Source, cell[i].Position, Color.orange, 1f, false);
-                                    //Debug.Log($"{dot} ({math.dot(transmission.Direction, math.normalize(entityLocalPosition))}) < {transmission.CosAngle} entity: {entity} origin: {transmission.Source}");
-                                    DebugEx.DrawSphere(cell[i].Position, 1f, Color.orange, 1f, false);
-#endif
-                                    continue;
-                                }
+                                if (!jammer.ValueRO.IsActive) continue;
+
+                                float dist = math.distance(receiverPoint, jammerTransform.ValueRO.Position);
+                                float pathLoss = radioEnvironment.RefLossDb
+                                               + 10f * radioEnvironment.PathLossExp * math.log10(dist)
+                                               + obstructions * radioEnvironment.ObstructionDb;
+                                jamMw += math.pow(10f, (jammer.ValueRO.EirpDbm - pathLoss + otherRadio.ValueRO.RxGainDbi) / 10f);
+                            }
+                            float jamRiseDb = 10f * math.log10(1f + jamMw / noiseMw);
+
+                            if (jamMw != 0f && !TryDeliver(radio.ValueRO, transform.ValueRO.InverseTransformPoint(sourcePoint), req, radio.ValueRO, transform.ValueRO.InverseTransformPoint(receiverPoint), radioEnvironment, obstructions, jamRiseDb, out pkt))
+                            {
+                                other.ValueRW.NetworkReceiveLED.Blink(2);
+                                continue;
                             }
 
-                            if (!processorComponentQ.HasComponent(cell[i].Entity)) continue;
-                            RefRW<Processor> other = processorComponentQ.GetRefRW(cell[i].Entity);
-                            if (!other.ValueRO.Source.Code.IsCreated || other.ValueRO.Signal != LanguageCore.Runtime.Signal.None) continue;
-
 #if DEBUG_LINES
-                            DebugEx.DrawSphere(cell[i].Position, 1f, Color.cyan, 1f, false);
+                            DebugEx.DrawLine(sourcePoint, receiverPoint, Color.green, 1f, true);
+                            DebugEx.DrawSphere(receiverPoint, 1f, Color.green, 1f, true);
 #endif
 
-                            other.ValueRW.NetworkReceiveLED.Blink();
+                            other.ValueRW.NetworkReceiveLED.Blink(1);
 
                             ref FixedList128Bytes<BufferedUnitTransmission> transmissions = ref other.ValueRW.IncomingTransmissions;
 
                             IncomingWirelessUnitTransmissionMetadata otherIncomingMetadata = new()
                             {
-                                Source = transform.ValueRO.Position,
+                                Direction = pkt.Direction,
+                                MarginDb = pkt.MarginDb,
                             };
 
                             if (logsBufferQ.TryGetBuffer(cell[i].Entity, out DynamicBuffer<BufferedLogPiece> otherLog))
@@ -187,13 +214,13 @@ partial struct WirelessTransmissionSystemServer : ISystem
 
                             foreach (var player in SystemAPI.Query<RefRO<RealPlayer>>())
                             {
-                                if (math.distance(player.ValueRO.Position, transform.ValueRO.Position) < 50f ||
-                                    math.distance(player.ValueRO.Position, cell[i].Position) < 50f)
+                                if (math.distance(player.ValueRO.Position, sourcePoint) < 50f ||
+                                    math.distance(player.ValueRO.Position, receiverPoint) < 50f)
                                 {
                                     NetcodeUtils.CreateRPC(state.WorldUnmanaged, new WirelessTransmissionEventRpc()
                                     {
-                                        Origin = transform.ValueRO.Position,
-                                        Destination = cell[i].Position,
+                                        Origin = sourcePoint,
+                                        Destination = receiverPoint,
                                         Data = transmission.Data,
                                     }, player.ValueRO.Connection);
                                 }
@@ -303,4 +330,49 @@ partial struct WirelessTransmissionSystemServer : ISystem
     static bool PointInRectangle(in float2 point, in float2 a, in float2 b) =>
         point.x >= a.x && point.x <= b.x &&
         point.y >= a.y && point.y <= b.y;
+
+    public static float BeamDeg(int beamHalvings) => 360f / (1 << beamHalvings);
+
+    public static float PatternDb(float offAxisDeg, float beamDeg) => beamDeg >= 360f ? 0f : math.max(-12f * math.square(offAxisDeg / beamDeg), -25f);
+
+    static float OffAxisDeg(float3 aim, float3 toTarget) => math.degrees(math.acos(math.clamp(math.dot(math.normalize(aim), toTarget), -1f, 1f)));
+
+    static readonly float[] GainDb = { 0f, 3.0f, 8.3f, 14.2f, 20.2f, 26.2f, 32.2f, 38.2f };
+
+    // TODO
+    static float3 QuantizeDirection(float3 direction, int sectors)
+    {
+        float step = math.PI * 2f / sectors;
+        float az = math.round(math.atan2(direction.x, direction.z) / step) * step;
+        float el = math.round(math.asin(direction.y) / step) * step;
+        return new float3(math.sin(az) * math.cos(el), math.sin(el), math.cos(az) * math.cos(el));
+    }
+
+    public static bool TryDeliver(
+        in Radio transmitterHardware, float3 transmitterPosition,
+        in SendRequest req,
+        in Radio receiverHardware, float3 receiverPosition,
+        in RadioEnvironment world, int obstructions, float jamRiseDb,
+        out RxPacket packet)
+    {
+        packet = default;
+
+        int k = math.clamp(req.BeamHalvings, transmitterHardware.MinBeamHalvings, math.min(transmitterHardware.MaxBeamHalvings, GainDb.Length - 1));
+
+        float dist = math.distance(transmitterPosition, receiverPosition);
+        float pathLoss = world.RefLossDb + 10f * world.PathLossExp * math.log10(dist) + obstructions * world.ObstructionDb;
+
+        float3 toTarget = math.normalize(receiverPosition - transmitterPosition);
+
+        float offAxisDeg = OffAxisDeg(req.Aim, toTarget);
+
+        float rxDbm = transmitterHardware.TxPowerDbm + GainDb[k] + PatternDb(offAxisDeg, BeamDeg(k)) + receiverHardware.RxGainDbi - pathLoss;
+
+        float margin = rxDbm - (receiverHardware.SensitivityDbm + jamRiseDb);
+        if (margin < 0f) return false;
+
+        packet.Direction = -toTarget;
+        packet.MarginDb = (sbyte)math.min((int)(margin / 3f), 127);
+        return true;
+    }
 }

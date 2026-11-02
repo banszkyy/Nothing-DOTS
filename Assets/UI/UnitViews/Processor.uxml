@@ -5,15 +5,15 @@
     <ui:Template name="TerminalProgressItem" src="project://database/Assets/UI/TerminalProgressItem.uxml?fileID=9197481963319205126&amp;guid=9eea0e1bced7ce10ba2cf37db8517d65&amp;type=3#TerminalProgressItem"/>
     <Style src="project://database/Assets/UI/Styles/Processor.uss?fileID=7433441132597879392&amp;guid=913710a6a48cfd2aa9a2b83710b5d436&amp;type=3#Processor"/>
     <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
-    <ui:VisualElement style="flex-grow: 1;">
+    <ui:VisualElement name="wrapper" class="overall-indicator-debugging" style="flex-grow: 1; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px;">
         <ui:VisualElement name="panel-status" style="flex-direction: row; flex-shrink: 0; flex-basis: 20px;">
             <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
-                <ui:Label text="?" name="icon-status" style="font-size: 10px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; -unity-text-align: middle-left;"/>
-                <ui:Label text="Loading ..." name="label-status" style="font-size: 10px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; -unity-text-align: middle-left; flex-grow: 1;"/>
+                <ui:Label text="\udb86\udd78" name="icon-status" parse-escape-sequences="true" style="font-size: 10px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; -unity-text-align: middle-left; -unity-font-style: bold;"/>
+                <ui:Label text="Loading ..." name="label-status" style="font-size: 10px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; -unity-text-align: middle-left; flex-grow: 1; -unity-font-style: bold;"/>
             </ui:VisualElement>
             <ui:Button text="\udb80\udfe4" name="button-halt-continue" parse-escape-sequences="true" tooltip="Halt Processor" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px;"/>
             <ui:Button text="\udb81\udc50" name="button-reset" parse-escape-sequences="true" tooltip="Restart Processor" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px;"/>
-            <ui:Button text="\udb80\udce4" name="button-start-debug" parse-escape-sequences="true" tooltip="Debug" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px;"/>
+            <ui:Button text="\udb80\udce4" name="button-debug" parse-escape-sequences="true" tooltip="Debug" style="margin-right: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px;"/>
         </ui:VisualElement>
         <ui:VisualElement name="panel-source" style="flex-direction: row; flex-shrink: 0; flex-basis: 20px;">
             <ui:Label text="\uf023" name="source-lock-icon" parse-escape-sequences="true" tooltip="Source Version Locked" class="warning" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 2px; margin-bottom: 0; margin-left: 2px; font-size: 10px; -unity-text-align: middle-center;"/>
@@ -28,10 +28,7 @@
                 <ui:VisualElement class="heap-block heap-block-used" style="flex-grow: 1;"/>
                 <ui:VisualElement class="heap-block heap-block-free" style="flex-grow: 1;"/>
             </ui:VisualElement>
-        </ui:VisualElement>
-        <ui:VisualElement name="panel-debug" style="flex-direction: row; background-color: rgb(178, 34, 34); display: flex; flex-shrink: 0; flex-basis: 20px;">
-            <ui:Label text="Currently debugging" style="flex-grow: 1; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; -unity-text-align: middle-left; font-size: 10px; -unity-font-style: bold;"/>
-            <ui:Button text="\udb82\ude30" parse-escape-sequences="true" tooltip="Stop Debugging" name="button-stop-debug" style="margin-right: 2px; margin-left: 2px; padding-top: 0; padding-right: 2px; padding-bottom: 0; padding-left: 2px; width: 16px; height: 16px; margin-top: 2px; margin-bottom: 2px;"/>
+            <ui:Button text="\udb81\udc50" name="button-analyze-heap" parse-escape-sequences="true" tooltip="Refresh Memory" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-right: 2px; padding-left: 2px; width: 12px; height: 12px; font-size: 9px; display: flex; align-self: center; -unity-font-style: normal;"/>
         </ui:VisualElement>
         <ui:VisualElement name="files-container" style="overflow: hidden;">
             <ui:Label text="Label" name="label-base-path" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; color: rgb(164, 164, 164); font-size: 8px;"/>

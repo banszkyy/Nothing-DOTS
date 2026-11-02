@@ -112,28 +112,33 @@ struct TerminalSubscriptionServer
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
 unsafe partial struct ProcessorSystemServer : ISystem
 {
-    public static readonly BytecodeInterpreterSettings BytecodeInterpreterSettings = new()
+    public static readonly int MappedMemoryStart = 1;
+    public static readonly int UserMemoryStart = MappedMemoryStart + sizeof(MappedMemory);
+
+    public static ref MappedMemory MappedMemory(DynamicBuffer<ProcessorMemoryBuffer> memory)
     {
-        HeapSize = Processor.HeapSize,
-        StackSize = Processor.StackSize,
-    };
+        if (MappedMemoryStart + sizeof(MappedMemory) >= memory.Length) throw new InvalidOperationException($"Memory size {memory.Length} is <= than the requierd {MappedMemoryStart + sizeof(MappedMemory)}");
+        return ref Unsafe.AsRef<MappedMemory>(((byte*)memory.GetUnsafePtr()) + MappedMemoryStart);
+    }
 
     [BurstCompile]
     public ref struct ProcessorRef
     {
         public required void* Memory;
+        public required int MemorySize;
         public required int* Crash;
         public required Signal* Signal;
         public required Registers* Registers;
 
-        public readonly Span<byte> MemorySpan => new(Memory, Processor.TotalMemorySize);
+        public readonly Span<byte> MemorySpan => new(Memory, MemorySize);
 
         [BurstCompile]
         public void Push(scoped ReadOnlySpan<byte> data)
         {
             Registers->StackPointer += data.Length * ProcessorState.StackDirection;
 
-            if (Registers->StackPointer is >= Processor.UserMemorySize or < Processor.HeapSize)
+            if (Registers->StackPointer + data.Length > MemorySize ||
+                Registers->StackPointer < Registers->MEow)
             {
                 *Signal = LanguageCore.Runtime.Signal.StackOverflow;
                 return;
@@ -198,6 +203,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
         [ReadOnly] public required ComponentLookup<Radar> QRadar;
         [ReadOnly] public required ComponentLookup<Facility> QFacility;
         [ReadOnly] public required ComponentLookup<Factory> QFactory;
+        [ReadOnly] public required ComponentLookup<Radio> QRadio;
     }
 
     [BurstCompile]
@@ -516,6 +522,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
                 QRadar = SystemAPI.GetComponentLookup<Radar>(true),
                 QFacility = SystemAPI.GetComponentLookup<Facility>(true),
                 QFactory = SystemAPI.GetComponentLookup<Factory>(true),
+                QRadio = SystemAPI.GetComponentLookup<Radio>(true),
             },
         }.ScheduleParallel();
     }
@@ -534,6 +541,7 @@ partial struct ProcessorJob : IJobEntity
 
     unsafe void Execute(
         ref Processor processor,
+        ref DynamicBuffer<ProcessorMemoryBuffer> _memory,
         in UnitTeam team,
         in GhostInstance ghost,
         in LocalToWorld worldTransform,
@@ -552,7 +560,7 @@ partial struct ProcessorJob : IJobEntity
 
         //NativeArray<byte> memory = new NativeArray<byte>(Processor.TotalMemorySize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
         //memory.CopyFrom(new Span<byte>(Unsafe.AsPointer(ref processor.Memory), Processor.TotalMemorySize).ToArray());
-        Span<byte> memory = new(Unsafe.AsPointer(ref processor.Memory), Processor.TotalMemorySize);
+        Span<byte> memory = new(_memory.GetUnsafePtr(), _memory.Length);
 
         FixedList128Bytes<BufferedLogPiece> log = new();
         ProcessorSystemServer.FunctionScope scope = new()
@@ -560,7 +568,8 @@ partial struct ProcessorJob : IJobEntity
             WorldRef = worldRef,
             ProcessorRef = new ProcessorSystemServer.ProcessorRef()
             {
-                Memory = Unsafe.AsPointer(ref processor.Memory),
+                Memory = _memory.GetUnsafePtr(),
+                MemorySize = _memory.Length,
                 Crash = null,
                 Registers = null,
                 Signal = null,
@@ -593,6 +602,12 @@ partial struct ProcessorJob : IJobEntity
                 continue;
             }
 
+            if ((this.scopedExternalFunctions[i].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.WirelessTransmission.Prefix &&
+                !worldRef.QRadio.HasComponent(entity))
+            {
+                continue;
+            }
+
             scopedExternalFunctions.Add(this.scopedExternalFunctions[i]);
             scopedExternalFunctions.GetUnsafePtr()[scopedExternalFunctions.Length - 1].Scope = (nint)(void*)&scope;
         }
@@ -604,7 +619,10 @@ partial struct ProcessorJob : IJobEntity
         }
 
         ProcessorState processorState = new(
-            ProcessorSystemServer.BytecodeInterpreterSettings,
+            new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
+            {
+                MemorySize = memory.Length,
+            },
             processor.Registers,
             memory,
             processor.Source.Code.AsSpan(),
@@ -637,9 +655,9 @@ partial struct ProcessorJob : IJobEntity
             }
         }
 
-        if (processor.Memory.MappedMemory.Leds.CustomLED != 0)
+        if (ProcessorSystemServer.MappedMemory(_memory).Leds.CustomLED != 0)
         {
-            processor.Memory.MappedMemory.Leds.CustomLED = 0;
+            ProcessorSystemServer.MappedMemory(_memory).Leds.CustomLED = 0;
             processor.CustomLED.Blink();
         }
 

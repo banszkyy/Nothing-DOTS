@@ -23,4 +23,10 @@ public static class DynamicBufferExtensions
         }
         return default;
     }
+
+    public static unsafe Span<T> AsSpan<T>(this DynamicBuffer<T> buffer) where T : unmanaged => new(buffer.GetUnsafePtr(), buffer.Length);
+    public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this DynamicBuffer<T> buffer) where T : unmanaged => new(buffer.GetUnsafeReadOnlyPtr(), buffer.Length);
+
+    public static unsafe Span<byte> AsSpan(this DynamicBuffer<ProcessorMemoryBuffer> buffer) => new(buffer.GetUnsafePtr(), buffer.Length);
+    public static unsafe ReadOnlySpan<byte> AsReadOnlySpan(this DynamicBuffer<ProcessorMemoryBuffer> buffer) => new(buffer.GetUnsafeReadOnlyPtr(), buffer.Length);
 }

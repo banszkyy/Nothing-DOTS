@@ -82,6 +82,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CyclesPerTick: 150
+  MemorySize: 1024
+  TransmissionPoint: {fileID: 0}
   StatusLED: {fileID: 371961180184276187}
   NetworkReceiveLED: {fileID: 7931587471001208579}
   NetworkSendLED: {fileID: 452564358002251789}

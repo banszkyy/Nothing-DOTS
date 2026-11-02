@@ -1,3 +1,4 @@
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -5,15 +6,23 @@ using UnityEngine;
 [AddComponentMenu("Authoring/Processor")]
 class ProcessorAuthoring : MonoBehaviour
 {
-    [SerializeField] int CyclesPerTick;
+    [Header("Options")]
+    [SerializeField, Min(0)] internal int CyclesPerTick;
+    [SerializeField, Min(0)] internal int MemorySize;
+    [SerializeField] Transform? TransmissionPoint;
+
+    [Header("LEDs")]
     [SerializeField] GameObject? StatusLED = default;
     [SerializeField] GameObject? NetworkReceiveLED = default;
     [SerializeField] GameObject? NetworkSendLED = default;
     [SerializeField] GameObject? RadarLED = default;
     [SerializeField] GameObject? CustomLED = default;
     [SerializeField] GameObject? USBLED = default;
+
+    [Header("Other")]
     [SerializeField] Transform? USBPosition = default;
 
+    [Header("Initialization")]
     [SerializeField] string? Script = default;
 
     class Baker : Baker<ProcessorAuthoring>
@@ -25,6 +34,7 @@ class ProcessorAuthoring : MonoBehaviour
             AddComponent<Processor>(entity, new()
             {
                 CyclesPerTick = authoring.CyclesPerTick,
+                WirelessTransmissionPoint = authoring.TransmissionPoint == null ? default : authoring.TransmissionPoint.position,
                 StatusLED = new(authoring.StatusLED != null ? GetEntity(authoring.StatusLED, TransformUsageFlags.Dynamic) : Entity.Null),
                 NetworkReceiveLED = new(authoring.NetworkReceiveLED != null ? GetEntity(authoring.NetworkReceiveLED, TransformUsageFlags.Dynamic) : Entity.Null),
                 NetworkSendLED = new(authoring.NetworkSendLED != null ? GetEntity(authoring.NetworkSendLED, TransformUsageFlags.Dynamic) : Entity.Null),
@@ -36,9 +46,16 @@ class ProcessorAuthoring : MonoBehaviour
 #if UNITY_EDITOR
                 SourceFile = authoring.Script is not null ? new FileId(authoring.Script, NetcodeEndPoint.Server) : default,
 #endif
+                MemorySize = authoring.MemorySize,
             });
             AddBuffer<BufferedLogPiece>(entity);
             AddComponent<LogPieces>(entity);
+            DynamicBuffer<ProcessorMemoryBuffer> memory = AddBuffer<ProcessorMemoryBuffer>(entity);
+            memory.ResizeUninitialized(authoring.MemorySize);
+            unsafe
+            {
+                UnsafeUtility.MemClear(memory.GetUnsafePtr(), memory.Length);
+            }
         }
     }
 }

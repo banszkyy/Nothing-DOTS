@@ -454,7 +454,6 @@ static class SaveManager
                     writer.Write(v.SourceFile.Name);
                     writer.Write(v.SourceFile.Source.ConnectionId.Value);
                     writer.WriteUnsafe(v.Registers);
-                    writer.WriteUnsafe(v.Memory.Memory);
                     writer.Write(v.Crash);
                     writer.Write(v.Signal);
                     writer.Write(v.SignalNotified);
@@ -485,7 +484,6 @@ static class SaveManager
                     v.SourceFile.Name = reader.ReadFixedString128();
                     v.SourceFile.Source.ConnectionId.Value = reader.ReadInt();
                     v.Registers = reader.ReadUnsafe<LanguageCore.Runtime.Registers>();
-                    v.Memory.Memory = reader.ReadUnsafe<FixedBytes2048>();
                     v.Crash = reader.ReadInt();
                     v.Signal = (LanguageCore.Runtime.Signal)reader.ReadByte();
                     v.SignalNotified = reader.ReadBool();
@@ -642,6 +640,18 @@ static class SaveManager
                 {
                     component.GhostA = ghostReferenceResolver(component.EntityA);
                     component.GhostB = ghostReferenceResolver(component.EntityB);
+                }
+            ),
+            TypeSerializer.ForDynamicBufferItem<ProcessorMemoryBuffer>(
+                (writer, v) =>
+                {
+                    writer.Write(v._v);
+                },
+                (reader) =>
+                {
+                    byte v = reader.ReadByte();
+
+                    return new ProcessorMemoryBuffer() { _v = v };
                 }
             ),
         };

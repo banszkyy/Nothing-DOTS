@@ -301,6 +301,12 @@ Scroller {
     border-left-color: #00000000;
 }
 
+ProgressBar > #unity-progress-bar {
+    min-height: auto;
+    max-height: auto;
+    flex-grow: 1;
+}
+
 ProgressBar > #unity-progress-bar > .unity-progress-bar__background {
     background-color: var(--widgetBackground);
     border-left-width: 1px;
@@ -326,6 +332,10 @@ ProgressBar > #unity-progress-bar > .unity-progress-bar__background > .unity-pro
     margin-bottom: 0;
 }
 
+ProgressBar.primary > #unity-progress-bar > .unity-progress-bar__background > .unity-progress-bar__progress {
+    background-color: var(--foregroundPrimary);
+}
+
 ProgressBar.error > #unity-progress-bar > .unity-progress-bar__background > .unity-progress-bar__progress {
     background-color: var(--error);
     margin-left: 0;
@@ -348,11 +358,6 @@ ProgressBar.success > #unity-progress-bar > .unity-progress-bar__background > .u
     margin-right: 0;
     margin-top: 0;
     margin-bottom: 0;
-}
-
-ProgressBar > #unity-progress-bar {
-    max-height: 15px;
-    min-height: 15px;
 }
 
 ProgressBar .unity-progress-bar__title-container {
@@ -493,4 +498,37 @@ ProgressBar Label {
 
 .hud-item Label {
     align-self: center;
+}
+
+#unit-stats-tooltip {
+    min-width: 200px;
+}
+
+#unit-stats-tooltip > VisualElement {
+    padding: 2px;
+}
+
+#unit-stats-tooltip > VisualElement > VisualElement {
+    flex-direction: row;
+    align-items: center;
+}
+
+#unit-stats-tooltip .icon {
+    margin: 0px;
+    margin-right: 4px;
+    padding: 0px;
+}
+
+#unit-stats-tooltip ProgressBar {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 100%;
+}
+
+#unit-stats-tooltip .stat-progress-label {
+    min-width: 50px;
+    flex-grow: 1;
+    margin: 0px;
+    padding: 0px;
+    padding-left: 6px;
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -389,12 +390,19 @@ public class SetupManager : Singleton<SetupManager>
 
     static void ApplyUnit(EntityManager entityManager, Entity entity, BaseUnitSetup unitSetup)
     {
-        if (entityManager.HasComponent<Processor>(entity) && !string.IsNullOrWhiteSpace(unitSetup.Script))
+        if (entityManager.TryGetComponentData(entity, out Processor proc) && !string.IsNullOrWhiteSpace(unitSetup.Script))
         {
             entityManager.ModifyComponent(entity, (ref Processor v) =>
             {
                 v.SourceFile = new FileId(unitSetup.Script, NetcodeEndPoint.Server);
             });
+
+            DynamicBuffer<ProcessorMemoryBuffer> memory = entityManager.GetBuffer<ProcessorMemoryBuffer>(entity);
+            memory.ResizeUninitialized(proc.MemorySize);
+            unsafe
+            {
+                UnsafeUtility.MemClear(memory.GetUnsafePtr(), memory.Length);
+            }
         }
 
         if (entityManager.HasComponent<UnitTeam>(entity))
@@ -425,18 +433,21 @@ public class SetupManager : Singleton<SetupManager>
                 unitSetup.Spawn = new float2(p.x, p.z);
             }
 
-            foreach (SpreadUnitSetup spreadUnitSetup in t.RandomUnits)
+            if (t.SpawnRandomUnits_)
             {
-                Vector3 start = UnityEditor.Handles.PositionHandle(
-                    new Vector3(spreadUnitSetup.Start.x, PositionY, spreadUnitSetup.Start.y),
-                    quaternion.identity
-                );
-                Vector3 end = UnityEditor.Handles.PositionHandle(
-                    new Vector3(spreadUnitSetup.End.x, PositionY, spreadUnitSetup.End.y),
-                    quaternion.identity
-                );
-                spreadUnitSetup.Start = new Vector2(start.x, start.z);
-                spreadUnitSetup.End = new Vector2(end.x, end.z);
+                foreach (SpreadUnitSetup spreadUnitSetup in t.RandomUnits)
+                {
+                    Vector3 start = UnityEditor.Handles.PositionHandle(
+                        new Vector3(spreadUnitSetup.Start.x, PositionY, spreadUnitSetup.Start.y),
+                        quaternion.identity
+                    );
+                    Vector3 end = UnityEditor.Handles.PositionHandle(
+                        new Vector3(spreadUnitSetup.End.x, PositionY, spreadUnitSetup.End.y),
+                        quaternion.identity
+                    );
+                    spreadUnitSetup.Start = new Vector2(start.x, start.z);
+                    spreadUnitSetup.End = new Vector2(end.x, end.z);
+                }
             }
         }
     }

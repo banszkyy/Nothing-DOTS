@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: RadarStation
   m_EditorClassIdentifier: 
   Prefab: {fileID: 1289979656329170851, guid: 9a341ad25308cd27d8c38c9c9143c6fb, type: 3}
-  Thumbnail: {fileID: 2800000, guid: a3cf2b559f7b62066a249db3a7669d22, type: 3}
-  PlaceholderPrefab: {fileID: 1289979656329170851, guid: 6ec630a7793cbdb428740947825fe2c2,
+  Thumbnail: {fileID: 2800000, guid: b81b57531b4360e2bab3269e83de0e43, type: 3}
+  PlaceholderPrefab: {fileID: 8678611040999710928, guid: d6b528479807d46d2a089c0fa2262568,
     type: 3}
-  HologramPrefab: {fileID: 1289979656329170851, guid: bb7234899ae3b43dab53d80523410684,
+  HologramPrefab: {fileID: 2037128368366805087, guid: 93a612762c44a3cd28078beb3e8fce2e,
     type: 3}
   ConstructionTime: 1
   RequiredResources: 1

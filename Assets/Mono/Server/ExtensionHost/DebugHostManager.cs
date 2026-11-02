@@ -142,7 +142,7 @@ class DebugHostManager : MonoBehaviour
 
         if (UseRpc)
         {
-            foreach (var stream in RpcStreamManagerSystem.GetInstance(ConnectionManager.ServerWorld).Streams)
+            foreach (var stream in RpcStreamManagerSystem.GetInstance(ConnectionManager.ServerWorld ?? throw new NullReferenceException($"ServerWorld is null")).Streams)
             {
                 if (RpcHosts.Any(v => v.Listener == stream)) continue;
                 if (!stream.RemoteIdentifier.Name.ToString().StartsWith("bbl_ext_dap_")) continue;

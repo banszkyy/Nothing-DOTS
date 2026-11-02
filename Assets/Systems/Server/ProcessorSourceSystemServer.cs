@@ -257,7 +257,10 @@ partial class ProcessorSourceSystemServer : SystemBase
     public static void ResetProcessor(ref Processor processor)
     {
         ProcessorState processorState = new(
-            ProcessorSystemServer.BytecodeInterpreterSettings,
+            new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
+            {
+                MemorySize = processor.MemorySize,
+            },
             default,
             default,
             default,

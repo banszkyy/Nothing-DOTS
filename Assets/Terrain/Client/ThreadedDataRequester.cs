@@ -91,7 +91,9 @@ public class ThreadedDataRequester : Singleton<ThreadedDataRequester>
 
     void OnDestroy()
     {
+#pragma warning disable VSTHRD002
         Task.WaitAll(Tasks.ToArray(), 10000);
+#pragma warning restore VSTHRD002
     }
 
     readonly struct TaskInfo

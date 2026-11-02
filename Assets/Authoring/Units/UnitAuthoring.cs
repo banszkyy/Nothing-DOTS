@@ -20,7 +20,6 @@ public class UnitAuthoring : MonoBehaviour
             {
                 Team = authoring.Team,
             });
-            AddComponent<Vehicle>(entity);
             if (authoring.Prefab != null)
             {
                 if (authoring.Prefabs == null)

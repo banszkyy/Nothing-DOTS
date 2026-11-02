@@ -16,10 +16,8 @@ public struct IncomingUnitTransmissionMetadata
 [BurstCompile]
 public struct IncomingWirelessUnitTransmissionMetadata
 {
-    /// <summary>
-    /// Position in world space
-    /// </summary>
-    public required float3 Source;
+    public required float3 Direction;
+    public required sbyte MarginDb;
 }
 
 [BurstCompile]

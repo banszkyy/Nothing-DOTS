@@ -117,6 +117,24 @@ public struct MappedMemory_Facility
     public i32 HashLocation;
 }
 
+/// <summary>
+/// Size: 1
+/// </summary>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct MappedMemory_RadioJammer
+{
+    public u8 Signal;
+}
+
+/// <summary>
+/// Size: 1
+/// </summary>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct MappedMemory_RadarJammer
+{
+    public u8 Signal;
+}
+
 [StructLayout(LayoutKind.Explicit)]
 public struct MappedMemory
 {
@@ -131,4 +149,6 @@ public struct MappedMemory
     [FieldOffset(GenericModulesSize)] public MappedMemory_Extractor Extractor;
     [FieldOffset(GenericModulesSize)] public MappedMemory_Transporter Transporter;
     [FieldOffset(GenericModulesSize)] public MappedMemory_Facility Facility;
+    [FieldOffset(GenericModulesSize)] public MappedMemory_RadioJammer RadioJammer;
+    [FieldOffset(GenericModulesSize)] public MappedMemory_RadarJammer RadarJammer;
 }

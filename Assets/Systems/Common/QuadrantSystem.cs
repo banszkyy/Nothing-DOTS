@@ -231,10 +231,10 @@ public partial struct QuadrantSystem : ISystem
                     cell.Value.RemoveAtSwapBack(i);
                     i--;
                 }
-                else
-                {
-                    CollisionSystem.Debug(cell.Value[i].Collider, cell.Value[i].Position, Color.lightGreen);
-                }
+                //else
+                //{
+                //    CollisionSystem.Debug(cell.Value[i].Collider, cell.Value[i].Position, Color.lightGreen);
+                //}
             }
         }
 

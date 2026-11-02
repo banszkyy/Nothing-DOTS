@@ -34,9 +34,9 @@ public static class QuadrantRayCast
             if ((distance * distance) >= math.distancesq(ray.End, ray.Start)) continue;
 
 #if DEBUG_LINES
-            CollisionSystem.Debug(entities[i].Collider, entities[i].Position, QuadrantSystem.CellColor(entities[i].Key), 1f, false);
-            DebugEx.DrawPoint(ray.GetPoint(distance), 1f, QuadrantSystem.CellColor(entities[i].Key), 1f, false);
-            DebugEx.DrawLine(ray.Start, ray.End, QuadrantSystem.CellColor(entities[i].Key), 1f, false);
+            CollisionSystem.Debug(entities[i].Collider, entities[i].Position, Color.green, 1f, false);
+            DebugEx.DrawPoint(ray.GetPoint(distance), 1f, Color.Lerp(Color.green, Color.white, 0.5f), 1f, false);
+            DebugEx.DrawLine(ray.Start, ray.End, Color.Lerp(Color.green, Color.white, 0.5f), 1f, false);
 #endif
             hit = new(entities[i], distance);
             return true;
@@ -97,9 +97,6 @@ public static class QuadrantRayCast
 
         while (distance < maxDistance)
         {
-#if DEBUG_LINES
-            QuadrantSystem.DrawQuadrant(mapCheck);
-#endif
             if (map.TryGetValue(mapCheck.key, out NativeList<QuadrantEntity> cell) &&
                 RayCast_(cell, ray, out hit))
             { return true; }

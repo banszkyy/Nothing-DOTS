@@ -1,12 +1,10 @@
 #if UNITY_EDITOR && EDITOR_DEBUG
-#define _DEBUG_COLLISIONS
-#define _DEBUG_COLLIDERS
+#define DEBUG_COLLISIONS
 #endif
 
 using System;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -23,7 +21,6 @@ unsafe partial struct CollisionSystem : ISystem
         in Collider collider, in float3 offset,
         in Color color, float duration = 0f, bool depthTest = true)
     {
-#if DEBUG_COLLIDERS
         switch (collider.Type)
         {
             case ColliderType.Sphere:
@@ -43,7 +40,6 @@ unsafe partial struct CollisionSystem : ISystem
                 break;
             default: throw new UnreachableException();
         }
-#endif
     }
 
     [BurstCompile]
@@ -213,7 +209,7 @@ unsafe partial struct CollisionSystem : ISystem
                         RefRW<LocalTransform> transform = localTransformQ.GetRefRW(a->Entity);
 #if DEBUG_COLLISIONS
                         DebugEx.Label(transform.ValueRO.Position, a->ResolvedOffset.ToString());
-                        DebugEx.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + a->ResolvedOffset, Color.green, 0.1f, false);
+                        DebugEx.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + a->ResolvedOffset, Color.blue, 0.3f, false);
 #endif
                         transform.ValueRW.Position += a->ResolvedOffset;
                     }
@@ -241,12 +237,12 @@ unsafe partial struct CollisionSystem : ISystem
         using ProfilerMarker.AutoScope _ = _handleCollision.Auto();
 
 #if DEBUG_COLLISIONS
-        DebugEx.DrawLine(a->Position, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
-        DebugEx.DrawPoint(a->Position, 0.5f, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
-        if (!skipB)
-        {
-            DebugEx.DrawPoint(b->Position, 0.5f, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
-        }
+        //DebugEx.DrawLine(a->Position, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
+        //DebugEx.DrawPoint(a->Position, 0.5f, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
+        //if (!skipB)
+        //{
+        //    DebugEx.DrawPoint(b->Position, 0.5f, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
+        //}
 #endif
 
         if (!Collision.Intersect(
@@ -256,34 +252,35 @@ unsafe partial struct CollisionSystem : ISystem
             ))
         {
 #if DEBUG_COLLISIONS
-            Debug(a->Collider, a->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
-            if (!skipB)
-            {
-                Debug(b->Collider, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
-            }
+            //Debug(a->Collider, a->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
+            //if (!skipB)
+            //{
+            //    Debug(b->Collider, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
+            //}
 #endif
 
             return;
         }
 
-
 #if DEBUG_COLLISIONS
-        Debug(a->Collider, a->Position, Color.green, 0.1f, false);
+        Debug(a->Collider, a->Position, Color.green, 0.1f);
         if (!skipB)
         {
-            Debug(b->Collider, b->Position, Color.green, 0.1f, false);
+            DebugEx.DrawLine(a->Position, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f);
+            Debug(b->Collider, b->Position, Color.green, 0.1f);
         }
 #endif
 
+        DebugEx.DrawLine(a->Position, a->Position + normal, Color.Lerp(Color.magenta, Color.white, 0.5f), 0.1f);
 
         normal.y = 0f;
-        depth = math.clamp(depth, 0f, SystemAPI.Time.DeltaTime * 0.1f);
+        float displaceVelocity = math.clamp(depth, 0f, SystemAPI.Time.DeltaTime);
 
         if (a->Collider.IsStatic)
         {
             if (!skipB)
             {
-                float3 displaceB = normal * -depth;
+                float3 displaceB = normal * -displaceVelocity;
 
                 b->ResolvedOffset += displaceB;
                 b->Position += displaceB;
@@ -298,8 +295,8 @@ unsafe partial struct CollisionSystem : ISystem
         }
         else
         {
-            float3 displaceA = normal * (depth * 0.5f);
-            float3 displaceB = normal * (depth * -0.5f);
+            float3 displaceA = normal * (displaceVelocity * +0.5f);
+            float3 displaceB = normal * (displaceVelocity * -0.5f);
 
             a->ResolvedOffset += displaceA;
             a->Position += displaceA;

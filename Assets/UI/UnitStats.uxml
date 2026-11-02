@@ -1,0 +1,89 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
+    <ui:VisualElement picking-mode="Ignore" name="unit-stats-tooltip" style="background-color: rgb(0, 0, 0);">
+        <ui:Label text="Something" name="label-name" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;"/>
+        <ui:VisualElement name="panel-health" picking-mode="Ignore" style="flex-grow: 1; flex-direction: column;"/>
+        <ui:VisualElement name="panel-health" picking-mode="Ignore" style="flex-grow: 1; flex-direction: column;">
+            <ui:VisualElement>
+                <ui:Label text="\udb80\uded1" parse-escape-sequences="true" name="health-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="health-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="0" name="health-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-combat" picking-mode="Ignore" style="flex-grow: 1; flex-direction: column;">
+            <ui:VisualElement>
+                <ui:Label text="\udb84\udfab" parse-escape-sequences="true" name="reload-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="accuracy-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="5s" name="reload-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement>
+                <ui:Label text="\udb82\udcc9" parse-escape-sequences="true" name="accuracy-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="accuracy-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="?" name="accuracy-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement>
+                <ui:Label text="\udb80\ude38" parse-escape-sequences="true" name="damage-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="damage-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="10" name="damage-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement>
+                <ui:Label text="\udb80\udf23" parse-escape-sequences="true" name="magazine-icon" picking-mode="Ignore" class="icon"/>
+                <ui:Label text="7" name="magazine-label" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-jammer" picking-mode="Ignore" style="flex-grow: 1; flex-direction: row;">
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+                <ui:Label text="\udb84\ude1c" parse-escape-sequences="true" name="jammer-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="jammer-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="700m" name="jammer-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-builder" picking-mode="Ignore" style="flex-direction: row;">
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+                <ui:Label text="\udb84\udc25" parse-escape-sequences="true" name="builder-icon" picking-mode="Ignore" class="icon" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 2px; margin-bottom: 0; margin-left: 0;"/>
+                <ui:ProgressBar name="builder-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="10" name="builder-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-vehicle" picking-mode="Ignore" style="flex-grow: 1; flex-direction: column;">
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+                <ui:Label text="\udb81\udcc5" parse-escape-sequences="true" name="vehicle-max-speed-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="vehicle-max-speed-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="0" name="vehicle-max-speed-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-radar" picking-mode="Ignore" style="flex-grow: 1; flex-direction: column;">
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+                <ui:Label text="\udb81\udc37" parse-escape-sequences="true" name="radar-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="radar-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="700maaaaaa" name="radar-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-processor" picking-mode="Ignore" style="flex-grow: 1; flex-direction: column;">
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+                <ui:Label text="\uefc5" parse-escape-sequences="true" name="memory-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="memory-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="1kb" name="memory-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+                <ui:Label text="\udb80\udf5b" parse-escape-sequences="true" name="cpu-icon" picking-mode="Ignore" class="icon"/>
+                <ui:ProgressBar name="cpu-bar" high-value="1" class="primary" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-grow: 1; justify-content: center; height: 8px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgb(224, 222, 244); border-right-color: rgb(224, 222, 244); border-top-color: rgb(224, 222, 244); border-bottom-color: rgb(224, 222, 244);"/>
+                <ui:Label text="500/s" name="cpu-label" picking-mode="Ignore" class="stat-progress-label"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-radio" picking-mode="Ignore" style="flex-grow: 1; flex-direction: row;">
+            <ui:Label text="\udb81\udc3b" parse-escape-sequences="true" name="transmit-power-icon" picking-mode="Ignore" class="icon"/>
+            <ui:Label text="???" name="transmit-power-label" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+            <ui:Label text="\udb82\udcbe" parse-escape-sequences="true" name="receive-gain-icon" picking-mode="Ignore" class="icon"/>
+            <ui:Label text="???" name="receive-gain-label" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+            <ui:Label text="\udb82\udd09" parse-escape-sequences="true" name="beam-icon" picking-mode="Ignore" class="icon"/>
+            <ui:Label text="???" name="beam-label" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+            <ui:Label text="\udb80\uded9" parse-escape-sequences="true" name="sectors-icon" picking-mode="Ignore" class="icon"/>
+            <ui:Label text="???" name="sectors-label" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-ports" picking-mode="Ignore" style="flex-grow: 1; flex-direction: row;">
+            <ui:Label text="\udb80\ude00" parse-escape-sequences="true" name="ports-icon" picking-mode="Ignore" class="icon"/>
+            <ui:Label text="x2" name="ports-label" picking-mode="Ignore" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -30,6 +30,7 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
     [Header("UI")]
 
     [SerializeField, NotNull] VisualTreeAsset? UnitButton = default;
+    [SerializeField, NotNull] VisualTreeAsset? Tooltip = default;
 
 
     [SerializeField, SaintsField.ReadOnly] bool IsValidPosition;
@@ -45,8 +46,8 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
     {
         if (!ui.IsVisible()) return;
 
-        VisualElement container = ui.UnitsScrollview.contentContainer;
-        container.Clear();
+        Tooltips.Instance.Unregister(ui.UnitsScrollview);
+        ui.UnitsScrollview.Clear();
 
         EntityManager entityManager = ConnectionManager.ClientOrDefaultWorld.EntityManager;
         using EntityQuery unitDatabaseQuery = entityManager.CreateEntityQuery(new ComponentType[] { typeof(UnitDatabase) });
@@ -56,7 +57,7 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
             return;
         }
 
-        container.SyncList<BufferedUnit, UnitItemSchema>(UnitsSystemClient.GetInstance(entityManager.WorldUnmanaged).Units, UnitButton, (item, element, recycled) =>
+        ui.UnitsScrollview.SyncList<BufferedUnit, UnitItemSchema>(UnitsSystemClient.GetInstance(entityManager.WorldUnmanaged).Units, UnitButton, (item, element, recycled) =>
         {
             UnitPrefab v = Prefabs.Units.First(v => v.Prefab.name == item.Name.ToString());
 
@@ -73,8 +74,7 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
 
             element.LabelResources.text = item.RequiredResources.ToString();
             element.Thumbnail.image = v.Thumbnail;
-            element.Root.tooltip = item.Name.ToString();
-            Tooltips.Instance.Reregister(element.Root);
+            Tooltips.Instance.Reregister(element.Root, Tooltip, tooltipContent => UnitStatManager.Populate(v, tooltipContent, Prefabs.Units));
         });
     }
 
@@ -304,6 +304,9 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
 
     public void Cleanup()
     {
+        DebugEx.Assert(ui != null);
+
+        Tooltips.Instance.Unregister(ui.UnitsScrollview);
         SelectedUnit = default;
         if (UnitHologram != null) Destroy(UnitHologram);
         UnitHologram = null;

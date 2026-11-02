@@ -27,11 +27,11 @@ partial struct CombatTurretProcessorSystem : ISystem
             random = Unity.Mathematics.Random.CreateFromIndex(*(uint*)&v);
         }
 
-        foreach (var (processor, turret, logBuffer, log, entity) in
-            SystemAPI.Query<RefRW<Processor>, RefRW<CombatTurret>, DynamicBuffer<BufferedLogPiece>, RefRW<LogPieces>>()
+        foreach (var (processor, memory, turret, logBuffer, log, entity) in
+            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<CombatTurret>, DynamicBuffer<BufferedLogPiece>, RefRW<LogPieces>>()
             .WithEntityAccess())
         {
-            ref MappedMemory mapped = ref processor.ValueRW.Memory.MappedMemory;
+            ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
             RefRW<LocalTransform> turretTransform = SystemAPI.GetComponentRW<LocalTransform>(turret.ValueRO.Turret);
             RefRW<LocalTransform> cannonTransform = SystemAPI.GetComponentRW<LocalTransform>(turret.ValueRO.Cannon);

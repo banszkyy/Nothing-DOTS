@@ -35,8 +35,9 @@ static unsafe class ProcessorAPI
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Math.Atan).Value, Math.Prefix + 8, ExternalFunctionGenerator.SizeOf<float>(), ExternalFunctionGenerator.SizeOf<float>(), default));
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Math.Random).Value, Math.Prefix + 9, 0, ExternalFunctionGenerator.SizeOf<int>(), default));
 
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WirelessTransmission.Send).Value, WirelessTransmission.Prefix + 1, ExternalFunctionGenerator.SizeOf<int, int, float, float>(), 0, default));
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WirelessTransmission.Receive).Value, WirelessTransmission.Prefix + 2, ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>(), default));
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WirelessTransmission.Send).Value, WirelessTransmission.Prefix + 1, ExternalFunctionGenerator.SizeOf<int, int, float3, byte>(), 0, default));
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WirelessTransmission.Receive).Value, WirelessTransmission.Prefix + 2, ExternalFunctionGenerator.SizeOf<int, int, int, int>(), ExternalFunctionGenerator.SizeOf<int>(), default));
+
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WiredTransmission.Send).Value, WirelessTransmission.Prefix + 3, ExternalFunctionGenerator.SizeOf<int, int, byte>(), 0, default));
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WiredTransmission.Receive).Value, WirelessTransmission.Prefix + 4, ExternalFunctionGenerator.SizeOf<int, int, byte>(), ExternalFunctionGenerator.SizeOf<int>(), default));
 
@@ -84,8 +85,9 @@ static unsafe class ProcessorAPI
         ExternalFunctionSync.Create<float, float>(Math.Prefix + 8,         "atan", MathF.Atan),
         ExternalFunctionSync.Create<int>(Math.Prefix + 9,                  "random", Math.SharedRandom.NextInt),
 
-        new ExternalFunctionStub(WirelessTransmission.Prefix + 1,      "wsend", ExternalFunctionGenerator.SizeOf<int, int, float, float>(), 0),
-        new ExternalFunctionStub(WirelessTransmission.Prefix + 2,      "wreceive", ExternalFunctionGenerator.SizeOf<int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 1,      "wsend", ExternalFunctionGenerator.SizeOf<int, int, float3, byte>(), 0),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 2,      "wreceive", ExternalFunctionGenerator.SizeOf<int, int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
+
         new ExternalFunctionStub(WirelessTransmission.Prefix + 3,      "send", ExternalFunctionGenerator.SizeOf<int, int, byte>(), 0),
         new ExternalFunctionStub(WirelessTransmission.Prefix + 4,      "receive", ExternalFunctionGenerator.SizeOf<int, int, byte>(), ExternalFunctionGenerator.SizeOf<int>()),
 
@@ -262,7 +264,7 @@ static unsafe class ProcessorAPI
             using ProfilerMarker.AutoScope marker = MarkerSend.Auto();
 #endif
 
-            (int bufferPtr, int length, int directionPtr, float angle) = ExternalFunctionGenerator.TakeParameters<int, int, int, float>(arguments);
+            (int bufferPtr, int length, float3 aim, byte beamHalvings) = ExternalFunctionGenerator.TakeParameters<int, int, float3, byte>(arguments);
             if (bufferPtr == 0 || length == 0) return;
 
             FunctionScope* scope = (FunctionScope*)_scope;
@@ -274,16 +276,14 @@ static unsafe class ProcessorAPI
                 return;
             }
 
-            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize)
+            if (bufferPtr < 0 || bufferPtr + length >= scope->ProcessorRef.MemorySize)
             {
                 // Passed buffer pointer is invalid
                 scope->ProcessorRef.DoCrash();
                 return;
             }
 
-            Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
-            float3 direction = angle != 0f && directionPtr > 0 && directionPtr < memory.Length ? memory.Get<float3>(directionPtr) : default;
-            float cosAngle = math.abs(math.cos(angle));
+            Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
 
             FixedList32Bytes<byte> data = new();
             data.AddRange((byte*)((nint)scope->ProcessorRef.Memory + bufferPtr), length);
@@ -298,10 +298,8 @@ static unsafe class ProcessorAPI
                     IsWireless = true,
                     Wireless = new()
                     {
-                        Source = scope->EntityRef.LocalTransform.Position,
-                        Direction = direction,
-                        CosAngle = cosAngle,
-                        Angle = angle,
+                        Aim = aim,
+                        BeamHalvings = beamHalvings,
                     },
                 },
             });
@@ -317,12 +315,12 @@ static unsafe class ProcessorAPI
 
             returnValue.Set(0);
 
-            (int bufferPtr, int length, int directionPtr) = ExternalFunctionGenerator.TakeParameters<int, int, int>(arguments);
+            (int bufferPtr, int length, int bearingPtr, int marginDbPtr) = ExternalFunctionGenerator.TakeParameters<int, int, int, int>(arguments);
             if (bufferPtr == 0 || length <= 0) return;
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize)
+            if (bufferPtr < 0 || bufferPtr + length >= scope->ProcessorRef.MemorySize)
             {
                 // Passed buffer pointer is invalid
                 scope->ProcessorRef.DoCrash();
@@ -341,11 +339,16 @@ static unsafe class ProcessorAPI
 
                 Buffer.MemoryCopy(((byte*)&item.Data) + 2, (byte*)scope->ProcessorRef.Memory + bufferPtr, copyLength, copyLength);
 
-                if (directionPtr > 0)
+                if (bearingPtr > 0)
                 {
-                    float3 transformed = math.normalize(scope->EntityRef.LocalTransform.InverseTransformPoint(item.Metadata.Wireless.Source));
-                    Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
-                    memory.Set(directionPtr, transformed);
+                    Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
+                    memory.Set(bearingPtr, item.Metadata.Wireless.Direction);
+                }
+
+                if (marginDbPtr > 0)
+                {
+                    Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
+                    memory.Set(marginDbPtr, item.Metadata.Wireless.MarginDb);
                 }
 
                 if (copyLength >= item.Data.Length)
@@ -392,14 +395,14 @@ static unsafe class ProcessorAPI
                 return;
             }
 
-            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize)
+            if (bufferPtr < 0 || bufferPtr + length >= scope->ProcessorRef.MemorySize)
             {
                 // Passed buffer pointer is invalid
                 scope->ProcessorRef.DoCrash();
                 return;
             }
 
-            Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
+            Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
 
             FixedList32Bytes<byte> data = new();
             data.AddRange((byte*)((nint)scope->ProcessorRef.Memory + bufferPtr), length);
@@ -435,7 +438,7 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            if (bufferPtr < 0 || bufferPtr + length >= Processor.UserMemorySize)
+            if (bufferPtr < 0 || bufferPtr + length >= scope->ProcessorRef.MemorySize)
             {
                 // Passed buffer pointer is invalid
                 scope->ProcessorRef.DoCrash();
@@ -487,9 +490,8 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            if (dataPtr is < 0 or >= Processor.UserMemorySize)
+            if (dataPtr < 0 || dataPtr >= scope->ProcessorRef.MemorySize)
             {
-                // Passed buffer pointer is invalid
                 scope->ProcessorRef.DoCrash();
                 return;
             }
@@ -652,7 +654,7 @@ static unsafe class ProcessorAPI
             if (ptr <= 0) return;
 
             FunctionScope* scope = (FunctionScope*)_scope;
-            Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
+            Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
             float3 point = memory.Get<float3>(ptr);
             float3 transformed = scope->EntityRef.LocalTransform.TransformPoint(point);
             memory.Set(ptr, transformed);
@@ -670,7 +672,7 @@ static unsafe class ProcessorAPI
             if (ptr <= 0) return;
 
             FunctionScope* scope = (FunctionScope*)_scope;
-            Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
+            Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
             float3 point = memory.Get<float3>(ptr);
             float3 transformed = scope->EntityRef.LocalTransform.InverseTransformPoint(point);
             memory.Set(ptr, transformed);
@@ -688,7 +690,7 @@ static unsafe class ProcessorAPI
             if (ptr <= 0) return;
 
             FunctionScope* scope = (FunctionScope*)_scope;
-            Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
+            Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
             float3 direction = memory.Get<float3>(ptr);
             float3 transformed = scope->EntityRef.LocalTransform.TransformDirection(direction);
             memory.Set(ptr, transformed);
@@ -706,7 +708,7 @@ static unsafe class ProcessorAPI
             if (ptr <= 0) return;
 
             FunctionScope* scope = (FunctionScope*)_scope;
-            Span<byte> memory = new(scope->ProcessorRef.Memory, Processor.UserMemorySize);
+            Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
             float3 direction = memory.Get<float3>(ptr);
             float3 transformed = scope->EntityRef.LocalTransform.InverseTransformDirection(direction);
             memory.Set(ptr, transformed);
@@ -742,7 +744,7 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            MappedMemory* mapped = (MappedMemory*)((nint)scope->ProcessorRef.Memory + Processor.MappedMemoryStart);
+            MappedMemory* mapped = (MappedMemory*)((nint)scope->ProcessorRef.Memory + ProcessorSystemServer.MappedMemoryStart);
 
             scope->EntityRef.Processor->RadarResponse = default;
             scope->EntityRef.Processor->RadarRequest = new float2(
@@ -840,7 +842,7 @@ static unsafe class ProcessorAPI
             FunctionScope* scope = (FunctionScope*)_scope;
             (int attributeId, int destination) = ExternalFunctionGenerator.TakeParameters<int, int>(arguments);
 
-            if (destination is < 0 or >= Processor.TotalMemorySize) goto bad;
+            if (destination < 0 || destination >= scope->ProcessorRef.MemorySize) goto bad;
 
             UnitAttributesPack attributes = scope->EntityRef.Processor->Attributes;
             if (attributeId < 0 || attributeId >= attributes.Fields.Length) goto bad;
@@ -869,8 +871,8 @@ static unsafe class ProcessorAPI
             FunctionScope* scope = (FunctionScope*)_scope;
             (float3 position, int namePtr, int sourcePtr) = ExternalFunctionGenerator.TakeParameters<float3, int, int>(arguments);
 
-            if (namePtr is <= 0 or >= Processor.TotalMemorySize) goto bad;
-            if (sourcePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
+            if (namePtr <= 0 || namePtr >= scope->ProcessorRef.MemorySize) goto bad;
+            if (sourcePtr < 0 || sourcePtr >= scope->ProcessorRef.MemorySize) goto bad;
 
             scope->ProcessorRef.GetStringU8(namePtr, out FixedString32Bytes name);
             scope->ProcessorRef.GetStringU8(sourcePtr, out FixedString64Bytes source);
@@ -909,8 +911,8 @@ static unsafe class ProcessorAPI
             FunctionScope* scope = (FunctionScope*)_scope;
             (int namePtr, int sourcePtr) = ExternalFunctionGenerator.TakeParameters<int, int>(arguments);
 
-            if (namePtr is <= 0 or >= Processor.TotalMemorySize) goto bad;
-            if (sourcePtr is < 0 or >= Processor.TotalMemorySize) goto bad;
+            if (namePtr <= 0 || namePtr >= scope->ProcessorRef.MemorySize) goto bad;
+            if (sourcePtr < 0 || sourcePtr >= scope->ProcessorRef.MemorySize) goto bad;
 
             scope->ProcessorRef.GetStringU8(namePtr, out FixedString32Bytes name);
             scope->ProcessorRef.GetStringU8(sourcePtr, out FixedString64Bytes source);
@@ -949,7 +951,7 @@ static unsafe class ProcessorAPI
             FunctionScope* scope = (FunctionScope*)_scope;
             int namePtr = ExternalFunctionGenerator.TakeParameters<int>(arguments);
 
-            if (namePtr is <= 0 or >= Processor.TotalMemorySize) goto bad;
+            if (namePtr <= 0 || namePtr >= scope->ProcessorRef.MemorySize) goto bad;
 
             scope->ProcessorRef.GetStringU8(namePtr, out FixedString64Bytes name);
 

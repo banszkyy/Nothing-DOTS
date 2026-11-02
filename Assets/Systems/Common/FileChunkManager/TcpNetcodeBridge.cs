@@ -50,7 +50,9 @@ public sealed class TcpNetcodeBridge : IAsyncDisposable
         _cts.Cancel();
         if (_pumpTask != null)
         {
+#pragma warning disable VSTHRD003
             try { await _pumpTask; }
+#pragma warning restore VSTHRD003
             catch { }
         }
         _cts.Dispose();

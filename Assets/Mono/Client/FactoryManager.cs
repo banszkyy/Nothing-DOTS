@@ -12,6 +12,7 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
     [Header("UI")]
 
     [SerializeField, NotNull] VisualTreeAsset? UI_UnitItem = default;
+    [SerializeField, NotNull] VisualTreeAsset? Tooltip = default;
 
 
     FactorySchema? ui;
@@ -84,7 +85,7 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
             element.Thumbnail.image = v.Thumbnail;
             element.LabelResources.text = v.RequiredResources.ToString();
             element.Root.tooltip = item.Name.ToString();
-            Tooltips.Instance.Reregister(element.Root);
+            Tooltips.Instance.Reregister(element.Root, Tooltip, tooltipContent => UnitStatManager.Populate(v, tooltipContent, Prefabs.Units));
         });
 
         ui.AvailableScrollview.SyncList<BufferedUnit, UnitItemSchema>(UnitsSystemClient.GetInstance(entityManager.WorldUnmanaged).Units, UI_UnitItem, (item, element, recycled) =>
@@ -95,7 +96,7 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
             element.LabelResources.text = item.RequiredResources.ToString();
             element.Root.tooltip = item.Name.ToString();
             if (!recycled) element.ButtonSelect.clicked += () => QueueUnit((string)element.Root.userData);
-            Tooltips.Instance.Reregister(element.Root);
+            Tooltips.Instance.Reregister(element.Root, Tooltip, tooltipContent => UnitStatManager.Populate(v, tooltipContent, Prefabs.Units));
         });
 
         if (selectedFactory.Current.Name != default)
@@ -116,7 +117,7 @@ public class FactoryManager : Singleton<FactoryManager>, IUISetup<Entity>, IUICl
             element.Thumbnail.image = v.Thumbnail;
             element.LabelResources.text = v.RequiredResources.ToString();
             element.Root.tooltip = selectedFactory.Current.Name.ToString();
-            Tooltips.Instance.Reregister(element.Root);
+            Tooltips.Instance.Reregister(element.Root, Tooltip, tooltipContent => UnitStatManager.Populate(v, tooltipContent, Prefabs.Units));
         }
         else
         {

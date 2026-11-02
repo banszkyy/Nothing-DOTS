@@ -1,4 +1,5 @@
 using Unity.Burst;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Transforms;
@@ -73,25 +74,35 @@ public partial struct UnitsSystemServer : ISystem
                 continue;
             }
 
-            Entity newEntity;
+            Entity newUnit;
             if (requestPlayer.InCreative)
             {
-                newEntity = commandBuffer.Instantiate(unit.Prefab);
-                commandBuffer.SetComponent<LocalTransform>(newEntity, LocalTransform.FromPosition(command.ValueRO.Position));
+                newUnit = commandBuffer.Instantiate(unit.Prefab);
+                commandBuffer.SetComponent<LocalTransform>(newUnit, LocalTransform.FromPosition(command.ValueRO.Position));
             }
             else
             {
                 Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Can't place unit \"{{0}}\": not in creative", unit.Name));
                 continue;
             }
-            commandBuffer.SetComponent<UnitTeam>(newEntity, new()
+            commandBuffer.SetComponent<UnitTeam>(newUnit, new()
             {
                 Team = requestPlayer.Team,
             });
-            commandBuffer.SetComponent<GhostOwner>(newEntity, new()
+            commandBuffer.SetComponent<GhostOwner>(newUnit, new()
             {
                 NetworkId = networkId.Value,
             });
+
+            if (SystemAPI.TryGetComponent(newUnit, out Processor proc))
+            {
+                DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(newUnit);
+                memory.ResizeUninitialized(proc.MemorySize);
+                unsafe
+                {
+                    UnsafeUtility.MemClear(memory.GetUnsafePtr(), memory.Length);
+                }
+            }
         }
 
         foreach (var (request, command, entity) in

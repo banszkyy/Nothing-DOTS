@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -8,7 +9,7 @@ public class CombatTurretAuthoring : MonoBehaviour
 {
     [SerializeField] Transform? Turret = default;
     [SerializeField] Transform? Cannon = default;
-    [SerializeField] ProjectilePrefab? Projectile = default;
+    [SerializeField, NotNull] internal ProjectilePrefab? Projectile = default;
     [SerializeField] Transform? ShootPosition = default;
     [SerializeField] VisualEffectAsset? ShootEffect = default;
 
@@ -17,10 +18,10 @@ public class CombatTurretAuthoring : MonoBehaviour
     [SerializeField] float TurretRotationSpeed = default;
     [SerializeField] float CannonRotationSpeed = default;
 
-    [SerializeField, Range(0f, 0.99f)] float Spread = default;
-    [SerializeField, Min(0f)] float BulletReload = default;
-    [SerializeField, Min(0f)] float MagazineReload = default;
-    [SerializeField, Min(1)] int MagazineSize = default;
+    [SerializeField, Range(0f, 0.99f)] internal float Spread = default;
+    [SerializeField, Min(0f)] internal float BulletReload = default;
+    [SerializeField, Min(0f)] internal float MagazineReload = default;
+    [SerializeField, Min(1)] internal int MagazineSize = default;
 
     class Baker : Baker<CombatTurretAuthoring>
     {

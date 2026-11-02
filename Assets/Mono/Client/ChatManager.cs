@@ -51,6 +51,8 @@ public class ChatManager : Singleton<ChatManager>
 
     void Update()
     {
+        DebugEx.Assert(ui != null);
+
         if (ui.ContainerMessages.childCount > 0)
         {
             DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -87,6 +89,8 @@ public class ChatManager : Singleton<ChatManager>
 
     void OnButtonSend()
     {
+        DebugEx.Assert(ui != null);
+
         ReadOnlySpan<char> message = ui.InputMessage.value.Trim();
         if (message.Length is 0) return;
 
@@ -137,6 +141,8 @@ public class ChatManager : Singleton<ChatManager>
 
     void RefreshChatContainer()
     {
+        DebugEx.Assert(ui != null);
+
         ui.ContainerMessages.SyncList<ChatMessage, ChatMessageSchema>(_chatMessages, _chatMessageTemplate, (item, element, reuse) =>
         {
             ChatMessageSenderKind senderKind = item.Sender switch

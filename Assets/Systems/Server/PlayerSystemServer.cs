@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
 using Unity.Transforms;
@@ -29,7 +30,7 @@ public partial struct PlayerSystemServer : ISystem
         EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
         PrefabDatabase prefabs = SystemAPI.GetSingleton<PrefabDatabase>();
 
-        foreach (var (id, entity) in
+        foreach ((RefRO<NetworkId> id, Entity entity) in
             SystemAPI.Query<RefRO<NetworkId>>()
             .WithNone<InitializedClient>()
             .WithEntityAccess())
@@ -40,7 +41,7 @@ public partial struct PlayerSystemServer : ISystem
 
         ReadOnlySpan<byte> bytes = stackalloc byte[16];
 
-        foreach (var (request, command, entity) in
+        foreach ((RefRO<ReceiveRpcCommandRequest> request, RefRO<ServerGuidRequestRpc> command, Entity entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<ServerGuidRequestRpc>>()
             .WithEntityAccess())
         {
@@ -65,7 +66,7 @@ public partial struct PlayerSystemServer : ISystem
             }, request.ValueRO.SourceConnection);
         }
 
-        foreach (var (request, command, entity) in
+        foreach ((RefRO<ReceiveRpcCommandRequest> request, RefRO<SessionRegisterRequestRpc> command, Entity entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<SessionRegisterRequestRpc>>()
             .WithEntityAccess())
         {
@@ -78,7 +79,7 @@ public partial struct PlayerSystemServer : ISystem
             Player requestedPlayer = default;
             Entity requestedPlayerE = default;
 
-            foreach (var (player, playerR, playerE) in
+            foreach ((RefRO<Player> player, RefRO<RealPlayer> playerR, Entity playerE) in
                 SystemAPI.Query<RefRO<Player>, RefRO<RealPlayer>>()
                 .WithEntityAccess())
             {
@@ -116,7 +117,7 @@ public partial struct PlayerSystemServer : ISystem
                 commandBuffer.SetComponent<Player>(newPlayer, new()
                 {
                     Team = Player.UnassignedTeam,
-                    IsStartkitSpawned = false,
+                    IsStartkitSpawned = true,
                     Guid = guid,
                     Nickname = command.ValueRO.Nickname,
                 });
@@ -139,7 +140,7 @@ public partial struct PlayerSystemServer : ISystem
             }
         }
 
-        foreach (var (request, command, entity) in
+        foreach ((RefRO<ReceiveRpcCommandRequest> request, RefRO<SessionLoginRequestRpc> command, Entity entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<SessionLoginRequestRpc>>()
             .WithEntityAccess())
         {
@@ -151,7 +152,7 @@ public partial struct PlayerSystemServer : ISystem
             Debug.Log($"{DebugEx.ServerPrefix} Received login request from client `{source}`\n  Guid: {Marshal.As<FixedBytes16, Guid>(guid)}");
 
             bool exists = false;
-            foreach (var (player, playerR) in
+            foreach ((RefRO<Player> player, RefRW<RealPlayer> playerR) in
                 SystemAPI.Query<RefRO<Player>, RefRW<RealPlayer>>())
             {
                 if (player.ValueRO.Guid != Marshal.As<FixedBytes16, Guid>(guid)) continue;
@@ -190,7 +191,7 @@ public partial struct PlayerSystemServer : ISystem
 
         bool isAdminAssigned = false;
 
-        foreach (var (player, playerR) in
+        foreach ((RefRW<Player> player, RefRW<RealPlayer> playerR) in
             SystemAPI.Query<RefRW<Player>, RefRW<RealPlayer>>())
         {
             if (player.ValueRO.Team == Player.UnassignedTeam)
@@ -205,7 +206,7 @@ public partial struct PlayerSystemServer : ISystem
 
             if (playerR.ValueRO.ConnectionState == PlayerConnectionState.Connected)
             {
-                foreach (var id in
+                foreach (RefRO<NetworkId> id in
                     SystemAPI.Query<RefRO<NetworkId>>()
                     .WithAll<InitializedClient>())
                 {
@@ -241,35 +242,55 @@ public partial struct PlayerSystemServer : ISystem
                         if (spawns[i].IsOccupied) continue;
                         spawns[i] = spawns[i] with { IsOccupied = true };
 
-                        Entity playerInterface = commandBuffer.Instantiate(prefabs.PlayerInterface);
-                        commandBuffer.SetComponent<UnitTeam>(playerInterface, new()
                         {
-                            Team = player.ValueRO.Team
-                        });
-                        commandBuffer.SetComponent<LocalTransform>(playerInterface, LocalTransform.FromPosition(spawns[i].Position));
-                        commandBuffer.SetComponent<GhostOwner>(playerInterface, new()
-                        {
-                            NetworkId = playerR.ValueRO.ConnectionId,
-                        });
-                        commandBuffer.AddComponent<ProcessorInitialization>(playerInterface, new()
-                        {
-                            SourceFile = new FileId("core-computer.vi", NetcodeEndPoint.Server)
-                        });
+                            Entity playerInterface = commandBuffer.Instantiate(prefabs.PlayerInterface);
+                            commandBuffer.SetComponent<UnitTeam>(playerInterface, new()
+                            {
+                                Team = player.ValueRO.Team
+                            });
+                            commandBuffer.SetComponent<LocalTransform>(playerInterface, LocalTransform.FromPosition(spawns[i].Position));
+                            commandBuffer.SetComponent<GhostOwner>(playerInterface, new()
+                            {
+                                NetworkId = playerR.ValueRO.ConnectionId,
+                            });
+                            commandBuffer.AddComponent<ProcessorInitialization>(playerInterface, new()
+                            {
+                                SourceFile = new FileId("core-computer.vi", NetcodeEndPoint.Server)
+                            });
 
-                        Entity builder = commandBuffer.Instantiate(prefabs.Builder);
-                        commandBuffer.SetComponent<UnitTeam>(builder, new()
+                            DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(playerInterface);
+                            Processor proc = SystemAPI.GetComponent<Processor>(playerInterface);
+                            memory.ResizeUninitialized(proc.MemorySize);
+                            unsafe
+                            {
+                                UnsafeUtility.MemClear(memory.GetUnsafePtr(), memory.Length);
+                            }
+                        }
+
                         {
-                            Team = player.ValueRO.Team
-                        });
-                        commandBuffer.SetComponent<LocalTransform>(builder, LocalTransform.FromPosition(spawns[i].Position + new Unity.Mathematics.float3(2f, 0f, 2f)));
-                        commandBuffer.SetComponent<GhostOwner>(builder, new()
-                        {
-                            NetworkId = playerR.ValueRO.ConnectionId,
-                        });
-                        commandBuffer.AddComponent<ProcessorInitialization>(builder, new()
-                        {
-                            SourceFile = new FileId("builder.vi", NetcodeEndPoint.Server)
-                        });
+                            Entity builder = commandBuffer.Instantiate(prefabs.Builder);
+                            commandBuffer.SetComponent<UnitTeam>(builder, new()
+                            {
+                                Team = player.ValueRO.Team
+                            });
+                            commandBuffer.SetComponent<LocalTransform>(builder, LocalTransform.FromPosition(spawns[i].Position + new Unity.Mathematics.float3(2f, 0f, 2f)));
+                            commandBuffer.SetComponent<GhostOwner>(builder, new()
+                            {
+                                NetworkId = playerR.ValueRO.ConnectionId,
+                            });
+                            commandBuffer.AddComponent<ProcessorInitialization>(builder, new()
+                            {
+                                SourceFile = new FileId("builder.vi", NetcodeEndPoint.Server)
+                            });
+
+                            DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(builder);
+                            Processor proc = SystemAPI.GetComponent<Processor>(builder);
+                            memory.ResizeUninitialized(proc.MemorySize);
+                            unsafe
+                            {
+                                UnsafeUtility.MemClear(memory.GetUnsafePtr(), memory.Length);
+                            }
+                        }
 
                         goto spawned;
                     }
@@ -288,7 +309,7 @@ public partial struct PlayerSystemServer : ISystem
             }
         }
 
-        foreach (var (player, playerV) in
+        foreach ((RefRW<Player> player, RefRW<VirtualPlayer> playerV) in
             SystemAPI.Query<RefRW<Player>, RefRW<VirtualPlayer>>())
         {
             if (player.ValueRO.Team == Player.UnassignedTeam)
@@ -306,19 +327,43 @@ public partial struct PlayerSystemServer : ISystem
                     if (spawns[i].IsOccupied) continue;
                     spawns[i] = spawns[i] with { IsOccupied = true };
 
-                    Entity playerInterface = commandBuffer.Instantiate(prefabs.PlayerInterface);
-                    commandBuffer.SetComponent<UnitTeam>(playerInterface, new()
                     {
-                        Team = player.ValueRO.Team
-                    });
-                    commandBuffer.SetComponent<LocalTransform>(playerInterface, LocalTransform.FromPosition(spawns[i].Position));
+                        Entity playerInterface = commandBuffer.Instantiate(prefabs.PlayerInterface);
+                        commandBuffer.SetComponent<UnitTeam>(playerInterface, new()
+                        {
+                            Team = player.ValueRO.Team
+                        });
+                        commandBuffer.SetComponent<LocalTransform>(playerInterface, LocalTransform.FromPosition(spawns[i].Position));
 
-                    Entity builder = commandBuffer.Instantiate(prefabs.Builder);
-                    commandBuffer.SetComponent<UnitTeam>(builder, new()
+                        if (SystemAPI.TryGetComponent(playerInterface, out Processor proc))
+                        {
+                            DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(playerInterface);
+                            memory.ResizeUninitialized(proc.MemorySize);
+                            unsafe
+                            {
+                                UnsafeUtility.MemClear(memory.GetUnsafePtr(), memory.Length);
+                            }
+                        }
+                    }
+
                     {
-                        Team = player.ValueRO.Team
-                    });
-                    commandBuffer.SetComponent<LocalTransform>(builder, LocalTransform.FromPosition(spawns[i].Position + new Unity.Mathematics.float3(2f, 0f, 2f)));
+                        Entity builder = commandBuffer.Instantiate(prefabs.Builder);
+                        commandBuffer.SetComponent<UnitTeam>(builder, new()
+                        {
+                            Team = player.ValueRO.Team
+                        });
+                        commandBuffer.SetComponent<LocalTransform>(builder, LocalTransform.FromPosition(spawns[i].Position + new Unity.Mathematics.float3(2f, 0f, 2f)));
+
+                        if (SystemAPI.TryGetComponent(builder, out Processor proc))
+                        {
+                            DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(builder);
+                            memory.ResizeUninitialized(proc.MemorySize);
+                            unsafe
+                            {
+                                UnsafeUtility.MemClear(memory.GetUnsafePtr(), memory.Length);
+                            }
+                        }
+                    }
 
                     goto spawned;
                 }
@@ -333,10 +378,10 @@ public partial struct PlayerSystemServer : ISystem
 
         for (int i = 0; i < virtualPlayerSettings.Length; i++)
         {
-            var settings = virtualPlayerSettings[i];
+            BufferedVirtualPlayerSettings settings = virtualPlayerSettings[i];
 
             bool exists = false;
-            foreach (var player in
+            foreach (RefRW<VirtualPlayer> player in
                 SystemAPI.Query<RefRW<VirtualPlayer>>())
             {
                 if (player.ValueRO.Index != i) continue;
@@ -374,7 +419,7 @@ public partial struct PlayerSystemServer : ISystem
 
         if (!isAdminAssigned)
         {
-            foreach (var (player, playerR) in
+            foreach ((RefRW<Player> player, RefRO<RealPlayer> playerR) in
                 SystemAPI.Query<RefRW<Player>, RefRO<RealPlayer>>())
             {
                 if (playerR.ValueRO.ConnectionState is not PlayerConnectionState.Connected and not PlayerConnectionState.Local) continue;

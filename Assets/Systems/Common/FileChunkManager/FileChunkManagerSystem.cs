@@ -423,8 +423,8 @@ partial class FileChunkManagerSystem : SystemBase
                 {
                     unsafe
                     {
-                        Processor processor = World.DefaultGameObjectInjectionWorld.EntityManager.GetComponentData<Processor>(entity);
-                        byte[] data = new Span<byte>(&processor.Memory, Processor.TotalMemorySize).ToArray();
+                        var memory = World.DefaultGameObjectInjectionWorld.EntityManager.GetBuffer<ProcessorMemoryBuffer>(entity, true);
+                        byte[] data = memory.AsReadOnlySpan().ToArray();
                         return new FileData(data, MonoTime.Ticks);
                     }
                 }

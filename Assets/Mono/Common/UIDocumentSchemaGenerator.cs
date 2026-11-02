@@ -10,6 +10,7 @@ using UnityEngine.UIElements;
 
 class UIDocumentSchemaGenerator : MonoBehaviour
 {
+#if UNITY_EDITOR
     [Button]
     public void Generate()
     {
@@ -102,7 +103,7 @@ class UIDocumentSchemaGenerator : MonoBehaviour
                 namedElements.TryAdd(name, (propertyType, propertyName, e, null));
             }
 
-            string className = $"{Path.GetFileNameWithoutExtension(xmlFile)}Schema";
+            string className = $"{new string(Path.GetFileNameWithoutExtension(xmlFile).Select(v => (v is (>= '0' and <= '9') or (>= 'a' and <= 'z') or (>= 'A' and <= 'Z')) ? v : '_').ToArray())}Schema";
 
             string outputFilename = Path.Combine(output, className + ".cs");
             generated.Add(outputFilename);
@@ -155,16 +156,5 @@ class UIDocumentSchemaGenerator : MonoBehaviour
             if (File.Exists(csFile + ".meta")) File.Delete(csFile + ".meta");
         }
     }
-}
-
-static class UISchemaExtensions
-{
-    public static TSchema AddNew<TSchema>(this VisualElement target, VisualTreeAsset visualTreeAsset) where TSchema : IDocumentSchema
-    {
-        VisualElement element = visualTreeAsset.Instantiate();
-        target.Add(element);
-        TSchema res = Activator.CreateInstance<TSchema>();
-        res.Q(element);
-        return res;
-    }
+#endif
 }

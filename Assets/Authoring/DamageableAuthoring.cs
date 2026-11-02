@@ -5,7 +5,7 @@ using UnityEngine.VFX;
 [AddComponentMenu("Authoring/Damageable")]
 public class DamageableAuthoring : MonoBehaviour
 {
-    [SerializeField] float MaxHealth = default;
+    [SerializeField] internal float MaxHealth = default;
     [SerializeField] VisualEffectAsset? DestroyEffect = default;
 
     class Baker : Baker<DamageableAuthoring>

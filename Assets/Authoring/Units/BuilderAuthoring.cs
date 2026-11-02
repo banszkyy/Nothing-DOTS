@@ -16,7 +16,6 @@ public class BuilderAuthoring : MonoBehaviour
             AddComponent<SelectableUnit>(entity);
             AddComponent<EntityWithInfoUI>(entity);
             AddComponent<UnitTeam>(entity);
-            AddComponent<Vehicle>(entity);
             if (authoring.Prefab != null)
             {
                 if (authoring.Prefabs == null)

@@ -80,6 +80,8 @@ public class SelectionManager : Singleton<SelectionManager>
                 Vector3 screenPoint = MainCamera.Camera.WorldToScreenPoint(_unitCommandUIPosition);
                 if (screenPoint.z >= 0f)
                 {
+                    DebugEx.Assert(commandsUi != null);
+
                     screenPoint.z = 0f;
                     screenPoint.y = MainCamera.Camera.pixelHeight - screenPoint.y;
                     commandsUi.Root.style.translate = screenPoint;
@@ -619,6 +621,8 @@ public class SelectionManager : Singleton<SelectionManager>
         });
         _selected.Add(unit);
 
+        DebugEx.Assert(HUDManager.Instance.ui != null);
+
         HUDManager.Instance.ui.LabelSelectedUnits.text = _selected.Count.ToString();
         HUDManager.Instance.ui.LabelSelectedUnits.parent.style.display = _selected.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;
     }
@@ -630,6 +634,8 @@ public class SelectionManager : Singleton<SelectionManager>
             Status = SelectionStatus.None,
         });
         _selected.Remove(unit);
+
+        DebugEx.Assert(HUDManager.Instance.ui != null);
 
         HUDManager.Instance.ui.LabelSelectedUnits.text = _selected.Count.ToString();
         HUDManager.Instance.ui.LabelSelectedUnits.parent.style.display = _selected.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;
@@ -645,6 +651,8 @@ public class SelectionManager : Singleton<SelectionManager>
             });
         }
         _selected.Clear();
+
+        DebugEx.Assert(HUDManager.Instance.ui != null);
 
         HUDManager.Instance.ui.LabelSelectedUnits.text = _selected.Count.ToString();
         HUDManager.Instance.ui.LabelSelectedUnits.parent.style.display = _selected.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;

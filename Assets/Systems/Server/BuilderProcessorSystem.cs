@@ -12,11 +12,11 @@ partial struct BuilderProcessorSystem : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        foreach (var (processor, builderTurret) in
-            SystemAPI.Query<RefRW<Processor>, RefRW<BuilderTurret>>()
+        foreach (var (processor, memory, builderTurret) in
+            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<BuilderTurret>>()
             .WithAll<Builder>())
         {
-            ref MappedMemory mapped = ref processor.ValueRW.Memory.MappedMemory;
+            ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
             if (mapped.CombatTurret.InputShoot is not 0 and not 2)
             {

@@ -60,19 +60,20 @@ class ExtensionHost : MonoBehaviour
                 case LogLevel.Trace:
                 case LogLevel.Debug:
                 case LogLevel.Information:
-                    Debug.Log($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {eventId} {formatter(state, exception)}");
+                    Debug.Log($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {formatter(state, exception)}");
                     break;
                 case LogLevel.Warning:
-                    Debug.LogWarning($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {eventId} {formatter(state, exception)}");
+                    Debug.LogWarning($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {formatter(state, exception)}");
                     break;
                 case LogLevel.Error:
                 case LogLevel.Critical:
-                    Debug.LogError($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {eventId} {formatter(state, exception)}");
+                    Debug.LogError($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {formatter(state, exception)}");
                     break;
                 case LogLevel.None:
                 default:
                     break;
             }
+            if (exception is not null) Debug.LogException(exception);
         }
     }
 
@@ -137,7 +138,7 @@ class ExtensionHost : MonoBehaviour
 
         if (UseRpc)
         {
-            foreach (RpcStream stream in RpcStreamManagerSystem.GetInstance(ConnectionManager.ServerWorld).Streams)
+            foreach (RpcStream stream in RpcStreamManagerSystem.GetInstance(ConnectionManager.ServerWorld ?? throw new NullReferenceException($"ServerWorld is null")).Streams)
             {
                 if (RpcHosts.Any(v => v.Stream == stream)) continue;
                 if (!stream.RemoteIdentifier.Name.ToString().StartsWith("bbl_ext_lsp_")) continue;

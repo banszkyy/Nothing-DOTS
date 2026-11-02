@@ -117,6 +117,7 @@ GameObject:
   - component: {fileID: 8948318020010601940}
   - component: {fileID: 3681865382151873366}
   - component: {fileID: 5738223995604765631}
+  - component: {fileID: 6920173920033296663}
   - component: {fileID: 2639703292439312697}
   - component: {fileID: 9159048369029021016}
   - component: {fileID: 3490116809308441210}
@@ -226,6 +227,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CyclesPerTick: 200
+  MemorySize: 1024
+  TransmissionPoint: {fileID: 0}
   StatusLED: {fileID: 5389730877752521265}
   NetworkReceiveLED: {fileID: 2447701851480365545}
   NetworkSendLED: {fileID: 5305952807411566311}
@@ -234,6 +237,24 @@ MonoBehaviour:
   USBLED: {fileID: 0}
   USBPosition: {fileID: 0}
   Script: 
+--- !u!114 &6920173920033296663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1289979656329170851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63998bd03e1b88364a41236e9eea18cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadioAuthoring
+  TxPowerDbm: 30
+  RxGainDbi: 0
+  SensitivityDbm: -112
+  MinBeamHalvings: 0
+  MaxBeamHalvings: 2
+  BearingSectors: 16
 --- !u!114 &2639703292439312697
 MonoBehaviour:
   m_ObjectHideFlags: 0

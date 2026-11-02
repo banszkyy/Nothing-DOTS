@@ -121,8 +121,10 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
 
     public void Cleanup()
     {
+        DebugEx.Assert(ui != null);
+
         refreshAt = float.PositiveInfinity;
-        this.ui.ButtonExit.clicked -= OnButtonExit;
-        this.ui.ButtonSave.clicked -= OnButtonSave;
+        ui.ButtonExit.clicked -= OnButtonExit;
+        ui.ButtonSave.clicked -= OnButtonSave;
     }
 }

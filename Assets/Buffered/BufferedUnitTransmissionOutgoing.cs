@@ -16,13 +16,8 @@ public struct OutgoingUnitTransmissionMetadata
 [BurstCompile]
 public struct OutgoingWirelessUnitTransmissionMetadata
 {
-    public required float3 Source;
-    /// <summary>
-    /// Direction in local space
-    /// </summary>
-    public required float3 Direction;
-    public required float Angle;
-    public required float CosAngle;
+    public required float3 Aim;
+    public required byte BeamHalvings;
 }
 
 [BurstCompile]
