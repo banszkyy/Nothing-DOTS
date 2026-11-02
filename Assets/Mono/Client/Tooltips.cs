@@ -9,6 +9,7 @@ public class Tooltips : Singleton<Tooltips>
     [SerializeField, NotNull] UIDocument? ui = null;
     [NotNull] Label? label = null;
     VisualElement? custom = null;
+    bool isCustom;
     VisualElement? targetVisualElement = null;
     bool visible;
 
@@ -21,12 +22,12 @@ public class Tooltips : Singleton<Tooltips>
 
     void Update()
     {
-        label.style.visibility = visible ? Visibility.Visible : Visibility.Hidden;
-        if (custom != null) custom.style.visibility = visible ? Visibility.Visible : Visibility.Hidden;
+        label.style.visibility = ((!isCustom || custom == null) && visible) ? Visibility.Visible : Visibility.Hidden;
+        if (custom != null) custom.style.visibility = (isCustom && visible) ? Visibility.Visible : Visibility.Hidden;
 
         if (!visible) return;
 
-        VisualElement e = custom ?? label;
+        VisualElement e = (custom != null && isCustom) ? custom : label;
         e.style.left = Math.Max(0, Input.mousePosition.x);
         e.style.bottom = Math.Max(0, Input.mousePosition.y);
     }
@@ -104,6 +105,7 @@ public class Tooltips : Singleton<Tooltips>
     void ClearTooltip(VisualElement? visualElement)
     {
         visible = false;
+        isCustom = false;
         label.text = string.Empty;
         targetVisualElement = visualElement;
     }
@@ -111,6 +113,7 @@ public class Tooltips : Singleton<Tooltips>
     void SetTooltip(VisualElement visualElement, string content)
     {
         visible = true;
+        isCustom = false;
         label.text = content ?? string.Empty;
         targetVisualElement = visualElement;
     }
@@ -118,6 +121,7 @@ public class Tooltips : Singleton<Tooltips>
     void SetTooltip(VisualElement visualElement, VisualTreeAsset asset, Action<VisualElement> callback)
     {
         visible = true;
+        isCustom = true;
         targetVisualElement = visualElement;
 
         if (custom != null)

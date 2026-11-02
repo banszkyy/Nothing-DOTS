@@ -334,10 +334,16 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
     UnitLogSystemClient.UnitLog? _unitLog;
     int? _localConnectionId;
     float _memoryLastCheck;
+    HeapUtils.AnalyzeMemoryTask? _analyzeMemoryTask;
 
     void Update()
     {
         if (!ui.IsVisible()) return;
+
+        if (_analyzeMemoryTask != null && !_analyzeMemoryTask.IsDone)
+        {
+            _analyzeMemoryTask.Tick(500);
+        }
 
         if (Time.time >= refreshAt || !selectingFile.IsDefault)
         {
@@ -366,6 +372,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         _memoryDownloadProgress = null;
         // try { _memoryDownloadTask?.Cancel(); } catch { }
         _memoryDownloadTask = null;
+        _analyzeMemoryTask = null;
 
         if (ConnectionManager.ClientOrDefaultWorld.IsLocal() || ConnectionManager.ClientOrDefaultWorld.IsServer())
         {
@@ -391,6 +398,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui.ScrollFiles.Clear();
         ui.ScrollProgresses.Clear();
         ui.ScrollDiagnostics.Clear();
+        ui.HeapObjectsContainer.Clear();
 
         term = new TerminalView(ui.ScrollTerminal);
         _renderedStdoutOffset = 0;
@@ -627,35 +635,47 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             return;
         }
 
+        ImmutableArray<HeapUtils.HeapBlock> blocks;
         DynamicBuffer<ProcessorMemoryBuffer> memory = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetBuffer<ProcessorMemoryBuffer>(unitEntity, true);
 
-        BytecodeProcessor bytecodeProcessor = new(
-            new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
-            {
-                MemorySize = memory.Length,
-            },
-            source.Generated.Code,
-            new Span<byte>(memory.GetUnsafeReadOnlyPtr(), memory.Length).ToArray(),
-            source.Generated.DebugInfo,
-            source.Compiled.ExternalFunctions,
-            source.GeneratedFunctions?.ToArray().AsImmutableArrayUnsafe() ?? default
-        );
-
-        ImmutableArray<HeapUtils.HeapBlock> blocks;
-
-        try
+        if (_analyzeMemoryTask == null)
         {
-            if (!HeapUtils.AnalyzeMemorySyncSafe(bytecodeProcessor, source.Generated.ExposedFunctions, out blocks, out string? error))
+            BytecodeProcessor bytecodeProcessor = new(
+                new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
+                {
+                    MemorySize = memory.Length,
+                },
+                source.Generated.Code,
+                new Span<byte>(memory.GetUnsafeReadOnlyPtr(), memory.Length).ToArray(),
+                source.Generated.DebugInfo,
+                source.Compiled.ExternalFunctions,
+                source.GeneratedFunctions?.ToArray().AsImmutableArrayUnsafe() ?? default
+            );
+
+            if (HeapUtils.AnalyzeMemoryTask.Create(bytecodeProcessor, source.Generated.ExposedFunctions, out _analyzeMemoryTask, out string? error))
             {
-                blocks = ImmutableArray<HeapUtils.HeapBlock>.Empty;
+                return;
+            }
+            else
+            {
                 Debug.LogWarning(error);
+                blocks = ImmutableArray<HeapUtils.HeapBlock>.Empty;
             }
         }
-        catch (Exception ex)
+        else if (_analyzeMemoryTask.Error != null)
         {
-            if (ex is not RuntimeException) Debug.LogException(ex);
-            else Debug.LogWarning(ex);
+            Debug.LogWarning(_analyzeMemoryTask.Error);
             blocks = ImmutableArray<HeapUtils.HeapBlock>.Empty;
+            _analyzeMemoryTask = null;
+        }
+        else if (_analyzeMemoryTask.IsDone)
+        {
+            blocks = _analyzeMemoryTask.Blocks.ToImmutableArray();
+            _analyzeMemoryTask = null;
+        }
+        else
+        {
+            return;
         }
 
         ui.HeapObjectsContainer.Clear();
@@ -663,6 +683,20 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         int totalMemory = memory.Length;
         int heapTotalMemory = blocks.Sum(v => v.Size);
         int stackTotalMemory = Math.Max(0, totalMemory - processor.Registers.StackPointer);
+
+        if (heapTotalMemory < 0 || heapTotalMemory >= memory.Length || blocks.Any(v => v.Size < 0 || v.Size >= memory.Length))
+        {
+            heapTotalMemory = 0;
+            Debug.LogWarning($"Invalid heap total memory, zeroing");
+            blocks = ImmutableArray<HeapUtils.HeapBlock>.Empty;
+        }
+
+        if (stackTotalMemory >= memory.Length)
+        {
+            stackTotalMemory = 0;
+            Debug.LogWarning($"Invalid stack total memory, zeroing");
+        }
+
         int internals = Math.Max(0, totalMemory - stackTotalMemory - heapTotalMemory);
 
         if (heapTotalMemory == 0 && stackTotalMemory == 0)
@@ -869,10 +903,10 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         Processor processor = entityManager.GetComponentData<Processor>(unitEntity);
         ReadOnlySpan<byte> localMemory = entityManager.GetBuffer<ProcessorMemoryBuffer>(unitEntity, true).AsReadOnlySpan();
 
-        if (_memoryDownloadProgress is null && !processor.IsVersionLocked)
+        if (_memoryDownloadProgress is null && !processor.IsVersionLocked && _analyzeMemoryTask == null)
         {
             ui.ButtonAnalyzeHeap.SetEnabled(true);
-            if (Time.unscaledTime - _memoryLastCheck > 5f)
+            if (Time.unscaledTime - _memoryLastCheck > 1f)
             {
                 _memoryLastCheck = Time.unscaledTime;
                 RefreshMemoryUsage(unitEntity);
@@ -881,6 +915,10 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         else
         {
             ui.ButtonAnalyzeHeap.SetEnabled(false);
+            if (_analyzeMemoryTask != null && _analyzeMemoryTask.IsDone)
+            {
+                RefreshMemoryUsage(unitEntity);
+            }
         }
 
         if (!selectingFile.IsEmpty)
@@ -1503,6 +1541,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         _memoryDownloadProgress = null;
         // try { _memoryDownloadTask?.Cancel(); } catch { }
         _memoryDownloadTask = null;
+        _analyzeMemoryTask = null;
         _memoryLastCheck = 0f;
         if (terminalSubscription != null && ConnectionManager.ClientOrDefaultWorld.IsClient())
         {
@@ -1521,6 +1560,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         ui.ButtonReset.clickable = null;
         ui.ButtonDebug.clickable = null;
         ui.ScrollTerminal.Clear();
+        ui.HeapObjectsContainer.Clear();
         EndFileSelection();
         ui = null;
     }

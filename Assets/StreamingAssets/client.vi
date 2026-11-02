@@ -1,0 +1,102 @@
+using "lib/api";
+using "netstack";
+
+i32 id = (time() as i32) ^ (GPS.position.x as i32) ^ (GPS.position.z as i32);
+i32 address = 0;
+float addressRequestedAt = 0f;
+float pingRequestedAt = 0f;
+float3 serverLastDirection = new float3;
+
+printf("I'm %d\n", [id]);
+
+while (true) {
+    LEDs.custom_led = true;
+
+    while (true) {
+        byte[16] buffer;
+        float3 direction;
+        int l = wreceive(&buffer, 16, &direction, (byte*)0);
+        if (!l) break;
+
+        int o = 0;
+
+        if (buffer[o] == (byte)RadioHeaderValues.Downlink) {
+            o++;
+            if (buffer[o] == (byte)Header.DhcpResponseOk) {
+                DhcpResponseOk* req = &buffer[o] as DhcpResponseOk*;
+                if (req.id == id)
+                {
+                    serverLastDirection = direction;
+                    address = req.address;
+                    printf("Received address %d\n", [address]);
+                }
+            } else if (buffer[o] == (byte)Header.AuthChallenge) {
+                AuthChallenge* req = &buffer[o] as AuthChallenge*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Uplink,
+                    },
+                    new AuthResponse {
+                        header = Header.AuthResponse,
+                        num = req.num,
+                        dst = req.src,
+                    },
+                };
+                wsend(&res, res.Length);
+            } else if (buffer[o] == (byte)Header.Ping) {
+                Ping* req = &buffer[o] as Ping*;
+                if (address && req.dst == address) {
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Uplink,
+                        },
+                        new Pong {
+                            header = Header.Pong,
+                            src = address,
+                            dst = req.src,
+                        },
+                    };
+                    wsend(&res, res.Length, serverLastDirection, 8);
+                }
+            } else if (buffer[o] == (byte)Header.Pong) {
+                Pong* req = &buffer[o] as Pong*;
+                if (address && req.dst == address) {
+                    printf("Pong from %d\n", [req.src]);
+                }
+            }
+        }
+    }
+
+    if (!address && time() - addressRequestedAt > 5f) {
+        printf("Requesting address\n");
+
+        u8[] req = pack {
+            new RadioHeader {
+                header = RadioHeaderValues.Uplink,
+            },
+            new DhcpRequest {
+                header = Header.DhcpRequest,
+                id = id,
+            },
+        };
+        wsend(&req, req.Length);
+        addressRequestedAt = time();
+    }
+
+    //if (address && address != 1 && time() - pingRequestedAt > 1f) {
+    //    printf("Ping %d ...\n", [1]);
+
+    //    u8[] req = pack {
+    //        new RadioHeader {
+    //            header = RadioHeaderValues.Uplink,
+    //        },
+    //        new Ping {
+    //            header = Header.Ping,
+    //            src = address,
+    //            dst = 1,
+    //        },
+    //    };
+    //    wsend(&req, req.Length, serverLastDirection, 8);
+    //    pingRequestedAt = time();
+    //}
+}

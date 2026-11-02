@@ -1,0 +1,143 @@
+using "lib/api";
+using "netstack";
+
+i32 id = (time() as i32) ^ (GPS.position.x as i32) ^ (GPS.position.z as i32);
+i32 address = 0;
+float addressRequestedAt = 0f;
+float3 serverLastDirection = new float3;
+i32 authenticatorAddress = 0;
+float3 lastRadarPoint = new float3;
+int lastRadarPointN = 0;
+RadarResponse lastRadarResponse = new RadarResponse;
+
+printf("I'm %d\n", [id]);
+
+while (true) {
+    LEDs.custom_led = true;
+
+    while (true) {
+        byte[16] buffer;
+        float3 direction;
+        int l = wreceive(&buffer, 16, &direction, (byte*)0);
+        if (!l) break;
+
+        int o = 0;
+
+        if (buffer[o] == (byte)RadioHeaderValues.Downlink) {
+            o++;
+            if (buffer[o] == (byte)Header.DhcpResponseOk) {
+                DhcpResponseOk* req = &buffer[o] as DhcpResponseOk*;
+                if (req.id == id)
+                {
+                    serverLastDirection = direction;
+                    address = req.address;
+                    printf("Received address %d\n", [address]);
+                }
+            } else if (buffer[o] == (byte)Header.AuthChallenge) {
+                AuthChallenge* req = &buffer[o] as AuthChallenge*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Uplink,
+                    },
+                    new AuthResponse {
+                        header = Header.AuthResponse,
+                        num = req.num,
+                        dst = req.src,
+                    },
+                };
+                wsend(&res, res.Length);
+            } else if (buffer[o] == (byte)Header.Ping) {
+                Ping* req = &buffer[o] as Ping*;
+                if (address && req.dst == address) {
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Uplink,
+                        },
+                        new Pong {
+                            header = Header.Pong,
+                            src = address,
+                            dst = req.src,
+                        },
+                    };
+                    wsend(&res, res.Length, serverLastDirection, 8);
+                }
+            } else if (buffer[o] == (byte)Header.Pong) {
+                Pong* req = &buffer[o] as Pong*;
+                if (address && req.dst == address) {
+                    printf("Pong from %d\n", [req.src]);
+                }
+            } else if (buffer[o] == (byte)Header.AuthenticatorAdvertisement) {
+                AuthenticatorAdvertisement* req = &buffer[o] as AuthenticatorAdvertisement*;
+                authenticatorAddress = req.src;
+            }
+        }
+    }
+
+    if (!address && time() - addressRequestedAt > 5f) {
+        printf("Requesting address\n");
+
+        u8[] req = pack {
+            new RadioHeader {
+                header = RadioHeaderValues.Uplink,
+            },
+            new DhcpRequest {
+                header = Header.DhcpRequest,
+                id = id,
+            },
+        };
+        wsend(&req, req.Length);
+        addressRequestedAt = time();
+    } else if (authenticatorAddress) {
+        float3 radarPoint = radar();
+        bool shouldSend = false;
+        float3 shouldSendP;
+        RadarResponse shouldSendR;
+        if (!empty(radarPoint)) {
+            if (lastRadarPointN && (Radar.response.fingerprint != lastRadarResponse.fingerprint || Radar.response.meta != lastRadarResponse.meta || distancesqr(lastRadarPoint, radarPoint) > 0.5f * 0.5f)) {
+                shouldSend = true;
+                shouldSendP = lastRadarPoint;
+                shouldSendR = lastRadarResponse;
+
+                lastRadarPoint = new float3;
+                lastRadarPointN = 0;
+                lastRadarResponse = new RadarResponse;
+            }
+
+            lastRadarPoint = ((lastRadarPoint * (float)lastRadarPointN) + radarPoint) / (float)(lastRadarPointN + 1);
+            lastRadarPointN++;
+            lastRadarResponse = Radar.response;
+        } else if (lastRadarPointN) {
+            shouldSend = true;
+            shouldSendP = lastRadarPoint;
+            shouldSendR = lastRadarResponse;
+
+            lastRadarPoint = new float3;
+            lastRadarPointN = 0;
+            lastRadarResponse = new RadarResponse;
+        }
+
+        if (shouldSend) {
+            ldebug(radarPoint, Color.White);
+
+            toglobal(&shouldSendP);
+
+            u8[] req = pack {
+                new RadioHeader {
+                    header = RadioHeaderValues.Uplink,
+                },
+                new Radar {
+                    header = Header.Radar,
+                    dst = authenticatorAddress,
+                    position = shouldSendP,
+                    speedSignal = shouldSendR.speedSignal,
+                    clutter = shouldSendR.clutter,
+                    fingerprint = shouldSendR.fingerprint,
+                    meta = shouldSendR.meta,
+                },
+            };
+            wsend(&req, req.Length, serverLastDirection, 8);
+        }
+
+        Radar.direction = (Radar.direction + 0.01f) % TAU;
+    }
+}

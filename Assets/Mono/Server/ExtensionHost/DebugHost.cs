@@ -413,6 +413,10 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                 {
                     case LogPieceType.Message:
                     {
+                        UnitLog_Message log = UnitLog_Message.Read(logBuffer, ref i);
+                        if (log.Header.Index <= _unitLogPosition) continue;
+                        _unitLogPosition = log.Header.Index;
+                        Protocol.SendEvent(new UnitLogEvent(log.Header));
                         break;
                     }
                     case LogPieceType.CombatTurret_Shoot:
@@ -542,8 +546,8 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                             data = Convert.ToBase64String(log.Data.ToArray()),
                             meta = new
                             {
-                                //direction = new { log.Metadata.LocalDirection.x, log.Metadata.LocalDirection.y, log.Metadata.LocalDirection.z },
-                                //angle = log.Metadata.Angle,
+                                aim = new { log.Metadata.Aim.x, log.Metadata.Aim.y, log.Metadata.Aim.z },
+                                beam_halvings = log.Metadata.BeamHalvings,
                             },
                         }));
                         break;
@@ -558,13 +562,21 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                             data = Convert.ToBase64String(log.Data.ToArray()),
                             meta = new
                             {
-                                //localDirection = new { log.Metadata.LocalDirection.x, log.Metadata.LocalDirection.y, log.Metadata.LocalDirection.z },
+                                direction = new { log.Metadata.Direction.x, log.Metadata.Direction.y, log.Metadata.Direction.z },
+                                margin_db = log.Metadata.MarginDb,
                             },
                         }));
                         break;
                     }
                     case LogPieceType.ProcessorSignal:
                     {
+                        UnitLog_ProcessorSignal log = UnitLog_ProcessorSignal.Read(logBuffer, ref i);
+                        if (log.Header.Index <= _unitLogPosition) continue;
+                        _unitLogPosition = log.Header.Index;
+                        Protocol.SendEvent(new UnitLogEvent(log.Header, new
+                        {
+                            signal = log.Signal.ToString(),
+                        }));
                         break;
                     }
                     case LogPieceType.Unknown0:

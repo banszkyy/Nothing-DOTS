@@ -1,0 +1,110 @@
+using "lib/stdlib/System";
+
+export enum RadioHeaderValues : u8
+{
+    Uplink,
+    Downlink,
+}
+
+export struct RadioHeader
+{
+    RadioHeaderValues header;
+}
+
+export enum Header : u8
+{
+    DhcpRequest,
+    DhcpResponseOk,
+    DhcpResponseFail,
+    Ping,
+    Pong,
+    Heartbeat,
+    AuthChallenge,
+    AuthResponse,
+    Radar,
+    Enemy,
+    AuthenticatorAdvertisement,
+    PlayerInterfaceAdvertisement,
+}
+
+export struct DhcpRequest
+{
+    Header header;
+    i32 id;
+}
+
+export struct DhcpResponseOk
+{
+    Header header;
+    i32 id;
+    i32 address;
+}
+
+export struct DhcpResponseOkFail
+{
+    Header header;
+    i32 id;
+}
+
+export struct Ping
+{
+    Header header;
+    i32 src;
+    i32 dst;
+}
+
+export struct Pong
+{
+    Header header;
+    i32 src;
+    i32 dst;
+}
+
+export struct Heartbeat
+{
+    Header header;
+}
+
+export struct AuthChallenge
+{
+    Header header;
+    float3 position;
+    i32 num;
+    i32 src;
+}
+
+export struct AuthResponse
+{
+    Header header;
+    i32 num;
+    i32 dst;
+}
+
+export struct Radar
+{
+    Header header;
+    i32 dst;
+    float3 position;
+    byte speedSignal;
+    byte clutter;
+    byte fingerprint;
+    byte meta;
+}
+
+export struct Enemy
+{
+    Header header;
+    float3 position;
+}
+
+export struct AuthenticatorAdvertisement
+{
+    Header header;
+    i32 src;
+}
+
+export struct PlayerInterfaceAdvertisement
+{
+    Header header;
+    i32 src;
+}

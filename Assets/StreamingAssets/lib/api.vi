@@ -42,31 +42,13 @@ export void sleep(float sec)
 [External("acos")] export float acos(float v);
 [External("atan")] export float atan(float v);
 
-[External("wreceive")] export int wreceive(any* buffer, int length, float3* direction);
-[External("wsend")] export void wsend(any* buffer, int length, float3* direction, float angle);
+[External("wreceive")] export int wreceive(any* buffer, int length, float3* direction, byte* marginDb);
+[External("wsend")] export void wsend(any* buffer, int length, float3 aim, byte beamHalvings);
+export inline void wsend(any* buffer, int length) { wsend(buffer, length, new float3, 0); }
 
 [External("receive")] export int receive(any* buffer, int length, byte port = 0);
 [External("send")] export void send(any* buffer, int length, byte port = 0);
 
-export inline void wsend(any* buffer, int length, float3 direction, float angle)
-{
-    wsend(buffer, length, &direction, angle);
-}
-
-export inline void wsend(any* buffer, int length, float3* direction)
-{
-    wsend(buffer, length, direction, 0.1f);
-}
-
-export inline void wsend(any* buffer, int length, float3 direction)
-{
-    wsend(buffer, length, &direction, 0.1f);
-}
-
-export inline void wsend(any* buffer, int length)
-{
-    wsend(buffer, length, 0 as float3*, 0f);
-}
 
 [External("radar")] void _radar();
 

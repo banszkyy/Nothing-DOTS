@@ -1,0 +1,177 @@
+using "lib/api";
+using "netstack";
+
+struct Client {
+    i32 id;
+    i32 address;
+    float3 lastDirection;
+}
+
+List<Client> clients = new List<Client>();
+
+bool clientByAddress(List<Client>& clients, i32 address, Client* result) {
+    for (int i = 0; i < clients.length(); i++) {
+        if (clients[i].address == address) {
+            if (result) *result = clients[i];
+            return true;
+        }
+    }
+    return false;
+}
+
+while (1) {
+    LEDs.custom_led = true;
+
+    while (1) {
+        byte[16] buffer;
+        float3 direction;
+        int l = wreceive(&buffer, 16, &direction, (byte*)0);
+        if (!l) break;
+        int o = 0;
+
+        if (buffer[o] == (byte)RadioHeaderValues.Uplink) {
+            RadioHeader* rh = &buffer[o] as RadioHeader*;
+            o++;
+
+            if (buffer[o] == (byte)Header.DhcpRequest) {
+                DhcpRequest* req = &buffer[o] as DhcpRequest*;
+                for (i32 i = 1; i < 621; i++) {
+                    if (!clientByAddress(clients, i, 0 as Client*)) {
+                        Client newClient;
+                        newClient.id = req.id;
+                        newClient.address = i;
+                        newClient.lastDirection = direction;
+                        clients.add(newClient);
+
+                        printf("Address %d assigned to %d\n", [i, req.id]);
+
+                        u8[] res = pack {
+                            new RadioHeader {
+                                header = RadioHeaderValues.Downlink,
+                            },
+                            new DhcpResponseOk {
+                                header = Header.DhcpResponseOk,
+                                id = req.id,
+                                address = i,
+                            },
+                        };
+                        wsend(&res, res.Length, direction, 8);
+
+                        break;
+                    }
+                }
+            } else if (buffer[o] == (byte)Header.AuthChallenge) {
+                AuthChallenge* req = &buffer[o] as AuthChallenge*;
+                if (distancesqr(req.position, GPS.position) < 4f * 4f) {
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Downlink,
+                        },
+                        new AuthResponse {
+                            header = Header.AuthResponse,
+                            dst = req.src,
+                            num = req.num,
+                        },
+                    };
+                    wsend(&res, res.Length, direction, 8);
+                } else {
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Downlink,
+                        },
+                        *req,
+                    };
+                    wsend(&res, res.Length, req.position - GPS.position, 8);
+                }
+            } else if (buffer[o] == (byte)Header.Ping) {
+                Ping* req = &buffer[o] as Ping*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Downlink,
+                    },
+                    *req,
+                };
+
+                for (int i = 0; i < clients.length(); i++)
+                {
+                    if (clients[i].address == req.dst)
+                    {
+                        wsend(&res, res.Length, clients[i].lastDirection, 8);
+                        break;
+                    }
+                }
+            } else if (buffer[o] == (byte)Header.Pong) {
+                Pong* req = &buffer[o] as Pong*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Downlink,
+                    },
+                    *req,
+                };
+
+                for (int i = 0; i < clients.length(); i++) {
+                    if (clients[i].address == req.dst) {
+                        wsend(&res, res.Length, clients[i].lastDirection, 8);
+                        break;
+                    }
+                }
+            } else if (buffer[o] == (byte)Header.AuthResponse) {
+                AuthResponse* req = &buffer[o] as AuthResponse*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Downlink,
+                    },
+                    *req,
+                };
+
+                for (int i = 0; i < clients.length(); i++) {
+                    if (clients[i].address == req.dst) {
+                        wsend(&res, res.Length, clients[i].lastDirection, 8);
+                        break;
+                    }
+                }
+            } else if (buffer[o] == (byte)Header.Radar) {
+                Radar* req = &buffer[o] as Radar*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Downlink,
+                    },
+                    *req,
+                };
+
+                for (int i = 0; i < clients.length(); i++) {
+                    if (clients[i].address == req.dst) {
+                        wsend(&res, res.Length, clients[i].lastDirection, 8);
+                        break;
+                    }
+                }
+            } else if (buffer[o] == (byte)Header.Enemy) {
+                Enemy* req = &buffer[o] as Enemy*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Downlink,
+                    },
+                    *req,
+                };
+
+                for (int i = 0; i < clients.length(); i++) {
+                    wsend(&res, res.Length, clients[i].lastDirection, 8);
+                }
+            } else if (buffer[o] == (byte)Header.AuthenticatorAdvertisement) {
+                AuthenticatorAdvertisement* req = &buffer[o] as AuthenticatorAdvertisement*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Downlink,
+                    },
+                    *req,
+                };
+
+                for (int i = 0; i < clients.length(); i++) {
+                    if (clients[i].address != req.src) {
+                        wsend(&res, res.Length, clients[i].lastDirection, 8);
+                    }
+                }
+            }
+        }
+    }
+}

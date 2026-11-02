@@ -31,7 +31,7 @@
             <ui:Button text="\udb81\udc50" name="button-analyze-heap" parse-escape-sequences="true" tooltip="Refresh Memory" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-right: 2px; padding-left: 2px; width: 12px; height: 12px; font-size: 9px; display: flex; align-self: center; -unity-font-style: normal;"/>
         </ui:VisualElement>
         <ui:VisualElement name="files-container" style="overflow: hidden;">
-            <ui:Label text="Label" name="label-base-path" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; color: rgb(164, 164, 164); font-size: 8px;"/>
+            <ui:Label text="meow" name="label-base-path" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; color: rgb(164, 164, 164); font-size: 8px;"/>
             <ui:ScrollView name="scroll-files" style="flex-grow: 1;">
                 <ui:Instance template="TerminalFileItem"/>
                 <ui:Instance template="TerminalFileItem"/>

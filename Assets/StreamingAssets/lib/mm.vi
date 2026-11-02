@@ -31,7 +31,7 @@ struct MappedMemory_Transporter
     int current_load;
 }
 
-struct RadarResponse
+export struct RadarResponse
 {
     float3 point;
     byte speedSignal;
@@ -58,18 +58,22 @@ struct MappedMemory_Facility
     TechnologyHash* hash_location;
 }
 
+struct MappedMemory_RadioJammer
+{
+    byte signal;
+}
+
+struct MappedMemory_RadarJammer
+{
+    byte signal;
+}
+
 export alias TechnologyHash byte[30];
 
 
-const int TotalMemorySize = 2048;
-const int StackSize = 1024;
-
-const int UserMemorySize = StackSize + HeapSize;
-const int MappedMemoryStart = UserMemorySize;
-const int MappedMemorySize = TotalMemorySize - UserMemorySize;
+const int MappedMemoryStart = 1;
 
 const int GenericModulesSize = sizeof(MappedMemory_GPS) + sizeof(MappedMemory_Radar) + sizeof(MappedMemory_Vehicle) + sizeof(MappedMemory_Leds);
-
 
 [MSILIncompatible] export const MappedMemory_GPS*            GPS =             MappedMemoryStart + 0;
 [MSILIncompatible] export const MappedMemory_Radar*          Radar =           GPS + sizeof(MappedMemory_GPS);
@@ -80,13 +84,5 @@ const int GenericModulesSize = sizeof(MappedMemory_GPS) + sizeof(MappedMemory_Ra
 [MSILIncompatible] export const MappedMemory_Extractor*      Extractor =       MappedMemoryStart + GenericModulesSize;
 [MSILIncompatible] export const MappedMemory_Transporter*    Transporter =     MappedMemoryStart + GenericModulesSize;
 [MSILIncompatible] export const MappedMemory_Facility*       Facility =        MappedMemoryStart + GenericModulesSize;
-
-
-*LEDs = new MappedMemory_Leds;
-*Vehicle = new MappedMemory_Vehicle;
-*CombatTurret = new MappedMemory_CombatTurret;
-*Extractor = new MappedMemory_Extractor;
-*Transporter = new MappedMemory_Transporter;
-*Radar = new MappedMemory_Radar;
-*GPS = new MappedMemory_GPS;
-*Facility = new MappedMemory_Facility;
+[MSILIncompatible] export const MappedMemory_RadioJammer*    RadioJammer =     MappedMemoryStart + GenericModulesSize;
+[MSILIncompatible] export const MappedMemory_RadarJammer*    RadarJammer =     MappedMemoryStart + GenericModulesSize;

@@ -8,9 +8,9 @@ static class UnitStatManager
     {
         UnitStatsSchema w = new(tooltipContent);
 
-        float f<TComponent>(TComponent current, Func<TComponent, float> selector)
+        float f<TComponent>(TComponent current, Func<TComponent, float> selector, bool baselineIsZero = false)
         {
-            float min = float.MaxValue;
+            float min = baselineIsZero ? 0 : float.MaxValue;
             float max = float.MinValue;
             foreach (IGeneralUnit item in all)
             {
@@ -29,7 +29,7 @@ static class UnitStatManager
         if (unit.Prefab.TryGetComponent(out DamageableAuthoring damageable))
         {
             w.HealthLabel.text = $"{damageable.MaxHealth}";
-            w.HealthBar.value = f(damageable, v => v.MaxHealth);
+            w.HealthBar.value = f(damageable, v => v.MaxHealth, true);
         }
         else
         {
@@ -39,7 +39,7 @@ static class UnitStatManager
         if (unit.Prefab.TryGetComponent(out CombatTurretAuthoring combatTurret))
         {
             w.DamageLabel.text = $"{combatTurret.Projectile.Damage}";
-            w.DamageBar.value = f(combatTurret, v => v.Projectile.Damage);
+            w.DamageBar.value = f(combatTurret, v => v.Projectile.Damage, true);
             w.MagazineLabel.text = $"{combatTurret.MagazineSize}";
             w.ReloadLabel.text = $"{(combatTurret.MagazineSize <= 1 ? Math.Max(combatTurret.MagazineReload, combatTurret.BulletReload) : combatTurret.MagazineReload)}s";
             w.AccuracyLabel.text = $"{MathF.Floor((1f - combatTurret.Spread) * 100f)}%";
@@ -73,7 +73,7 @@ static class UnitStatManager
         if (unit.Prefab.TryGetComponent(out VehicleAuthoring vehicle))
         {
             w.VehicleMaxSpeedLabel.text = $"{vehicle.MaxSpeed * 3.6f}km/h";
-            w.VehicleMaxSpeedBar.value = f(vehicle, v => v.MaxSpeed);
+            w.VehicleMaxSpeedBar.value = f(vehicle, v => v.MaxSpeed, true);
         }
         else
         {
@@ -83,7 +83,7 @@ static class UnitStatManager
         if (unit.Prefab.TryGetComponent(out ProcessorAuthoring processor))
         {
             w.CpuLabel.text = $"{processor.CyclesPerTick * 30f}i/s";
-            w.CpuBar.value = f(processor, v => v.CyclesPerTick);
+            w.CpuBar.value = f(processor, v => v.CyclesPerTick, true);
             string suffix = "B";
             float mem = processor.MemorySize;
             if (mem >= 1024)
@@ -97,7 +97,7 @@ static class UnitStatManager
                 suffix = "MiB";
             }
             w.MemoryLabel.text = $"{MathF.Round(mem * 10f) / 10f}{suffix}";
-            w.MemoryBar.value = f(processor, v => v.MemorySize);
+            w.MemoryBar.value = f(processor, v => v.MemorySize, true);
         }
         else
         {

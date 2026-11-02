@@ -1,0 +1,52 @@
+using "lib/move";
+using "lib/api";
+
+[UnitCommand(1, "󰍒")]
+struct CommandMoveTo
+{
+    [Context("position2")] float2 position;
+}
+
+[UnitCommand(2, "󰓾")]
+struct CommandJamming { }
+
+[UnitCommand(3, "󰹆")]
+struct CommandStop { }
+
+const int MaxCommandDataSize = 8;
+
+float2 currentDestination = new float2;
+
+while (1)
+{
+    byte[MaxCommandDataSize] _command;
+
+    int commandId = dequeue_command(&_command);
+
+    if (commandId == 1)
+    {
+        CommandMoveTo* command = &_command as CommandMoveTo*;
+        currentDestination = command.position;
+    }
+    else if (commandId == 2)
+    {
+        CommandJamming* command = &_command as CommandJamming*;
+        RadioJammer.signal = 1;
+        currentDestination = new float3;
+    }
+    else if (commandId == 3)
+    {
+        RadioJammer.signal = 0;
+        currentDestination = new float3;
+    }
+
+    if (currentDestination.x != 0f &&
+        currentDestination.y != 0f)
+    {
+        move_to(currentDestination.x, currentDestination.y);
+    }
+    else
+    {
+        stop_moving();
+    }
+}

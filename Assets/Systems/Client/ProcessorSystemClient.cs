@@ -10,9 +10,15 @@ using Unity.Rendering;
 [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.LocalSimulation)]
 partial struct ProcessorSystemClient : ISystem
 {
-    const float LedIntensity = 10f;
     ComponentLookup<URPMaterialPropertyEmissionColor> _emissionColorQ;
     public NativeList<UserUIElement> uiElements;
+
+    const float LedIntensity = 8f;
+    static float4 Off => default;
+    static float4 Green => new float4(0.1f, 1f, 0.2f, 1f) * LedIntensity;
+    static float4 Amber => new float4(1f, 0.8f, 0f, 1f) * LedIntensity;
+    static float4 Red => new float4(1f, 0.1f, 0f, 1f) * LedIntensity;
+    static float4 Blue => new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity;
 
     [BurstCompile]
     void ISystem.OnCreate(ref SystemState state)
@@ -35,10 +41,10 @@ partial struct ProcessorSystemClient : ISystem
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.StatusLED.Entity).ValueRW.Value = processor.ValueRO.StatusLED.Status switch
                 {
-                    ProcessorStatus.Off => default,
-                    ProcessorStatus.Running => new float4(0f, 1f, 0f, 1f) * LedIntensity,
-                    ProcessorStatus.Halted => new float4(1f, 1f, 0f, 1f) * LedIntensity,
-                    ProcessorStatus.Error => new float4(1f, 0f, 0f, 1f) * LedIntensity,
+                    ProcessorStatus.Off => Off,
+                    ProcessorStatus.Running => Green,
+                    ProcessorStatus.Halted => Amber,
+                    ProcessorStatus.Error => Red,
                     _ => throw new UnreachableException(),
                 };
             }
@@ -46,9 +52,7 @@ partial struct ProcessorSystemClient : ISystem
             if (processor.ValueRO.NetworkSendLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.NetworkSendLED.Entity).ValueRW.Value =
-                    processor.ValueRW.NetworkSendLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
-                    default;
+                    processor.ValueRW.NetworkSendLED.ReceiveBlink() ? Blue : Off;
             }
 
             if (processor.ValueRO.NetworkReceiveLED.Entity != Entity.Null)
@@ -57,34 +61,28 @@ partial struct ProcessorSystemClient : ISystem
                     processor.ValueRW.NetworkReceiveLED.ReceiveBlink(out byte status) ?
                     (status switch
                     {
-                        2 => new float4(1f, 0f, 0f, 1f) * LedIntensity,
-                        _ => new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity,
+                        2 => Red,
+                        _ => Blue,
                     }) :
-                    default;
+                    Off;
             }
 
             if (processor.ValueRO.RadarLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.RadarLED.Entity).ValueRW.Value =
-                    processor.ValueRW.RadarLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
-                    default;
+                    processor.ValueRW.RadarLED.ReceiveBlink() ? Blue : Off;
             }
 
             if (processor.ValueRO.USBLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.USBLED.Entity).ValueRW.Value =
-                    processor.ValueRW.USBLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
-                    default;
+                    processor.ValueRW.USBLED.ReceiveBlink() ? Blue : Off;
             }
 
             if (processor.ValueRO.CustomLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.CustomLED.Entity).ValueRW.Value =
-                    processor.ValueRW.CustomLED.ReceiveBlink() ?
-                    new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity :
-                    default;
+                    processor.ValueRW.CustomLED.ReceiveBlink() ? Green : Off;
             }
         }
 
