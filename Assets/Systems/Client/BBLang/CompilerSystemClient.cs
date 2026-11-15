@@ -13,6 +13,8 @@ partial class CompilerSystemClient : SystemBase
     readonly Dictionary<FileId, float> StatusRequestTimestamps = new();
     const float StatusRequestCooldownSec = 2f;
 
+    public IReadOnlyDictionary<FileId, CompiledSourceClient> Sources => CompiledSources;
+
     protected override void OnUpdate()
     {
         EntityCommandBuffer commandBuffer = default;

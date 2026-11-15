@@ -22,8 +22,8 @@ partial struct ExtractorProcessorSystemServer : ISystem
         PrefabDatabase prefabDatabase = SystemAPI.GetSingleton<PrefabDatabase>();
         EntityCommandBuffer commandBuffer = default;
 
-        foreach (var (processor, memory, extractor, transform, localTransform) in
-            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Extractor>, RefRO<LocalToWorld>, RefRO<LocalTransform>>())
+        foreach (var (processor, memory, extractor, transform) in
+            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Extractor>, RefRO<LocalTransform>>())
         {
             ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
@@ -32,7 +32,7 @@ partial struct ExtractorProcessorSystemServer : ISystem
                 mapped.Extractor.InputExtract = 0;
 
                 foreach (var resourceNodeTransform in
-                    SystemAPI.Query<RefRO<LocalToWorld>>()
+                    SystemAPI.Query<RefRO<LocalTransform>>()
                     .WithAll<ResourceNode>())
                 {
                     float distanceSq = math.distancesq(resourceNodeTransform.ValueRO.Position, transform.ValueRO.Position);
@@ -68,7 +68,7 @@ partial struct ExtractorProcessorSystemServer : ISystem
                         {
                             Amount = 1,
                         });
-                        commandBuffer.SetComponent<LocalTransform>(newResource, LocalTransform.FromPosition(localTransform.ValueRO.TransformPoint(extractor.ValueRO.ExtractPoint)));
+                        commandBuffer.SetComponent<LocalTransform>(newResource, LocalTransform.FromPosition(transform.ValueRO.TransformPoint(extractor.ValueRO.ExtractPoint)));
                         float3 velocity = _random.NextFloat3Direction() * 0.5f;
                         velocity.y = _random.NextFloat(2f, 5f);
                         commandBuffer.SetComponent<Rigidbody>(newResource, new()

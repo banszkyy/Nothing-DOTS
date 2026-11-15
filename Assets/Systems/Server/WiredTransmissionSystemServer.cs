@@ -7,6 +7,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Transforms;
 
 public readonly struct EntityPortIdentifier : IEquatable<EntityPortIdentifier>
@@ -29,40 +30,44 @@ public readonly struct EntityPortIdentifier : IEquatable<EntityPortIdentifier>
 }
 
 [BurstCompile]
+[UpdateBefore(typeof(ProcessorSystemServer))]
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
 partial struct WiredTransmissionSystemServer : ISystem
 {
-    ComponentLookup<Processor> processorComponentQ;
+    ComponentLookup<Processor> processorQ;
+    ComponentLookup<Radio> radioQ;
     BufferLookup<BufferedLogPiece> logsBufferQ;
 
     [BurstCompile]
     void ISystem.OnCreate(ref SystemState state)
     {
-        processorComponentQ = state.GetComponentLookup<Processor>(false);
+        processorQ = state.GetComponentLookup<Processor>(false);
+        radioQ = state.GetComponentLookup<Radio>(false);
         logsBufferQ = state.GetBufferLookup<BufferedLogPiece>(false);
     }
 
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        processorComponentQ.Update(ref state);
+        processorQ.Update(ref state);
+        radioQ.Update(ref state);
         logsBufferQ.Update(ref state);
 
         NativeQueue<EntityPortIdentifier> openSet = new(Allocator.Temp);
         NativeHashSet<EntityPortIdentifier> closedSet = new(16, Allocator.Temp);
 
-        foreach (var (processor, transform, logBuffer, log, originEntity) in
-            SystemAPI.Query<RefRW<Processor>, RefRO<LocalTransform>, DynamicBuffer<BufferedLogPiece>, RefRW<LogPieces>>()
+        foreach (var (processor, radio, transform, logBuffer, log, originEntity) in
+            SystemAPI.Query<RefRW<Processor>, RefRW<Radio>, RefRO<LocalTransform>, DynamicBuffer<BufferedLogPiece>, RefRW<LogPieces>>()
             .WithEntityAccess())
         {
-            if (processor.ValueRW.OutgoingTransmissions.Length == 0) continue;
-            BufferedUnitTransmissionOutgoing transmission = processor.ValueRW.OutgoingTransmissions[0];
+            if (radio.ValueRW.OutgoingTransmissions.Length == 0) continue;
+            BufferedUnitTransmissionOutgoing transmission = radio.ValueRW.OutgoingTransmissions[0];
             if (transmission.Metadata.IsWireless) continue;
             OutgoingWiredUnitTransmissionMetadata metadata = transmission.Metadata.Wired;
 
             //new UnitLog_Transmission_WiredOut(MonoTime.UnixSeconds, metadata, transmission.Data).Write(log);
 
-            processor.ValueRW.OutgoingTransmissions.RemoveAt(0);
+            radio.ValueRW.OutgoingTransmissions.RemoveAt(0);
 
             if (!SystemAPI.TryGetComponent(originEntity, out Connector originConnector))
             {
@@ -132,9 +137,10 @@ partial struct WiredTransmissionSystemServer : ISystem
 
             foreach (EntityPortIdentifier connector in closedSet)
             {
-                if (!processorComponentQ.HasComponent(connector.Entity)) continue;
-                RefRW<Processor> other = processorComponentQ.GetRefRW(connector.Entity);
+                if (!processorQ.HasComponent(connector.Entity)) continue;
+                RefRW<Processor> other = processorQ.GetRefRW(connector.Entity);
                 if (!other.ValueRO.Source.Code.IsCreated || other.ValueRO.Signal != LanguageCore.Runtime.Signal.None) continue;
+                RefRW<Radio> otherRadio = radioQ.GetRefRW(connector.Entity);
 
                 other.ValueRW.NetworkReceiveLED.Blink(1);
 
@@ -143,7 +149,7 @@ partial struct WiredTransmissionSystemServer : ISystem
                 DebugEx.DrawSphere(p, 0.5f, Color.white, 0.1f, false);
 #endif
 
-                ref FixedList128Bytes<BufferedUnitTransmission> transmissions = ref other.ValueRW.IncomingTransmissions;
+                ref FixedList128Bytes<BufferedUnitTransmission> transmissions = ref otherRadio.ValueRW.IncomingTransmissions;
 
                 IncomingWiredUnitTransmissionMetadata otherIncomingMetadata = new()
                 {
@@ -152,7 +158,7 @@ partial struct WiredTransmissionSystemServer : ISystem
 
                 if (logsBufferQ.TryGetBuffer(connector.Entity, out DynamicBuffer<BufferedLogPiece> otherLog))
                 {
-                    new UnitLog_Transmission_WiredIn(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex, otherIncomingMetadata, transmission.Data).Write(logBuffer);
+                    new UnitLog_Transmission_WiredIn(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex, otherIncomingMetadata, transmission.Data, SystemAPI.GetComponent<GhostInstance>(originEntity)).Write(logBuffer);
                 }
 
                 if (transmissions.Length >= transmissions.Capacity) transmissions.RemoveAt(0);

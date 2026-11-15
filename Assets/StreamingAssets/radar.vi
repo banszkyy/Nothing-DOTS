@@ -6,9 +6,9 @@ i32 address = 0;
 float addressRequestedAt = 0f;
 float3 serverLastDirection = new float3;
 i32 authenticatorAddress = 0;
-float3 lastRadarPoint = new float3;
-int lastRadarPointN = 0;
-RadarResponse lastRadarResponse = new RadarResponse;
+float radarSweeping = PI;
+RadarContact[4] radarContacts = new RadarContact[4];
+float nextRadarReq = 0f;
 
 printf("I'm %d\n", [id]);
 
@@ -16,9 +16,9 @@ while (true) {
     LEDs.custom_led = true;
 
     while (true) {
-        byte[16] buffer;
+        byte[30] buffer;
         float3 direction;
-        int l = wreceive(&buffer, 16, &direction, (byte*)0);
+        int l = wreceive(&buffer, &direction, (byte*)0);
         if (!l) break;
 
         int o = 0;
@@ -35,17 +35,19 @@ while (true) {
                 }
             } else if (buffer[o] == (byte)Header.AuthChallenge) {
                 AuthChallenge* req = &buffer[o] as AuthChallenge*;
-                u8[] res = pack {
-                    new RadioHeader {
-                        header = RadioHeaderValues.Uplink,
-                    },
-                    new AuthResponse {
-                        header = Header.AuthResponse,
-                        num = req.num,
-                        dst = req.src,
-                    },
-                };
-                wsend(&res, res.Length);
+                if (distancesqr(req.position, GPS.position) < 4f * 4f) {
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Uplink,
+                        },
+                        new AuthResponse {
+                            header = Header.AuthResponse,
+                            authNum = req.authNum,
+                            dst = req.src,
+                        },
+                    };
+                    wsend(&res, res.Length);
+                }
             } else if (buffer[o] == (byte)Header.Ping) {
                 Ping* req = &buffer[o] as Ping*;
                 if (address && req.dst == address) {
@@ -88,56 +90,43 @@ while (true) {
         wsend(&req, req.Length);
         addressRequestedAt = time();
     } else if (authenticatorAddress) {
-        float3 radarPoint = radar();
-        bool shouldSend = false;
-        float3 shouldSendP;
-        RadarResponse shouldSendR;
-        if (!empty(radarPoint)) {
-            if (lastRadarPointN && (Radar.response.fingerprint != lastRadarResponse.fingerprint || Radar.response.meta != lastRadarResponse.meta || distancesqr(lastRadarPoint, radarPoint) > 0.5f * 0.5f)) {
-                shouldSend = true;
-                shouldSendP = lastRadarPoint;
-                shouldSendR = lastRadarResponse;
-
-                lastRadarPoint = new float3;
-                lastRadarPointN = 0;
-                lastRadarResponse = new RadarResponse;
-            }
-
-            lastRadarPoint = ((lastRadarPoint * (float)lastRadarPointN) + radarPoint) / (float)(lastRadarPointN + 1);
-            lastRadarPointN++;
-            lastRadarResponse = Radar.response;
-        } else if (lastRadarPointN) {
-            shouldSend = true;
-            shouldSendP = lastRadarPoint;
-            shouldSendR = lastRadarResponse;
-
-            lastRadarPoint = new float3;
-            lastRadarPointN = 0;
-            lastRadarResponse = new RadarResponse;
+        if (nextRadarReq <= time()) {
+            nextRadarReq = time() + set_radar(radarSweeping);
+            radarSweeping = (radarSweeping + 0.03f) % TAU;
         }
 
-        if (shouldSend) {
-            ldebug(radarPoint, Color.White);
+        int l = radar_query(&radarContacts);
+        for (int i = 0; i < l; i++)
+        {
+            RadarContact c = radarContacts[i];
 
-            toglobal(&shouldSendP);
+            ldebug(c.pos, Color.White);
 
-            u8[] req = pack {
+            //printf("L %f %f %f\n", [c.pos.x, c.pos.y, c.pos.z]);
+            print('L');
+            print(' ');
+            print(c.pos.x);
+            print(' ');
+            print(c.pos.y);
+            print(' ');
+            print(c.pos.z);
+            print('\n');
+            toglobal(&c.pos);
+
+            byte[] req = pack {
                 new RadioHeader {
                     header = RadioHeaderValues.Uplink,
                 },
                 new Radar {
                     header = Header.Radar,
                     dst = authenticatorAddress,
-                    position = shouldSendP,
-                    speedSignal = shouldSendR.speedSignal,
-                    clutter = shouldSendR.clutter,
-                    fingerprint = shouldSendR.fingerprint,
-                    meta = shouldSendR.meta,
+                    position = c.pos,
+                    radialVel = c.radialVel,
+                    emission = c.emission,
+                    strength = c.strength,
                 },
             };
-            wsend(&req, req.Length, serverLastDirection, 8);
+            wsend(&req, serverLastDirection, 8);
         }
-
-        Radar.direction = (Radar.direction + 0.01f) % TAU;
     }
 }

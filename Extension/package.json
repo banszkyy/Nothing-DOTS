@@ -41,15 +41,8 @@
                 {
                     "id": "gameUnits",
                     "name": "Game Units",
-                    "type": "tree"
-                }
-            ],
-            "debug": [
-                {
-                    "id": "unitLog",
-                    "name": "Unit Logs",
                     "type": "tree",
-                    "when": "inDebugMode && debugType == 'nothingame'"
+                    "when": "isWorkspaceTrusted"
                 }
             ]
         },
@@ -64,7 +57,18 @@
             "view/item/context": [
                 {
                     "command": "nothingame.debug.attach",
-                    "when": "viewItem == nothingameEntity"
+                    "when": "viewItem == nothingame.entity.running || viewItem == nothingame.entity.halted || viewItem == nothingame.entity.crashed",
+                    "group": "inline"
+                },
+                {
+                    "command": "nothingame.debug.disconnect",
+                    "when": "viewItem == nothingame.entity.debugged",
+                    "group": "inline"
+                },
+                {
+                    "command": "nothingame.unitLog.radio.view",
+                    "when": "view == unitLog && viewItem == radio",
+                    "group": "inline"
                 }
             ],
             "debug/toolBar": [
@@ -80,22 +84,17 @@
                 }
             ]
         },
-        "configuration": {
-            "title": "Nothingame",
-            "type": "object",
-            "properties": {}
-        },
         "commands": [
-            {
-                "command": "nothingame.server.restart",
-                "category": "Nothingame",
-                "title": "Restart Language Server"
-            },
             {
                 "command": "nothingame.units.refresh",
                 "category": "Nothingame",
                 "icon": "$(refresh)",
-                "title": "Refresh units"
+                "title": "Refresh Units"
+            },
+            {
+                "command": "nothingame.authenticate.internal",
+                "category": "Nothingame",
+                "title": "Authenticate with token (internal)"
             },
             {
                 "command": "nothingame.authenticate",
@@ -106,7 +105,14 @@
             {
                 "command": "nothingame.debug.attach",
                 "category": "Nothingame",
-                "title": "Debug unit"
+                "title": "Debug Unit",
+                "icon": "$(debug)"
+            },
+            {
+                "command": "nothingame.debug.disconnect",
+                "category": "Nothingame",
+                "title": "Stop Debugging Unit",
+                "icon": "$(debug-disconnect)"
             },
             {
                 "command": "nothingame.profiling.start",
@@ -114,7 +120,7 @@
                 "title": "Start profiling active debug session",
                 "when": "isWorkspaceTrusted && inDebugMode && debugType == 'nothingame'",
                 "icon": "$(flame)",
-                "shortTitle": "Start profiling"
+                "shortTitle": "Start Profiling"
             },
             {
                 "command": "nothingame.profiling.stop",
@@ -122,7 +128,18 @@
                 "title": "Stop profiling active debug session",
                 "when": "isWorkspaceTrusted && inDebugMode && debugType == 'nothingame'",
                 "icon": "$(flame)",
-                "shortTitle": "Stop profiling"
+                "shortTitle": "Stop Profiling"
+            },
+            {
+                "command": "nothingame.unitLog.radio.view",
+                "category": "Nothingame",
+                "title": "Inspect Radio Packet",
+                "icon": "$(inspect)"
+            },
+            {
+                "command": "nothingame.unitLog.view",
+                "category": "Nothingame",
+                "title": "View Unit Log"
             }
         ]
     },
@@ -133,7 +150,7 @@
     },
     "devDependencies": {
         "@types/adm-zip": "latest",
-        "@types/node": "latest",
+        "@types/node": "^26.6.6",
         "@types/vscode": "^1.88.0",
         "@vscode/vsce": "latest",
         "typescript": "latest",
@@ -141,6 +158,6 @@
     },
     "dependencies": {
         "adm-zip": "latest",
-        "vscode-languageclient": "^9.0.1"
+        "vscode-jsonrpc": "^10.0.0"
     }
 }

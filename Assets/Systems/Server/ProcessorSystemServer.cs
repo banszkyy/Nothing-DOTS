@@ -16,6 +16,7 @@ using Unity.Profiling;
 using Unity.Transforms;
 using System.Runtime.InteropServices;
 using System.Linq;
+using Unity.Burst.Intrinsics;
 
 enum UserUIElementType : byte
 {
@@ -199,11 +200,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
         public required NativeList<OwnedData<BufferedLine>>.ParallelWriter DebugLines;
         public required NativeList<OwnedData<BufferedWorldLabel>>.ParallelWriter WorldLabels;
         public required NativeList<EntityOwnedData<UserUIElement>>.ParallelWriter UIElements;
-        [ReadOnly] public required ComponentLookup<PlayerInterface> QPlayerInterface;
-        [ReadOnly] public required ComponentLookup<Radar> QRadar;
-        [ReadOnly] public required ComponentLookup<Facility> QFacility;
-        [ReadOnly] public required ComponentLookup<Factory> QFactory;
-        [ReadOnly] public required ComponentLookup<Radio> QRadio;
     }
 
     [BurstCompile]
@@ -211,7 +207,9 @@ unsafe partial struct ProcessorSystemServer : ISystem
     {
         public required Entity Entity;
         public required Processor* Processor;
-        public required LocalToWorld WorldTransform;
+        public required Radar* Radar;
+        public required Radio* Radio;
+        public required DynamicBuffer<RadarContact> RadarContacts;
         public required LocalTransform LocalTransform;
         public required UnitTeam Team;
         public required SpawnedGhost Ghost;
@@ -232,6 +230,22 @@ unsafe partial struct ProcessorSystemServer : ISystem
     public NativeList<EntityOwnedData<UserUIElement>> uiElements;
     NativeList<TerminalSubscriptionServer> subscribedTerminals;
 
+    ComponentTypeHandle<Processor> _processorHandle;
+    BufferTypeHandle<ProcessorMemoryBuffer> _processorMemoryBufferHandle;
+    ComponentTypeHandle<UnitTeam> _unitTeamHandle;
+    ComponentTypeHandle<GhostInstance> _ghostInstanceHandle;
+    ComponentTypeHandle<LocalTransform> _localTransformHandle;
+    BufferTypeHandle<BufferedLogPiece> _bufferedLogPieceHandle;
+    EntityTypeHandle _entityHandle;
+
+    ComponentTypeHandle<Radio> _radioHandle;
+    ComponentTypeHandle<Radar> _radarHandle;
+    BufferTypeHandle<RadarContact> _radarContactHandle;
+    ComponentTypeHandle<Factory> _factoryHandle;
+    ComponentTypeHandle<PlayerInterface> _playerInterfaceHandle;
+
+    EntityQuery _query;
+
     void ISystem.OnCreate(ref SystemState state)
     {
         //state.RequireForUpdate<WorldLabelSettings>();
@@ -241,6 +255,22 @@ unsafe partial struct ProcessorSystemServer : ISystem
         scopedExternalFunctions = new NativeArray<ExternalFunctionScopedSync>(_scopedExternalFunctions.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         scopedExternalFunctions.CopyFrom(_scopedExternalFunctions.AsArray());
         _scopedExternalFunctions.Dispose();
+
+        _processorHandle = state.GetComponentTypeHandle<Processor>(false);
+        _processorMemoryBufferHandle = state.GetBufferTypeHandle<ProcessorMemoryBuffer>(false);
+        _unitTeamHandle = state.GetComponentTypeHandle<UnitTeam>(true);
+        _ghostInstanceHandle = state.GetComponentTypeHandle<GhostInstance>(true);
+        _localTransformHandle = state.GetComponentTypeHandle<LocalTransform>(true);
+        _bufferedLogPieceHandle = state.GetBufferTypeHandle<BufferedLogPiece>(false);
+        _entityHandle = state.GetEntityTypeHandle();
+
+        _radioHandle = state.GetComponentTypeHandle<Radio>(false);
+        _radarHandle = state.GetComponentTypeHandle<Radar>(false);
+        _radarContactHandle = state.GetBufferTypeHandle<RadarContact>(false);
+        _factoryHandle = state.GetComponentTypeHandle<Factory>(true);
+        _playerInterfaceHandle = state.GetComponentTypeHandle<PlayerInterface>(true);
+
+        _query = SystemAPI.QueryBuilder().WithAllRW<Processor>().WithAll<LocalToWorld>().Build();
 
         debugLines = new(256, Allocator.Persistent);
         worldLabels = new(256, Allocator.Persistent);
@@ -455,20 +485,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
             }
         }
 
-        foreach (var (request, command, entity) in
-            SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<StopDebugRequestRpc>>()
-            .WithEntityAccess())
-        {
-            commandBuffer.DestroyEntity(entity);
-
-            foreach (var (ghost, processor) in SystemAPI.Query<RefRO<GhostInstance>, RefRW<Processor>>())
-            {
-                if (!command.ValueRO.Entity.Equals(ghost.ValueRO)) continue;
-                processor.ValueRW.DebugContext.IsBeingDebugged = false;
-                break;
-            }
-        }
-
         for (int i = 0; i < subscribedTerminals.Length; i++)
         {
             TerminalSubscriptionServer subscription = subscribedTerminals[i];
@@ -508,8 +524,36 @@ unsafe partial struct ProcessorSystemServer : ISystem
         debugLines.Clear();
         worldLabels.Clear();
 
-        new ProcessorJob()
+        _processorHandle.Update(ref state);
+        _processorMemoryBufferHandle.Update(ref state);
+        _unitTeamHandle.Update(ref state);
+        _ghostInstanceHandle.Update(ref state);
+        _localTransformHandle.Update(ref state);
+        _bufferedLogPieceHandle.Update(ref state);
+        _entityHandle.Update(ref state);
+
+        _radioHandle.Update(ref state);
+        _radarHandle.Update(ref state);
+        _radarContactHandle.Update(ref state);
+        _factoryHandle.Update(ref state);
+        _playerInterfaceHandle.Update(ref state);
+
+        state.Dependency = new ProcessorChunkJob
         {
+            ProcessorHandle = _processorHandle,
+            ProcessorMemoryBufferHandle = _processorMemoryBufferHandle,
+            UnitTeamHandle = _unitTeamHandle,
+            GhostInstanceHandle = _ghostInstanceHandle,
+            LocalTransformHandle = _localTransformHandle,
+            BufferedLogPieceHandle = _bufferedLogPieceHandle,
+            EntityHandle = _entityHandle,
+
+            RadioHandle = _radioHandle,
+            RadarHandle = _radarHandle,
+            RadarContactHandle = _radarContactHandle,
+            FactoryHandle = _factoryHandle,
+            PlayerInterfaceHandle = _playerInterfaceHandle,
+
             scopedExternalFunctions = scopedExternalFunctions.AsReadOnly(),
             worldRef = new()
             {
@@ -518,171 +562,15 @@ unsafe partial struct ProcessorSystemServer : ISystem
                 DebugLines = debugLines.AsParallelWriter(),
                 WorldLabels = worldLabels.AsParallelWriter(),
                 UIElements = uiElements.AsParallelWriter(),
-                QPlayerInterface = SystemAPI.GetComponentLookup<PlayerInterface>(true),
-                QRadar = SystemAPI.GetComponentLookup<Radar>(true),
-                QFacility = SystemAPI.GetComponentLookup<Facility>(true),
-                QFactory = SystemAPI.GetComponentLookup<Factory>(true),
-                QRadio = SystemAPI.GetComponentLookup<Radio>(true),
             },
-        }.ScheduleParallel();
+        }.ScheduleParallel(_query, state.Dependency);
     }
-}
 
-[WithAll(typeof(Processor))]
-partial struct ProcessorJob : IJobEntity
-{
 #if UNITY_PROFILER
-    public static readonly ProfilerMarker __ProcessorJobOuter = new("ProcessorJobOuter");
     public static readonly ProfilerMarker __ProcessorJobInner = new("ProcessorJobInner");
 #endif
 
-    [ReadOnly] public required NativeArray<ExternalFunctionScopedSync>.ReadOnly scopedExternalFunctions;
-    public required ProcessorSystemServer.WorldRef worldRef;
-
-    unsafe void Execute(
-        ref Processor processor,
-        ref DynamicBuffer<ProcessorMemoryBuffer> _memory,
-        in UnitTeam team,
-        in GhostInstance ghost,
-        in LocalToWorld worldTransform,
-        in LocalTransform localTransform,
-        ref DynamicBuffer<BufferedLogPiece> _log,
-        Entity entity,
-        [ChunkIndexInQuery] int chunkIndex)
-    {
-        using var _1 = __ProcessorJobOuter.Auto();
-
-        if (!processor.Source.Code.IsCreated)
-        {
-            processor.StatusLED.Status = ProcessorStatus.Off;
-            return;
-        }
-
-        //NativeArray<byte> memory = new NativeArray<byte>(Processor.TotalMemorySize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-        //memory.CopyFrom(new Span<byte>(Unsafe.AsPointer(ref processor.Memory), Processor.TotalMemorySize).ToArray());
-        Span<byte> memory = new(_memory.GetUnsafePtr(), _memory.Length);
-
-        FixedList128Bytes<BufferedLogPiece> log = new();
-        ProcessorSystemServer.FunctionScope scope = new()
-        {
-            WorldRef = worldRef,
-            ProcessorRef = new ProcessorSystemServer.ProcessorRef()
-            {
-                Memory = _memory.GetUnsafePtr(),
-                MemorySize = _memory.Length,
-                Crash = null,
-                Registers = null,
-                Signal = null,
-            },
-            EntityRef = new ProcessorSystemServer.EntityRef()
-            {
-                Entity = entity,
-                Processor = (Processor*)Unsafe.AsPointer(ref processor),
-                WorldTransform = worldTransform,
-                LocalTransform = localTransform,
-                Team = team,
-                Ghost = ghost,
-            },
-            Log = &log,
-        };
-
-        NativeList<ExternalFunctionScopedSync> scopedExternalFunctions = new(this.scopedExternalFunctions.Length + processor.Source.GeneratedFunctions.Length, Allocator.Temp);
-
-        for (int i = 0; i < this.scopedExternalFunctions.Length; i++)
-        {
-            if ((this.scopedExternalFunctions[i].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.GUI.Prefix &&
-                !worldRef.QPlayerInterface.HasComponent(entity))
-            {
-                continue;
-            }
-
-            if ((this.scopedExternalFunctions[i].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.Factory.Prefix &&
-                !worldRef.QFactory.HasComponent(entity))
-            {
-                continue;
-            }
-
-            if ((this.scopedExternalFunctions[i].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.WirelessTransmission.Prefix &&
-                !worldRef.QRadio.HasComponent(entity))
-            {
-                continue;
-            }
-
-            scopedExternalFunctions.Add(this.scopedExternalFunctions[i]);
-            scopedExternalFunctions.GetUnsafePtr()[scopedExternalFunctions.Length - 1].Scope = (nint)(void*)&scope;
-        }
-
-        int start = scopedExternalFunctions.Length;
-        if (processor.Source.GeneratedFunctions.IsCreated)
-        {
-            scopedExternalFunctions.AddRange(processor.Source.GeneratedFunctions.Ptr, processor.Source.GeneratedFunctions.Length);
-        }
-
-        ProcessorState processorState = new(
-            new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
-            {
-                MemorySize = memory.Length,
-            },
-            processor.Registers,
-            memory,
-            processor.Source.Code.AsSpan(),
-            scopedExternalFunctions.AsArray().AsSpan()
-        )
-        {
-            Signal = processor.Signal,
-            Crash = processor.Crash,
-            HotFunctions = processor.HotFunctions,
-        };
-
-        scope.ProcessorRef.Crash = &processorState.Crash;
-        scope.ProcessorRef.Signal = &processorState.Signal;
-        scope.ProcessorRef.Registers = &processorState.Registers;
-
-        if (processor.DebugContext.IsBeingDebugged)
-        {
-            HandleTickDebug(ref processor, ref processorState);
-        }
-        else
-        {
-            HandleTick(ref processor, ref processorState);
-        }
-
-        if (processor.Source.GeneratedFunctions.IsCreated)
-        {
-            for (int i = start; i < scopedExternalFunctions.Length; i++)
-            {
-                processor.Source.GeneratedFunctions.Ptr[i - start].Flags = scopedExternalFunctions[i].Flags;
-            }
-        }
-
-        if (ProcessorSystemServer.MappedMemory(_memory).Leds.CustomLED != 0)
-        {
-            ProcessorSystemServer.MappedMemory(_memory).Leds.CustomLED = 0;
-            processor.CustomLED.Blink();
-        }
-
-        //processor.Memory = *(ProcessorMemory*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(memory));
-        processor.Registers = processorState.Registers;
-        processor.Signal = processorState.Signal;
-        processor.Crash = processorState.Crash;
-        processor.HotFunctions = processorState.HotFunctions;
-#pragma warning disable IDE0072 // Add missing cases
-        processor.StatusLED.Status = processorState.Signal switch
-        {
-            Signal.None => ProcessorStatus.Running,
-            Signal.Halt => ProcessorStatus.Halted,
-            _ => ProcessorStatus.Error,
-        };
-#pragma warning restore IDE0072 // Add missing cases
-        scopedExternalFunctions.Dispose();
-
-        for (int i = 0; i < log.Length; i++)
-        {
-            _log.Add(log[i]);
-        }
-    }
-
-    static void HandleTick(ref Processor processor, ref ProcessorState processorState)
+    public static void HandleTick(ref Processor processor, ref ProcessorState processorState)
     {
         __ProcessorJobInner.Begin();
         try
@@ -739,119 +627,192 @@ partial struct ProcessorJob : IJobEntity
         }
         __ProcessorJobInner.End();
     }
+}
 
-    public enum StopReason
+[BurstCompile]
+unsafe partial struct ProcessorChunkJob : IJobChunk
+{
+#if UNITY_PROFILER
+    public static readonly ProfilerMarker __ProcessorJobOuter = new("ProcessorJobOuter");
+#endif
+
+    [ReadOnly] public required NativeArray<ExternalFunctionScopedSync>.ReadOnly scopedExternalFunctions;
+    public required ProcessorSystemServer.WorldRef worldRef;
+
+    public required ComponentTypeHandle<Processor> ProcessorHandle;
+    public required BufferTypeHandle<ProcessorMemoryBuffer> ProcessorMemoryBufferHandle;
+    [ReadOnly] public required ComponentTypeHandle<UnitTeam> UnitTeamHandle;
+    [ReadOnly] public required ComponentTypeHandle<GhostInstance> GhostInstanceHandle;
+    [ReadOnly] public required ComponentTypeHandle<LocalTransform> LocalTransformHandle;
+    public required BufferTypeHandle<BufferedLogPiece> BufferedLogPieceHandle;
+    [ReadOnly] public required EntityTypeHandle EntityHandle;
+
+    public required ComponentTypeHandle<Radio> RadioHandle;
+    public required ComponentTypeHandle<Radar> RadarHandle;
+    public required BufferTypeHandle<RadarContact> RadarContactHandle;
+    [ReadOnly] public required ComponentTypeHandle<Factory> FactoryHandle;
+    [ReadOnly] public required ComponentTypeHandle<PlayerInterface> PlayerInterfaceHandle;
+
+    public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
     {
-        No,
-        Pause,
-        Breakpoint,
-        Signal,
-        RuntimeException,
+        Processor* processors = (Processor*)chunk.GetRequiredComponentDataPtrRW(ref ProcessorHandle);
+        Entity* entities = chunk.GetEntityDataPtrRO(EntityHandle);
+        BufferAccessor<ProcessorMemoryBuffer> memoryBuffers = chunk.GetBufferAccessorRW(ref ProcessorMemoryBufferHandle);
+        UnitTeam* unitTeams = (UnitTeam*)chunk.GetRequiredComponentDataPtrRO(ref UnitTeamHandle);
+        GhostInstance* ghostInstances = (GhostInstance*)chunk.GetRequiredComponentDataPtrRO(ref GhostInstanceHandle);
+        LocalTransform* localTransforms = (LocalTransform*)chunk.GetRequiredComponentDataPtrRO(ref LocalTransformHandle);
+        BufferAccessor<BufferedLogPiece> bufferedLogPieces = chunk.GetBufferAccessorRW(ref BufferedLogPieceHandle);
 
-        StepForward,
-        StepIn,
-        StepOut,
-        StepInstruction,
+        Radio* radios = (Radio*)(chunk.Has(ref RadioHandle) ? chunk.GetRequiredComponentDataPtrRW(ref RadioHandle) : null);
+        Radar* radars = (Radar*)(chunk.Has(ref RadarHandle) ? chunk.GetRequiredComponentDataPtrRW(ref RadarHandle) : null);
+        BufferAccessor<RadarContact> radarContactsAccessor = chunk.Has(ref RadarContactHandle) ? chunk.GetBufferAccessorRW(ref RadarContactHandle) : default;
 
-        StepForwardUnfinished,
-        StepInUnfinished,
-        StepOutUnfinished,
-        StepInstructionUnfinished,
-    }
-
-    public struct DebugContext
-    {
-        [GhostField] public required bool IsBeingDebugged;
-        [GhostField(SendData = false)] public required FixedList128Bytes<ushort> Breakpoints;
-        [GhostField(SendData = false)] public StopReason Stopped;
-        [GhostField(SendData = false)] public bool SkipCurrentBreakpoint;
-        [GhostField(SendData = false)] public bool IsStopUnhandled;
-        [GhostField(SendData = false)] public bool IsContinueUnhandled;
-    }
-
-    static void HandleTickDebug(ref Processor processor, ref ProcessorState processorState)
-    {
-        if (processor.DebugContext.Stopped
-            is StopReason.Breakpoint
-            or StopReason.Pause
-            or StopReason.RuntimeException
-            or StopReason.Signal
-            or StopReason.StepForward
-            or StopReason.StepIn
-            or StopReason.StepOut
-            or StopReason.StepInstruction) return;
-
-        try
+        ChunkEntityEnumerator en = new(useEnabledMask, chunkEnabledMask, chunk.Count);
+        while (en.NextEntityIndex(out int i))
         {
-            for (int i = 0; i < processor.CyclesPerTick && !processorState.IsDone; i++)
+            ref Processor processor = ref processors[i];
+            ref readonly Entity entity = ref entities[i];
+            DynamicBuffer<ProcessorMemoryBuffer> _memory = memoryBuffers[i];
+            ref readonly UnitTeam team = ref unitTeams[i];
+            ref readonly GhostInstance ghostInstance = ref ghostInstances[i];
+            ref readonly LocalTransform localTransform = ref localTransforms[i];
+            DynamicBuffer<BufferedLogPiece> _log = bufferedLogPieces[i];
+
+            using ProfilerMarker.AutoScope _1 = __ProcessorJobOuter.Auto();
+
+            if (!processor.Source.Code.IsCreated)
             {
-                if (!processor.DebugContext.SkipCurrentBreakpoint)
-                {
-                    for (int j = 0; j < processor.DebugContext.Breakpoints.Length; j++)
-                    {
-                        if (processor.DebugContext.Breakpoints[j] != processorState.Registers.CodePointer) continue;
+                processor.StatusLED.Status = ProcessorStatus.Off;
+                continue;
+            }
 
-                        processor.DebugContext.Stopped = StopReason.Breakpoint;
-                        processor.DebugContext.IsStopUnhandled = true;
-                        return;
-                    }
+            Span<byte> memory = new(_memory.GetUnsafePtr(), _memory.Length);
+
+            FixedList128Bytes<BufferedLogPiece> log = new();
+            ProcessorSystemServer.FunctionScope scope = new()
+            {
+                WorldRef = worldRef,
+                ProcessorRef = new ProcessorSystemServer.ProcessorRef()
+                {
+                    Memory = _memory.GetUnsafePtr(),
+                    MemorySize = _memory.Length,
+                    Crash = null,
+                    Registers = null,
+                    Signal = null,
+                },
+                EntityRef = new ProcessorSystemServer.EntityRef()
+                {
+                    Entity = entity,
+                    Processor = (Processor*)Unsafe.AsPointer(ref processor),
+                    Radio = radios == null ? null : &radios[i],
+                    Radar = radars == null ? null : &radars[i],
+                    RadarContacts = radars == null ? default : radarContactsAccessor[i],
+                    LocalTransform = localTransform,
+                    Team = team,
+                    Ghost = ghostInstance,
+                },
+                Log = &log,
+            };
+
+            NativeList<ExternalFunctionScopedSync> scopedExternalFunctions = new(this.scopedExternalFunctions.Length + processor.Source.GeneratedFunctions.Length, Allocator.Temp);
+
+            for (int j = 0; j < this.scopedExternalFunctions.Length; j++)
+            {
+                if ((this.scopedExternalFunctions[j].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.GUI.Prefix &&
+                    !chunk.Has(ref PlayerInterfaceHandle))
+                {
+                    continue;
                 }
-                else
+
+                if ((this.scopedExternalFunctions[j].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.Factory.Prefix &&
+                    !chunk.Has(ref FactoryHandle))
                 {
-                    processor.DebugContext.SkipCurrentBreakpoint = false;
+                    continue;
                 }
 
-                if (processorState.Signal != Signal.None)
+                if ((this.scopedExternalFunctions[j].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.WirelessTransmission.Prefix &&
+                    !chunk.Has(ref RadioHandle))
                 {
-                    if (!processor.SignalNotified)
-                    {
-                        processor.SignalNotified = true;
-                    }
-                    processor.DebugContext.Stopped = StopReason.Signal;
-                    processor.DebugContext.IsStopUnhandled = true;
-                    break;
+                    continue;
                 }
 
-                processor.SignalNotified = false;
-
-                if (processor.IsKeyRequested)
+                if ((this.scopedExternalFunctions[j].Id & ProcessorAPI.GlobalPrefix) == ProcessorAPI.Radar.Prefix &&
+                    !chunk.Has(ref RadarHandle))
                 {
-                    if (processor.InputKey.Length == 0) break;
-                    byte key = processor.InputKey[0];
-                    processor.InputKey.RemoveAt(0);
-                    processor.IsKeyRequested = false;
-                    processorState.Pop(1);
-                    processorState.Push(key);
+                    continue;
                 }
 
-                processorState.Tick();
+                scopedExternalFunctions.Add(this.scopedExternalFunctions[j]);
+                scopedExternalFunctions.GetUnsafePtr()[scopedExternalFunctions.Length - 1].Scope = (nint)(void*)&scope;
+            }
 
-                if (processor.DebugContext.Stopped
-                    is StopReason.StepForwardUnfinished
-                    or StopReason.StepInUnfinished
-                    or StopReason.StepOutUnfinished
-                    or StopReason.StepInstructionUnfinished)
+            int start = scopedExternalFunctions.Length;
+            if (processor.Source.GeneratedFunctions.IsCreated)
+            {
+                scopedExternalFunctions.AddRange(processor.Source.GeneratedFunctions.Ptr, processor.Source.GeneratedFunctions.Length);
+            }
+
+            ProcessorState processorState = new(
+                new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)
                 {
-#pragma warning disable IDE0072 // Add missing cases
-                    processor.DebugContext.Stopped = processor.DebugContext.Stopped switch
-                    {
-                        StopReason.StepForwardUnfinished => StopReason.StepForward,
-                        StopReason.StepInUnfinished => StopReason.StepIn,
-                        StopReason.StepOutUnfinished => StopReason.StepOut,
-                        StopReason.StepInstructionUnfinished => StopReason.StepInstruction,
-                        _ => processor.DebugContext.Stopped,
-                    };
-#pragma warning restore IDE0072 // Add missing cases
-                    processor.DebugContext.IsStopUnhandled = true;
-                    return;
+                    MemorySize = memory.Length,
+                },
+                processor.Registers,
+                memory,
+                processor.Source.Code.AsSpan(),
+                scopedExternalFunctions.AsArray().AsSpan()
+            )
+            {
+                Signal = processor.Signal,
+                Crash = processor.Crash,
+                HotFunctions = processor.HotFunctions,
+            };
+
+            scope.ProcessorRef.Crash = &processorState.Crash;
+            scope.ProcessorRef.Signal = &processorState.Signal;
+            scope.ProcessorRef.Registers = &processorState.Registers;
+
+            if (processor.DebugContext.IsBeingDebugged)
+            {
+                ProcessorDebugSystemServer.HandleTickDebug(ref processor, ref processorState);
+            }
+            else
+            {
+                ProcessorSystemServer.HandleTick(ref processor, ref processorState);
+            }
+
+            if (processor.Source.GeneratedFunctions.IsCreated)
+            {
+                for (int j = start; j < scopedExternalFunctions.Length; j++)
+                {
+                    processor.Source.GeneratedFunctions.Ptr[j - start].Flags = scopedExternalFunctions[j].Flags;
                 }
             }
-        }
-        catch (RuntimeException ex)
-        {
-            Debug.LogError(ex.ToString());
-            processor.DebugContext.Stopped = StopReason.RuntimeException;
-            processor.DebugContext.IsStopUnhandled = true;
+
+            if (ProcessorSystemServer.MappedMemory(_memory).Leds.CustomLED != 0)
+            {
+                ProcessorSystemServer.MappedMemory(_memory).Leds.CustomLED = 0;
+                processor.CustomLED.Blink();
+            }
+
+            processor.Registers = processorState.Registers;
+            processor.Signal = processorState.Signal;
+            processor.Crash = processorState.Crash;
+            processor.HotFunctions = processorState.HotFunctions;
+#pragma warning disable IDE0072 // Add missing cases
+            processor.StatusLED.Status = processorState.Signal switch
+            {
+                Signal.None => ProcessorStatus.Running,
+                Signal.Halt => ProcessorStatus.Halted,
+                _ => ProcessorStatus.Error,
+            };
+#pragma warning restore IDE0072 // Add missing cases
+            scopedExternalFunctions.Dispose();
+
+            for (int j = 0; j < log.Length; j++)
+            {
+                _log.Add(log[j]);
+            }
         }
     }
 }

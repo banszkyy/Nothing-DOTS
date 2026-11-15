@@ -12,6 +12,7 @@
 /Assets/Samples
 /Assets/_Recovery
 /Assets/UI/Models
+/Assets/Generated
 
 /Packages/packages-lock.json
 /Packages/*/tools

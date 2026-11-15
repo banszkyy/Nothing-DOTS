@@ -9,13 +9,12 @@ class ProcessorAuthoring : MonoBehaviour
     [Header("Options")]
     [SerializeField, Min(0)] internal int CyclesPerTick;
     [SerializeField, Min(0)] internal int MemorySize;
-    [SerializeField] Transform? TransmissionPoint;
+    [SerializeField, Min(0)] internal float EmissionPower;
 
     [Header("LEDs")]
     [SerializeField] GameObject? StatusLED = default;
     [SerializeField] GameObject? NetworkReceiveLED = default;
     [SerializeField] GameObject? NetworkSendLED = default;
-    [SerializeField] GameObject? RadarLED = default;
     [SerializeField] GameObject? CustomLED = default;
     [SerializeField] GameObject? USBLED = default;
 
@@ -34,11 +33,12 @@ class ProcessorAuthoring : MonoBehaviour
             AddComponent<Processor>(entity, new()
             {
                 CyclesPerTick = authoring.CyclesPerTick,
-                WirelessTransmissionPoint = authoring.TransmissionPoint == null ? default : authoring.TransmissionPoint.position,
+                EmissionPower = authoring.EmissionPower,
+                MemorySize = authoring.MemorySize,
+
                 StatusLED = new(authoring.StatusLED != null ? GetEntity(authoring.StatusLED, TransformUsageFlags.Dynamic) : Entity.Null),
                 NetworkReceiveLED = new(authoring.NetworkReceiveLED != null ? GetEntity(authoring.NetworkReceiveLED, TransformUsageFlags.Dynamic) : Entity.Null),
                 NetworkSendLED = new(authoring.NetworkSendLED != null ? GetEntity(authoring.NetworkSendLED, TransformUsageFlags.Dynamic) : Entity.Null),
-                RadarLED = new(authoring.RadarLED != null ? GetEntity(authoring.RadarLED, TransformUsageFlags.Dynamic) : Entity.Null),
                 CustomLED = new(authoring.CustomLED != null ? GetEntity(authoring.CustomLED, TransformUsageFlags.Dynamic) : Entity.Null),
                 USBLED = new(authoring.USBLED != null ? GetEntity(authoring.USBLED, TransformUsageFlags.Dynamic) : Entity.Null),
                 USBPosition = authoring.USBPosition != null ? authoring.transform.InverseTransformPoint(authoring.USBPosition.position) : float3.zero,
@@ -46,7 +46,6 @@ class ProcessorAuthoring : MonoBehaviour
 #if UNITY_EDITOR
                 SourceFile = authoring.Script is not null ? new FileId(authoring.Script, NetcodeEndPoint.Server) : default,
 #endif
-                MemorySize = authoring.MemorySize,
             });
             AddBuffer<BufferedLogPiece>(entity);
             AddComponent<LogPieces>(entity);

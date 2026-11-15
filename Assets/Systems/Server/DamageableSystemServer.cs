@@ -12,7 +12,7 @@ public partial struct DamageableSystemServer : ISystem
         EntityCommandBuffer commandBuffer = default;
 
         foreach (var (damageable, damages, transform, entity) in
-            SystemAPI.Query<RefRW<Damageable>, DynamicBuffer<BufferedDamage>, RefRO<LocalToWorld>>()
+            SystemAPI.Query<RefRW<Damageable>, DynamicBuffer<BufferedDamage>, RefRO<LocalTransform>>()
             .WithEntityAccess())
         {
             for (int i = 0; i < damages.Length; i++)

@@ -5,6 +5,7 @@
 #endif
 
 using System;
+using System.Runtime.CompilerServices;
 using AOT;
 using LanguageCore.Runtime;
 using Unity.Burst;
@@ -41,7 +42,8 @@ static unsafe class ProcessorAPI
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WiredTransmission.Send).Value, WirelessTransmission.Prefix + 3, ExternalFunctionGenerator.SizeOf<int, int, byte>(), 0, default));
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(WiredTransmission.Receive).Value, WirelessTransmission.Prefix + 4, ExternalFunctionGenerator.SizeOf<int, int, byte>(), ExternalFunctionGenerator.SizeOf<int>(), default));
 
-        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Sensors.Radar).Value, Sensors.Prefix + 1, 0, 0, default));
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Radar.SetRadar).Value, Radar.Prefix + 1, ExternalFunctionGenerator.SizeOf<float>(), ExternalFunctionGenerator.SizeOf<float>(), default));
+        buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Radar.RadarQuery).Value, Radar.Prefix + 2, ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<int>(), default));
 
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Environment.ToGlobal).Value, Environment.Prefix + 1, ExternalFunctionGenerator.SizeOf<int>(), 0, default));
         buffer.Add(new((delegate* unmanaged[Cdecl]<nint, nint, nint, void>)BurstCompiler.CompileFunctionPointer<ExternalFunctionUnity>(Environment.ToLocal).Value, Environment.Prefix + 2, ExternalFunctionGenerator.SizeOf<int>(), 0, default));
@@ -72,52 +74,53 @@ static unsafe class ProcessorAPI
 
     public static IExternalFunction[] GenerateManagedExternalFunctions() => new IExternalFunction[]
     {
-        new ExternalFunctionStub(IO.Prefix + 1,                "stdout", ExternalFunctionGenerator.SizeOf<byte>(), 0),
-        new ExternalFunctionStub(IO.Prefix + 2,                "stdin", 0, ExternalFunctionGenerator.SizeOf<byte>()),
+        new ExternalFunctionStub(IO.Prefix + 1, "stdout", ExternalFunctionGenerator.SizeOf<byte>(), 0),
+        new ExternalFunctionStub(IO.Prefix + 2, "stdin", 0, ExternalFunctionGenerator.SizeOf<byte>()),
 
-        ExternalFunctionSync.Create<float, float>(Math.Prefix + 1,        "sqrt", MathF.Sqrt),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 1, "sqrt", MathF.Sqrt),
         ExternalFunctionSync.Create<float, float, float>(Math.Prefix + 2, "atan2", MathF.Atan2),
-        ExternalFunctionSync.Create<float, float>(Math.Prefix + 3,         "sin", MathF.Sin),
-        ExternalFunctionSync.Create<float, float>(Math.Prefix + 4,         "cos", MathF.Cos),
-        ExternalFunctionSync.Create<float, float>(Math.Prefix + 5,         "tan", MathF.Tan),
-        ExternalFunctionSync.Create<float, float>(Math.Prefix + 6,         "asin", MathF.Asin),
-        ExternalFunctionSync.Create<float, float>(Math.Prefix + 7,         "acos", MathF.Acos),
-        ExternalFunctionSync.Create<float, float>(Math.Prefix + 8,         "atan", MathF.Atan),
-        ExternalFunctionSync.Create<int>(Math.Prefix + 9,                  "random", Math.SharedRandom.NextInt),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 3, "sin", MathF.Sin),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 4, "cos", MathF.Cos),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 5, "tan", MathF.Tan),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 6, "asin", MathF.Asin),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 7, "acos", MathF.Acos),
+        ExternalFunctionSync.Create<float, float>(Math.Prefix + 8, "atan", MathF.Atan),
+        ExternalFunctionSync.Create<int>(Math.Prefix + 9, "random", Math.SharedRandom.NextInt),
 
-        new ExternalFunctionStub(WirelessTransmission.Prefix + 1,      "wsend", ExternalFunctionGenerator.SizeOf<int, int, float3, byte>(), 0),
-        new ExternalFunctionStub(WirelessTransmission.Prefix + 2,      "wreceive", ExternalFunctionGenerator.SizeOf<int, int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 1, "wsend", ExternalFunctionGenerator.SizeOf<int, int, float3, byte>(), 0),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 2, "wreceive", ExternalFunctionGenerator.SizeOf<int, int, int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
 
-        new ExternalFunctionStub(WirelessTransmission.Prefix + 3,      "send", ExternalFunctionGenerator.SizeOf<int, int, byte>(), 0),
-        new ExternalFunctionStub(WirelessTransmission.Prefix + 4,      "receive", ExternalFunctionGenerator.SizeOf<int, int, byte>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 3, "send", ExternalFunctionGenerator.SizeOf<int, int, byte>(), 0),
+        new ExternalFunctionStub(WirelessTransmission.Prefix + 4, "receive", ExternalFunctionGenerator.SizeOf<int, int, byte>(), ExternalFunctionGenerator.SizeOf<int>()),
 
-        new ExternalFunctionStub(Sensors.Prefix + 1,           "radar", 0, 0),
+        new ExternalFunctionStub(Radar.Prefix + 1, "set_radar", ExternalFunctionGenerator.SizeOf<float>(), ExternalFunctionGenerator.SizeOf<float>()),
+        new ExternalFunctionStub(Radar.Prefix + 2, "radar_query", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<int>()),
 
-        new ExternalFunctionStub(Environment.Prefix + 1,       "toglobal", ExternalFunctionGenerator.SizeOf<int>(), 0),
-        new ExternalFunctionStub(Environment.Prefix + 2,       "tolocal", ExternalFunctionGenerator.SizeOf<int>(), 0),
-        new ExternalFunctionStub(Environment.Prefix + 3,       "toglobald", ExternalFunctionGenerator.SizeOf<int>(), 0),
-        new ExternalFunctionStub(Environment.Prefix + 4,       "tolocald", ExternalFunctionGenerator.SizeOf<int>(), 0),
-        new ExternalFunctionStub(Environment.Prefix + 5,       "time", 0, ExternalFunctionGenerator.SizeOf<float>()),
+        new ExternalFunctionStub(Environment.Prefix + 1, "toglobal", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(Environment.Prefix + 2, "tolocal", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(Environment.Prefix + 3, "toglobald", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(Environment.Prefix + 4, "tolocald", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(Environment.Prefix + 5, "time", 0, ExternalFunctionGenerator.SizeOf<float>()),
 
-        new ExternalFunctionStub(Debug.Prefix + 1,             "debug", ExternalFunctionGenerator.SizeOf<float3, byte>(), 0),
-        new ExternalFunctionStub(Debug.Prefix + 2,             "ldebug", ExternalFunctionGenerator.SizeOf<float3, byte>(), 0),
-        new ExternalFunctionStub(Debug.Prefix + 3,             "debug_label", ExternalFunctionGenerator.SizeOf<float3, int>(), 0),
-        new ExternalFunctionStub(Debug.Prefix + 4,             "ldebug_label", ExternalFunctionGenerator.SizeOf<float3, int>(), 0),
+        new ExternalFunctionStub(Debug.Prefix + 1, "debug", ExternalFunctionGenerator.SizeOf<float3, byte>(), 0),
+        new ExternalFunctionStub(Debug.Prefix + 2, "ldebug", ExternalFunctionGenerator.SizeOf<float3, byte>(), 0),
+        new ExternalFunctionStub(Debug.Prefix + 3, "debug_label", ExternalFunctionGenerator.SizeOf<float3, int>(), 0),
+        new ExternalFunctionStub(Debug.Prefix + 4, "ldebug_label", ExternalFunctionGenerator.SizeOf<float3, int>(), 0),
 
-        new ExternalFunctionStub(Commands.Prefix + 1,          "dequeue_command", ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<int>()),
+        new ExternalFunctionStub(Commands.Prefix + 1, "dequeue_command", ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<int>()),
 
-        new ExternalFunctionStub(GUI.Prefix + 1,               "gui_create", ExternalFunctionGenerator.SizeOf<int>(), 0),
-        new ExternalFunctionStub(GUI.Prefix + 2,               "gui_destroy", ExternalFunctionGenerator.SizeOf<int>(), 0),
-        new ExternalFunctionStub(GUI.Prefix + 3,               "gui_update", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(GUI.Prefix + 1, "gui_create", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(GUI.Prefix + 2, "gui_destroy", ExternalFunctionGenerator.SizeOf<int>(), 0),
+        new ExternalFunctionStub(GUI.Prefix + 3, "gui_update", ExternalFunctionGenerator.SizeOf<int>(), 0),
 
-        new ExternalFunctionStub(Attributes.Prefix + 1,        "attributes_query", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+        new ExternalFunctionStub(Attributes.Prefix + 1, "attributes_query", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
 
-        new ExternalFunctionStub(Buildings.Prefix + 1,         "build_at", ExternalFunctionGenerator.SizeOf<float3, int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+        new ExternalFunctionStub(Buildings.Prefix + 1, "build_at", ExternalFunctionGenerator.SizeOf<float3, int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
 
-        new ExternalFunctionStub(Factory.Prefix + 1,           "queue_unit", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+        new ExternalFunctionStub(Factory.Prefix + 1, "queue_unit", ExternalFunctionGenerator.SizeOf<int, int>(), ExternalFunctionGenerator.SizeOf<byte>()),
 
-        new ExternalFunctionStub(Processor_.Prefix + 1,        "set_source", ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<byte>()),
-        new ExternalFunctionStub(Processor_.Prefix + 2,        "halt", 0, 0),
+        new ExternalFunctionStub(Processor_.Prefix + 1, "set_source", ExternalFunctionGenerator.SizeOf<int>(), ExternalFunctionGenerator.SizeOf<byte>()),
+        new ExternalFunctionStub(Processor_.Prefix + 2, "halt", 0, 0),
     };
 
     public const int GlobalPrefix = unchecked((int)0xFFFF0000);
@@ -264,12 +267,20 @@ static unsafe class ProcessorAPI
             using ProfilerMarker.AutoScope marker = MarkerSend.Auto();
 #endif
 
+            FunctionScope* scope = (FunctionScope*)_scope;
+
+            if (scope->EntityRef.Radio == null)
+            {
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
+
             (int bufferPtr, int length, float3 aim, byte beamHalvings) = ExternalFunctionGenerator.TakeParameters<int, int, float3, byte>(arguments);
             if (bufferPtr == 0 || length == 0) return;
 
-            FunctionScope* scope = (FunctionScope*)_scope;
+            FixedList32Bytes<byte> data = new();
 
-            if (length is < 0 or >= 30)
+            if (length < 0 || length > data.Capacity)
             {
                 // Passed buffer length must be in range [0,30] inclusive
                 scope->ProcessorRef.DoCrash();
@@ -285,12 +296,11 @@ static unsafe class ProcessorAPI
 
             Span<byte> memory = new(scope->ProcessorRef.Memory, scope->ProcessorRef.MemorySize);
 
-            FixedList32Bytes<byte> data = new();
             data.AddRange((byte*)((nint)scope->ProcessorRef.Memory + bufferPtr), length);
 
-            if (scope->EntityRef.Processor->OutgoingTransmissions.Length >= scope->EntityRef.Processor->OutgoingTransmissions.Capacity)
-            { scope->EntityRef.Processor->OutgoingTransmissions.RemoveAt(0); }
-            scope->EntityRef.Processor->OutgoingTransmissions.Add(new()
+            if (scope->EntityRef.Radio->OutgoingTransmissions.Length >= scope->EntityRef.Radio->OutgoingTransmissions.Capacity)
+            { scope->EntityRef.Radio->OutgoingTransmissions.RemoveAt(0); }
+            scope->EntityRef.Radio->OutgoingTransmissions.Add(new()
             {
                 Data = data,
                 Metadata = new OutgoingUnitTransmissionMetadata()
@@ -313,12 +323,18 @@ static unsafe class ProcessorAPI
             using ProfilerMarker.AutoScope marker = MarkerReceive.Auto();
 #endif
 
+            FunctionScope* scope = (FunctionScope*)_scope;
+
+            if (scope->EntityRef.Radio == null)
+            {
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
+
             returnValue.Set(0);
 
             (int bufferPtr, int length, int bearingPtr, int marginDbPtr) = ExternalFunctionGenerator.TakeParameters<int, int, int, int>(arguments);
             if (bufferPtr == 0 || length <= 0) return;
-
-            FunctionScope* scope = (FunctionScope*)_scope;
 
             if (bufferPtr < 0 || bufferPtr + length >= scope->ProcessorRef.MemorySize)
             {
@@ -327,7 +343,7 @@ static unsafe class ProcessorAPI
                 return;
             }
 
-            ref FixedList128Bytes<BufferedUnitTransmission> received = ref scope->EntityRef.Processor->IncomingTransmissions; // scope->EntityManager.GetBuffer<BufferedUnitTransmission>(scope->SourceEntity);
+            ref FixedList128Bytes<BufferedUnitTransmission> received = ref scope->EntityRef.Radio->IncomingTransmissions; // scope->EntityManager.GetBuffer<BufferedUnitTransmission>(scope->SourceEntity);
             if (received.Length == 0) return;
 
             for (int i = 0; i < received.Length; i++)
@@ -385,6 +401,12 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
+            if (scope->EntityRef.Radio == null)
+            {
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
+
             (int bufferPtr, int length, byte port) = ExternalFunctionGenerator.TakeParameters<int, int, byte>(arguments);
             if (bufferPtr == 0 || length == 0) return;
 
@@ -407,9 +429,9 @@ static unsafe class ProcessorAPI
             FixedList32Bytes<byte> data = new();
             data.AddRange((byte*)((nint)scope->ProcessorRef.Memory + bufferPtr), length);
 
-            if (scope->EntityRef.Processor->OutgoingTransmissions.Length >= scope->EntityRef.Processor->OutgoingTransmissions.Capacity)
-            { scope->EntityRef.Processor->OutgoingTransmissions.RemoveAt(0); }
-            scope->EntityRef.Processor->OutgoingTransmissions.Add(new()
+            if (scope->EntityRef.Radio->OutgoingTransmissions.Length >= scope->EntityRef.Radio->OutgoingTransmissions.Capacity)
+            { scope->EntityRef.Radio->OutgoingTransmissions.RemoveAt(0); }
+            scope->EntityRef.Radio->OutgoingTransmissions.Add(new()
             {
                 Data = data,
                 Metadata = new OutgoingUnitTransmissionMetadata()
@@ -431,12 +453,18 @@ static unsafe class ProcessorAPI
             using ProfilerMarker.AutoScope marker = MarkerReceive.Auto();
 #endif
 
+            FunctionScope* scope = (FunctionScope*)_scope;
+
+            if (scope->EntityRef.Radio == null)
+            {
+                scope->ProcessorRef.DoCrash();
+                return;
+            }
+
             returnValue.Set(0);
 
             (int bufferPtr, int length, byte port) = ExternalFunctionGenerator.TakeParameters<int, int, byte>(arguments);
             if (bufferPtr == 0 || length <= 0) return;
-
-            FunctionScope* scope = (FunctionScope*)_scope;
 
             if (bufferPtr < 0 || bufferPtr + length >= scope->ProcessorRef.MemorySize)
             {
@@ -445,7 +473,7 @@ static unsafe class ProcessorAPI
                 return;
             }
 
-            ref FixedList128Bytes<BufferedUnitTransmission> received = ref scope->EntityRef.Processor->IncomingTransmissions; // scope->EntityManager.GetBuffer<BufferedUnitTransmission>(scope->SourceEntity);
+            ref FixedList128Bytes<BufferedUnitTransmission> received = ref scope->EntityRef.Radio->IncomingTransmissions;
             if (received.Length == 0) return;
 
             for (int i = 0; i < received.Length; i++)
@@ -535,7 +563,7 @@ static unsafe class ProcessorAPI
             if (scope->WorldRef.DebugLines.ListData->Length + 1 < scope->WorldRef.DebugLines.ListData->Capacity) scope->WorldRef.DebugLines.AddNoResize(new(
                 scope->EntityRef.Team.Team,
                 new BufferedLine(new float3x2(
-                    scope->EntityRef.WorldTransform.Position,
+                    scope->EntityRef.LocalTransform.Position,
                     position
                 ), color, default)
             ));
@@ -571,7 +599,7 @@ static unsafe class ProcessorAPI
             if (scope->WorldRef.DebugLines.ListData->Length + 1 < scope->WorldRef.DebugLines.ListData->Capacity) scope->WorldRef.DebugLines.AddNoResize(new(
                 scope->EntityRef.Team.Team,
                 new BufferedLine(new float3x2(
-                    scope->EntityRef.WorldTransform.Position,
+                    scope->EntityRef.LocalTransform.Position,
                     transformed
                 ), color, default)
             ));
@@ -728,7 +756,7 @@ static unsafe class ProcessorAPI
     }
 
     [BurstCompile]
-    public static class Sensors
+    public static class Radar
     {
         public const int Prefix = 0x00070000;
 
@@ -736,7 +764,7 @@ static unsafe class ProcessorAPI
 
         [BurstCompile]
         [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
-        public static void Radar(nint _scope, nint arguments, nint returnValue)
+        public static void SetRadar(nint _scope, nint arguments, nint returnValue)
         {
 #if UNITY_PROFILER
             using ProfilerMarker.AutoScope marker = MarkerRadar.Auto();
@@ -744,13 +772,45 @@ static unsafe class ProcessorAPI
 
             FunctionScope* scope = (FunctionScope*)_scope;
 
-            MappedMemory* mapped = (MappedMemory*)((nint)scope->ProcessorRef.Memory + ProcessorSystemServer.MappedMemoryStart);
+            float direction = ExternalFunctionGenerator.TakeParameters<float>(arguments);
 
-            scope->EntityRef.Processor->RadarResponse = default;
-            scope->EntityRef.Processor->RadarRequest = new float2(
-                math.cos(mapped->Radar.RadarDirection),
-                math.sin(mapped->Radar.RadarDirection)
-            );
+            if (float.IsFinite(direction))
+            {
+                scope->EntityRef.Radar->ReqCenter = new float3(math.cos(direction), 0f, math.sin(direction));
+                scope->EntityRef.Radar->ReqHalvings = 8;
+                scope->EntityRef.Radar->ReqSector = 0;
+                scope->EntityRef.Radar->ReqDirty = true;
+            }
+
+            returnValue.Set<float>(RadarMath.EstimateRevisit(in Unsafe.AsRef<global::Radar>(scope->EntityRef.Radar)));
+        }
+
+        [BurstCompile]
+        [MonoPInvokeCallback(typeof(ExternalFunctionUnity))]
+        public static void RadarQuery(nint _scope, nint arguments, nint returnValue)
+        {
+#if UNITY_PROFILER
+            using ProfilerMarker.AutoScope marker = MarkerRadar.Auto();
+#endif
+
+            FunctionScope* scope = (FunctionScope*)_scope;
+
+            (int bufferPtr, int bufferSize) = ExternalFunctionGenerator.TakeParameters<int, int>(arguments);
+
+            if (scope->EntityRef.RadarContacts.IsCreated && scope->EntityRef.RadarContacts.Length > 0)
+            {
+                int l = math.min(bufferSize, scope->EntityRef.RadarContacts.Length);
+                for (int i = 0; i < l; i++)
+                {
+                    scope->ProcessorRef.MemorySpan.Set(bufferPtr + (i * sizeof(RadarContactItem)), new RadarContactItem(scope->EntityRef.RadarContacts[0].Pos, scope->EntityRef.RadarContacts[0].RadialVel, scope->EntityRef.RadarContacts[0].Strength, scope->EntityRef.RadarContacts[0].Emission));
+                }
+                scope->EntityRef.RadarContacts.RemoveRange(0, l);
+                returnValue.Set(l);
+            }
+            else
+            {
+                returnValue.Set(0);
+            }
         }
     }
 

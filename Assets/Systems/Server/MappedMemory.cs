@@ -152,3 +152,20 @@ public struct MappedMemory
     [FieldOffset(GenericModulesSize)] public MappedMemory_RadioJammer RadioJammer;
     [FieldOffset(GenericModulesSize)] public MappedMemory_RadarJammer RadarJammer;
 }
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public readonly struct RadarContactItem
+{
+    public readonly float3 Point;
+    public readonly float radialVel;
+    public readonly byte strength;
+    public readonly byte emission;
+
+    public RadarContactItem(float3 point, float radialVel, byte strength, byte emission)
+    {
+        Point = point;
+        this.radialVel = radialVel;
+        this.strength = strength;
+        this.emission = emission;
+    }
+}

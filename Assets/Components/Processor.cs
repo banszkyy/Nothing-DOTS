@@ -1,6 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using LanguageCore.Runtime;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -9,37 +7,11 @@ using Unity.Mathematics;
 using Unity.NetCode;
 using Unity.Rendering;
 
-public static class Led
-{
-    // Power of two so every periodic pattern in the shader divides it evenly (no seam on wrap).
-    public const float TimeWrap = 16384f;   // 4.5 h, float ulp ~2 ms at the top
-    public static float Wrap(float t)
-    {
-        t %= TimeWrap;
-        return t < 0 ? t + TimeWrap : t;
-    }
-}
-
-// ---- adapt to your existing ghost component ----
-public struct LedSync : IComponentData
-{
-    [GhostField] public byte ProcStatus, RadarStatus, NetStatus, UserStatus;
-    [GhostField] public ushort ProcBlinks, RadarBlinks, NetBlinks, UserBlinks;
-}
-
-// ---- client-only presentation state ----
-public struct LedClientState : IComponentData
-{
-    public bool Initialized;
-    public uint4 LastCounters;
-    public float4 Stamps;          // wrapped local time of last accepted blink, per channel
-}
-
 [MaterialProperty("_LedBlink")] public struct LedBlinkProp : IComponentData { public float4 Value; }
 [MaterialProperty("_LedStatus")] public struct LedStatusProp : IComponentData { public float4 Value; }
 public struct LedGlowLink : IComponentData { public Entity Glow; }
 
-struct StatusLED<T> where T : struct, Enum
+public struct StatusLED<T> where T : struct, Enum
 {
     [GhostField(SendData = false)] public Entity Entity;
     [GhostField] public T Status;
@@ -51,7 +23,7 @@ struct StatusLED<T> where T : struct, Enum
     }
 }
 
-struct BlinkingLED
+public struct BlinkingLED
 {
     [GhostField(SendData = false)] public Entity Entity;
     [GhostField(SendData = false)] public float LastBlinked;
@@ -64,19 +36,20 @@ struct BlinkingLED
     }
 
     public void Blink() => LastBlinkedNet = unchecked(LastBlinkedNet + 1);
-    public bool ReceiveBlink()
+    public bool ReceiveBlink(float now, float flashTime)
     {
         if (LastBlinkedLocal != LastBlinkedNet)
         {
             LastBlinkedLocal = LastBlinkedNet;
-            LastBlinked = Math.Max(LastBlinkedNet, MonoTime.Now);
+            LastBlinked = now;
             return true;
         }
-        return false;
+
+        return now - LastBlinked < flashTime;
     }
 }
 
-struct BlinkingStatusLED
+public struct BlinkingStatusLED
 {
     [GhostField(SendData = false)] public Entity Entity;
     [GhostField(SendData = false)] public float LastBlinked;
@@ -95,26 +68,26 @@ struct BlinkingStatusLED
         Status = status;
     }
 
-    public bool ReceiveBlink(out byte status)
+    public bool ReceiveBlink(float now, float flashTime, out byte status)
     {
         if (LastBlinkedLocal != LastBlinkedNet)
         {
             LastBlinkedLocal = LastBlinkedNet;
-            LastBlinked = Math.Max(LastBlinkedNet, MonoTime.Now);
+            LastBlinked = now;
             status = Status;
             return true;
         }
+
+        if (now - LastBlinked < flashTime)
+        {
+            status = Status;
+            return true;
+        }
+
         status = default;
         return false;
     }
 }
-
-//[StructLayout(LayoutKind.Explicit)]
-//struct ProcessorMemory
-//{
-//    [FieldOffset(0)] public FixedBytes2048 Memory;
-//    [FieldOffset(Processor.MappedMemoryStart)] public MappedMemory MappedMemory;
-//}
 
 readonly struct AttributeMeta : IEquatable<AttributeMeta>
 {
@@ -171,32 +144,22 @@ public enum ProcessorStatus : byte
 
 struct Processor : IComponentData
 {
-    //public const int TotalMemorySize = 2048;
-    //public const int HeapSize = 512;
-    //public const int StackSize = 1024;
-
-    //public const int UserMemorySize = StackSize + HeapSize;
-    //public const int MappedMemoryStart = UserMemorySize;
-    //public const int MappedMemorySize = TotalMemorySize - UserMemorySize;
-
     [GhostField] public FileId SourceFile;
     public long CompiledSourceVersion;
     public ProcessorSource Source;
     public UnitAttributesPack Attributes;
-    [GhostField] public ProcessorJob.DebugContext DebugContext;
+    [GhostField] public ProcessorDebugSystemServer.DebugContext DebugContext;
     [GhostField] public bool IsVersionLocked;
 
     public int CyclesPerTick;
     public int MemorySize;
-    public float3 WirelessTransmissionPoint;
+    public float EmissionPower;
     public Registers Registers;
     public HotFunctions HotFunctions;
     [GhostField] public int Crash;
     [GhostField] public Signal Signal;
     public bool SignalNotified;
 
-    public FixedList128Bytes<BufferedUnitTransmission> IncomingTransmissions;
-    public FixedList128Bytes<BufferedUnitTransmissionOutgoing> OutgoingTransmissions;
     public FixedList128Bytes<UnitCommandRequest> CommandQueue;
 
     public bool IsKeyRequested;
@@ -214,13 +177,8 @@ struct Processor : IComponentData
     [GhostField] public StatusLED<ProcessorStatus> StatusLED;
     [GhostField] public BlinkingStatusLED NetworkReceiveLED;
     [GhostField] public BlinkingLED NetworkSendLED;
-    [GhostField] public BlinkingLED RadarLED;
     [GhostField] public BlinkingLED USBLED;
     [GhostField] public BlinkingLED CustomLED;
     public float3 USBPosition;
     public quaternion USBRotation;
-
-    //public static unsafe nint GetMemoryPtr(ref Processor processor) => (nint)Unsafe.AsPointer(ref processor.Memory.Memory);
-    //public static unsafe Span<byte> GetMemorySpan(ref Processor processor) => new(Unsafe.AsPointer(ref processor.Memory.Memory), 2048);
-    //public static unsafe ReadOnlySpan<byte> GetMemorySpan(Processor processor) => new(Unsafe.AsPointer(ref processor.Memory.Memory), 2048);
 }

@@ -1,81 +1,61 @@
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
 class TcpListenerManager : IDisposable
 {
-    public IPAddress Address { get; }
-    public int Port { get; }
+    public EndPoint EndPoint => Listener.LocalEndpoint;
+    public bool IsListening { get; private set; }
+    readonly TcpListener Listener;
+    public readonly ConcurrentBag<TcpClient> Clients;
+    readonly CancellationTokenSource CancellationTokenSource;
+    public event Action<TcpClient>? OnClientConnected;
 
-    readonly string _category;
-
-    readonly TcpListener _listener;
-    Thread? _listenerThread;
-    TcpClient? _client;
-
-    public TcpClient? ConnectedClient
+    public TcpListenerManager(IPAddress address, int port)
     {
-        get
+        Clients = new ConcurrentBag<TcpClient>();
+        Listener = new TcpListener(address, port);
+        CancellationTokenSource = new CancellationTokenSource();
+
+        IsListening = true;
+        Listener.Start();
+        Listener.AcceptTcpClientAsync().ContinueWith(HandleClient, CancellationTokenSource.Token);
+    }
+
+    void HandleClient(System.Threading.Tasks.Task<TcpClient> task)
+    {
+        if (task.IsCanceled)
         {
-            if (_client is null) return null;
-            if (_client.Connected) return _client;
-            Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Disposing TCP client {_client.Client.RemoteEndPoint}");
-            _client.Dispose();
-            _client = null;
-            return null;
+            IsListening = false;
+            return;
         }
-    }
-    public bool IsListening => _listenerThread is not null && _listenerThread.IsAlive;
 
-    TcpListenerManager(IPAddress address, int port, string category)
-    {
-        Address = address;
-        Port = port;
-        _category = category;
-        _listener = new TcpListener(Address, Port);
-        _listener.Start();
-    }
+        if (task.IsFaulted) Debug.LogException(task.Exception);
 
-    public static TcpListenerManager Listen(IPAddress address, int port, string category)
-    {
-        TcpListenerManager res = new(address, port, category);
-        res.StartThread();
-        return res;
-    }
-
-    void StartThread()
-    {
-        _listenerThread = new Thread(new ThreadStart(() =>
+        if (task.IsCompletedSuccessfully)
         {
-            try
-            {
-                Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Accepting next TCP client on {Address}:{Port} ...");
-                _client = _listener.AcceptTcpClient();
-                Debug.Log($"{DebugEx.AnyPrefix} [{_category}] TCP client connected from {_client.Client.RemoteEndPoint}");
-            }
-            catch (SocketException socketException)
-            {
-                if (socketException.Message == "interrupted")
-                {
-                    Debug.Log($"{DebugEx.AnyPrefix} [{_category}] Listening stopped on {Address}:{Port}");
-                }
-                else
-                {
-                    Debug.LogException(socketException);
-                }
-            }
-        }))
+            Clients.Add(task.Result);
+            OnClientConnected?.Invoke(task.Result);
+            IsListening = true;
+            Listener.AcceptTcpClientAsync().ContinueWith(HandleClient, CancellationTokenSource.Token);
+        }
+        else
         {
-            IsBackground = true
-        };
-        _listenerThread.Start();
+            IsListening = false;
+        }
     }
 
     public void Dispose()
     {
-        _client?.Dispose();
-        _client = null;
-        _listener.Stop();
+        CancellationTokenSource.Cancel();
+        Listener.Stop();
+        foreach (TcpClient item in Clients)
+        {
+            Debug.Log($"{DebugEx.AnyPrefix} [TCP] Disposing client");
+            item.Dispose();
+        }
+        Clients.Clear();
     }
 }

@@ -96,7 +96,7 @@ partial struct CombatTurretProcessorSystem : ISystem
                 if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
 
                 Entity instance = commandBuffer.Instantiate(projectiles[turret.ValueRO.Projectile].Prefab);
-                commandBuffer.SetComponent(instance, LocalTransform.FromPosition(SystemAPI.GetComponent<LocalToWorld>(turret.ValueRO.ShootPosition).Position));
+                commandBuffer.SetComponent(instance, LocalTransform.FromPosition(shootPosition.ValueRO.Position));
                 commandBuffer.SetComponent<Projectile>(instance, new()
                 {
                     Velocity = velocity,
@@ -111,7 +111,7 @@ partial struct CombatTurretProcessorSystem : ISystem
                 {
                     NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ShootRpc()
                     {
-                        Position = SystemAPI.GetComponent<LocalToWorld>(turret.ValueRO.ShootPosition).Position,
+                        Position = shootPosition.ValueRO.Position,
                         Velocity = velocity,
                         ProjectileIndex = projectileIndex,
                         VisualEffectIndex = turret.ValueRO.ShootEffect,

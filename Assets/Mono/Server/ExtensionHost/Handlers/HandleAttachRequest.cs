@@ -56,43 +56,32 @@ partial class DebugHost
         }
 
         {
-            string entityId = arguments.ConfigurationProperties.GetValueAsString("entity");
-            if (string.IsNullOrEmpty(entityId))
+            string ghostId = arguments.ConfigurationProperties.GetValueAsString("ghost");
+            if (string.IsNullOrEmpty(ghostId))
             {
-                string ghostId = arguments.ConfigurationProperties.GetValueAsString("ghost");
-                if (string.IsNullOrEmpty(ghostId))
-                {
-                    throw new ProtocolException("Attach failed because launch configuration did not specify 'entity' or 'ghost'.");
-                }
-
-                if (!ExtensionHostUtils.TryParseGhost(ghostId, out var ghost))
-                {
-                    throw new ProtocolException($"Attach failed because the ghost is invalid.");
-                }
-
-                using var q = e.CreateEntityQuery(typeof(Processor), typeof(GhostInstance));
-                using var entities = q.ToEntityArray(Allocator.Temp);
-
-                for (int i = 0; i < entities.Length; i++)
-                {
-                    if (ghost.Equals(e.GetComponentData<GhostInstance>(entities[i])))
-                    {
-                        entity = entities[i];
-                        goto ok;
-                    }
-                }
-
-                throw new ProtocolException($"Attach failed because the ghost {ghost} not found.");
-
-            ok:;
+                throw new ProtocolException("Attach failed because launch configuration did not specify 'ghost'.");
             }
-            else
+
+            if (!ExtensionHostUtils.TryParseGhost(ghostId, out var ghost))
             {
-                if (!ExtensionHostUtils.TryParseEntity(entityId, out entity))
+                throw new ProtocolException($"Attach failed because the ghost is invalid.");
+            }
+
+            using var q = e.CreateEntityQuery(typeof(Processor), typeof(GhostInstance));
+            using var entities = q.ToEntityArray(Allocator.Temp);
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                if (ghost.Equals(e.GetComponentData<GhostInstance>(entities[i])))
                 {
-                    throw new ProtocolException($"Attach failed because the entity is invalid.");
+                    entity = entities[i];
+                    goto ok;
                 }
             }
+
+            throw new ProtocolException($"Attach failed because the ghost {ghost} not found.");
+
+        ok:;
         }
 
         if (!e.Exists(entity))
@@ -126,6 +115,7 @@ partial class DebugHost
 
         Log.Info($"Debug session started: {{ entity: {entity}, token: {guid}, connection: {playerConnectionId} }}");
 
+        _ghost = e.TryGetComponentData(entity, out GhostInstance w) ? w : default;
         _entity = entity;
         _playerGuid = guid;
         _playerConnectionId = playerConnectionId;
@@ -133,7 +123,7 @@ partial class DebugHost
         _originalFile = _processor.SourceFile;
         _originalSource = _processor.Source;
         _unitLogPosition = 0;
-        _processor.DebugContext = new ProcessorJob.DebugContext()
+        _processor.DebugContext = new ProcessorDebugSystemServer.DebugContext()
         {
             IsBeingDebugged = true,
             Breakpoints = new FixedList128Bytes<ushort>(),

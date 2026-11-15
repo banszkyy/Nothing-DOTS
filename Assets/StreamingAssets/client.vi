@@ -13,9 +13,9 @@ while (true) {
     LEDs.custom_led = true;
 
     while (true) {
-        byte[16] buffer;
+        byte[30] buffer;
         float3 direction;
-        int l = wreceive(&buffer, 16, &direction, (byte*)0);
+        int l = wreceive(&buffer, &direction, (byte*)0);
         if (!l) break;
 
         int o = 0;
@@ -32,17 +32,19 @@ while (true) {
                 }
             } else if (buffer[o] == (byte)Header.AuthChallenge) {
                 AuthChallenge* req = &buffer[o] as AuthChallenge*;
-                u8[] res = pack {
-                    new RadioHeader {
-                        header = RadioHeaderValues.Uplink,
-                    },
-                    new AuthResponse {
-                        header = Header.AuthResponse,
-                        num = req.num,
-                        dst = req.src,
-                    },
-                };
-                wsend(&res, res.Length);
+                if (distancesqr(req.position, GPS.position) < 4f * 4f) {
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Uplink,
+                        },
+                        new AuthResponse {
+                            header = Header.AuthResponse,
+                            authNum = req.authNum,
+                            dst = req.src,
+                        },
+                    };
+                    wsend(&res, res.Length);
+                }
             } else if (buffer[o] == (byte)Header.Ping) {
                 Ping* req = &buffer[o] as Ping*;
                 if (address && req.dst == address) {

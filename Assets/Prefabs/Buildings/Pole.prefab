@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: -6240172969677342294}
   - component: {fileID: -3574999813005951356}
   - component: {fileID: 6216150996948289786}
+  - component: {fileID: -6062282106530434023}
   m_Layer: 0
   m_Name: Pole
   m_TagString: Untagged
@@ -222,6 +223,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1578c6f4703a07a5a2ba978c753907e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-6062282106530434023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1545415078347206922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 141cb5c1974dd794fa0a9ec2261dca44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadarSignatureAuthoring
+  RadarCrossSection: 1
 --- !u!1 &8694413660970219775
 GameObject:
   m_ObjectHideFlags: 0

@@ -30,9 +30,9 @@ export function activate(context: vscode.ExtensionContext) {
                 log.info(`[Profiling] Profiling stopped`, res)
                 vscode.commands.executeCommand('setContext', `${utils.extensionId}.isProfiling`, false)
 
-                if (res.Path) {
-                    //log.info(`[Profiling] Opening ${vscode.Uri.file(res.Path)}`)
-                    //vscode.commands.executeCommand('workbench.action.files.openFile', vscode.Uri.file(res.Path))
+                if (res.path) {
+                    log.info(`[Profiling] Opening ${vscode.Uri.file(res.path)}`)
+                    vscode.commands.executeCommand('workbench.action.files.openFile', vscode.Uri.file(res.path))
                 } else {
                     vscode.window.showErrorMessage(`Profiling failed: No path returned from the debug adapter.`)
                 }

@@ -457,16 +457,6 @@ static class SaveManager
                     writer.Write(v.Crash);
                     writer.Write(v.Signal);
                     writer.Write(v.SignalNotified);
-                    writer.Write(v.IncomingTransmissions, (writer, v) =>
-                    {
-                        writer.WriteUnsafe(v.Data);
-                        writer.WriteUnsafe(v.Metadata);
-                    });
-                    writer.Write(v.OutgoingTransmissions, (writer, v) =>
-                    {
-                        writer.WriteUnsafe(v.Data);
-                        writer.WriteUnsafe(v.Metadata);
-                    });
                     writer.Write(v.CommandQueue, (writer, v) =>
                     {
                         writer.WriteUnsafe(v.Id);
@@ -487,22 +477,6 @@ static class SaveManager
                     v.Crash = reader.ReadInt();
                     v.Signal = (LanguageCore.Runtime.Signal)reader.ReadByte();
                     v.SignalNotified = reader.ReadBool();
-                    v.IncomingTransmissions = reader.ReadFixedList128<BufferedUnitTransmission>(reader =>
-                    {
-                        return new BufferedUnitTransmission()
-                        {
-                            Data = reader.ReadFixedList32Unsafe<byte>(),
-                            Metadata = reader.ReadUnsafe<IncomingUnitTransmissionMetadata>(),
-                        };
-                    });
-                    v.OutgoingTransmissions = reader.ReadFixedList128<BufferedUnitTransmissionOutgoing>(reader =>
-                    {
-                        return new BufferedUnitTransmissionOutgoing()
-                        {
-                            Data = reader.ReadFixedList32Unsafe<byte>(),
-                            Metadata = reader.ReadUnsafe<OutgoingUnitTransmissionMetadata>(),
-                        };
-                    });
                     v.CommandQueue = reader.ReadFixedList128<UnitCommandRequest>(reader =>
                     {
                         int id = reader.ReadInt();

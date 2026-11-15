@@ -1,9 +1,9 @@
 using System;
-using LanguageCore.Runtime;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.NetCode;
 
 [BurstCompile]
 public readonly struct BufferedLogPiece : IBufferElementData
@@ -22,7 +22,6 @@ public readonly struct BufferedLogPiece : IBufferElementData
 public enum LogPieceType : byte
 {
     Unknown0,
-    Message,
     CombatTurret_Shoot,
     Command,
     Radar,
@@ -30,7 +29,6 @@ public enum LogPieceType : byte
     Transmission_WiredIn,
     Transmission_WirelessOut,
     Transmission_WirelessIn,
-    ProcessorSignal,
     Unknown1,
 }
 
@@ -65,27 +63,6 @@ public readonly struct LogPieceHeader
         buffer.Add((byte)Type);
         buffer.WriteUnsafe(Timestamp);
         buffer.WriteUnsafe(Index);
-    }
-}
-
-public readonly struct UnitLog_Message
-{
-    public readonly LogPieceHeader Header;
-
-    public UnitLog_Message(long timestamp, uint index)
-    {
-        Header = new(LogPieceType.Message, timestamp, index);
-    }
-
-    public static UnitLog_Message Read(ReadOnlySpan<byte> buffer, ref int index)
-    {
-        LogPieceHeader header = LogPieceHeader.Read(buffer, ref index);
-        return new UnitLog_Message(header.Timestamp, header.Index);
-    }
-
-    public void Write(DynamicBuffer<BufferedLogPiece> buffer)
-    {
-        Header.Write(buffer);
     }
 }
 
@@ -150,12 +127,14 @@ public readonly struct UnitLog_Radar
     public readonly LogPieceHeader Header;
     public readonly bool Success;
     public readonly RadarResponse RadarResponse;
+    public readonly SpawnedGhost ContextualEntity;
 
-    public UnitLog_Radar(long timestamp, uint index, bool success, RadarResponse radarResponse)
+    public UnitLog_Radar(long timestamp, uint index, bool success, RadarResponse radarResponse, SpawnedGhost contextualEntity)
     {
         Header = new(LogPieceType.Radar, timestamp, index);
         Success = success;
         RadarResponse = radarResponse;
+        ContextualEntity = contextualEntity;
     }
 
     public static UnitLog_Radar Read(ReadOnlySpan<byte> buffer, ref int index)
@@ -163,9 +142,10 @@ public readonly struct UnitLog_Radar
         LogPieceHeader header = LogPieceHeader.Read(buffer, ref index);
 
         bool success = buffer[index++] != 0;
-        var radarResponse = success ? buffer.ReadUnsafe<RadarResponse>(ref index) : default;
+        RadarResponse radarResponse = success ? buffer.ReadUnsafe<RadarResponse>(ref index) : default;
+        SpawnedGhost contextualEntity = success ? buffer.ReadSpawnedGhost(ref index) : default;
 
-        return new UnitLog_Radar(header.Timestamp, header.Index, success, radarResponse);
+        return new UnitLog_Radar(header.Timestamp, header.Index, success, radarResponse, contextualEntity);
     }
 
     public void Write(DynamicBuffer<BufferedLogPiece> buffer)
@@ -174,7 +154,11 @@ public readonly struct UnitLog_Radar
         Header.Write(buffer);
 
         buffer.Add((byte)(Success ? 1 : 0));
-        if (Success) buffer.WriteUnsafe(RadarResponse);
+        if (Success)
+        {
+            buffer.WriteUnsafe(RadarResponse);
+            buffer.Write(ContextualEntity);
+        }
     }
 }
 
@@ -216,12 +200,14 @@ public readonly struct UnitLog_Transmission_WiredIn
     public readonly LogPieceHeader Header;
     public readonly IncomingWiredUnitTransmissionMetadata Metadata;
     public readonly FixedList32Bytes<byte> Data;
+    public readonly SpawnedGhost ContextualEntity;
 
-    public UnitLog_Transmission_WiredIn(long timestamp, uint index, IncomingWiredUnitTransmissionMetadata metadata, FixedList32Bytes<byte> data)
+    public UnitLog_Transmission_WiredIn(long timestamp, uint index, IncomingWiredUnitTransmissionMetadata metadata, FixedList32Bytes<byte> data, SpawnedGhost contextualEntity)
     {
         Header = new(LogPieceType.Transmission_WiredIn, timestamp, index);
         Metadata = metadata;
         Data = data;
+        ContextualEntity = contextualEntity;
     }
 
     public static UnitLog_Transmission_WiredIn Read(ReadOnlySpan<byte> buffer, ref int index)
@@ -230,8 +216,9 @@ public readonly struct UnitLog_Transmission_WiredIn
 
         IncomingWiredUnitTransmissionMetadata metadata = buffer.ReadUnsafe<IncomingWiredUnitTransmissionMetadata>(ref index);
         FixedList32Bytes<byte> data = buffer.ReadFixedList32Unsafe<byte>(ref index);
+        SpawnedGhost contextualEntity = buffer.ReadSpawnedGhost(ref index);
 
-        return new UnitLog_Transmission_WiredIn(header.Timestamp, header.Index, metadata, data);
+        return new UnitLog_Transmission_WiredIn(header.Timestamp, header.Index, metadata, data, contextualEntity);
     }
 
     public void Write(DynamicBuffer<BufferedLogPiece> buffer)
@@ -241,6 +228,7 @@ public readonly struct UnitLog_Transmission_WiredIn
 
         buffer.WriteUnsafe(Metadata);
         buffer.WriteListUnsafe(Data);
+        buffer.Write(ContextualEntity);
     }
 }
 
@@ -282,12 +270,14 @@ public readonly struct UnitLog_Transmission_WirelessIn
     public readonly LogPieceHeader Header;
     public readonly IncomingWirelessUnitTransmissionMetadata Metadata;
     public readonly FixedList32Bytes<byte> Data;
+    public readonly SpawnedGhost ContextualEntity;
 
-    public UnitLog_Transmission_WirelessIn(long timestamp, uint index, IncomingWirelessUnitTransmissionMetadata metadata, FixedList32Bytes<byte> data)
+    public UnitLog_Transmission_WirelessIn(long timestamp, uint index, IncomingWirelessUnitTransmissionMetadata metadata, FixedList32Bytes<byte> data, SpawnedGhost contextualEntity)
     {
         Header = new(LogPieceType.Transmission_WirelessIn, timestamp, index);
         Metadata = metadata;
         Data = data;
+        ContextualEntity = contextualEntity;
     }
 
     public static UnitLog_Transmission_WirelessIn Read(ReadOnlySpan<byte> buffer, ref int index)
@@ -296,8 +286,9 @@ public readonly struct UnitLog_Transmission_WirelessIn
 
         IncomingWirelessUnitTransmissionMetadata metadata = buffer.ReadUnsafe<IncomingWirelessUnitTransmissionMetadata>(ref index);
         FixedList32Bytes<byte> data = buffer.ReadFixedList32Unsafe<byte>(ref index);
+        SpawnedGhost contextualEntity = buffer.ReadSpawnedGhost(ref index);
 
-        return new UnitLog_Transmission_WirelessIn(header.Timestamp, header.Index, metadata, data);
+        return new UnitLog_Transmission_WirelessIn(header.Timestamp, header.Index, metadata, data, contextualEntity);
     }
 
     public void Write(DynamicBuffer<BufferedLogPiece> buffer)
@@ -307,39 +298,11 @@ public readonly struct UnitLog_Transmission_WirelessIn
 
         buffer.WriteUnsafe(Metadata);
         buffer.WriteListUnsafe(Data);
+        buffer.Write(ContextualEntity);
     }
 }
 
-public readonly struct UnitLog_ProcessorSignal
-{
-    public readonly LogPieceHeader Header;
-    public readonly Signal Signal;
-
-    public UnitLog_ProcessorSignal(long timestamp, uint index, Signal signal)
-    {
-        Header = new(LogPieceType.ProcessorSignal, timestamp, index);
-        Signal = signal;
-    }
-
-    public static UnitLog_ProcessorSignal Read(ReadOnlySpan<byte> buffer, ref int index)
-    {
-        LogPieceHeader header = LogPieceHeader.Read(buffer, ref index);
-
-        var signal = (Signal)buffer[index++];
-
-        return new UnitLog_ProcessorSignal(header.Timestamp, header.Index, signal);
-    }
-
-    public void Write(DynamicBuffer<BufferedLogPiece> buffer)
-    {
-        LogPieceExtensions.LimitSize(buffer);
-        Header.Write(buffer);
-
-        buffer.Add((byte)Signal);
-    }
-}
-
-public static class LogPieceExtensions
+static class LogPieceExtensions
 {
     const int MaxBufferSize = 1024;
 
@@ -347,7 +310,6 @@ public static class LogPieceExtensions
 
     public static LogPieceHeader Read(ReadOnlySpan<byte> buffer, ref int offset) => (LogPieceType)buffer[offset] switch
     {
-        LogPieceType.Message => UnitLog_Message.Read(buffer, ref offset).Header,
         LogPieceType.CombatTurret_Shoot => UnitLog_CombatTurret_Shoot.Read(buffer, ref offset).Header,
         LogPieceType.Command => UnitLog_Command.Read(buffer, ref offset).Header,
         LogPieceType.Radar => UnitLog_Radar.Read(buffer, ref offset).Header,
@@ -355,7 +317,6 @@ public static class LogPieceExtensions
         LogPieceType.Transmission_WiredIn => UnitLog_Transmission_WiredIn.Read(buffer, ref offset).Header,
         LogPieceType.Transmission_WirelessOut => UnitLog_Transmission_WirelessOut.Read(buffer, ref offset).Header,
         LogPieceType.Transmission_WirelessIn => UnitLog_Transmission_WirelessIn.Read(buffer, ref offset).Header,
-        LogPieceType.ProcessorSignal => UnitLog_ProcessorSignal.Read(buffer, ref offset).Header,
         LogPieceType.Unknown0 => throw new UnreachableException(),
         LogPieceType.Unknown1 => throw new UnreachableException(),
         _ => default,
@@ -422,6 +383,19 @@ public static class LogPieceExtensions
         ReadOnlySpan<byte> result = buffer.Slice(index, count);
         index += count;
         return result;
+    }
+
+    public static SpawnedGhost ReadSpawnedGhost(this ReadOnlySpan<byte> buffer, ref int index)
+    {
+        int id = buffer.ReadUnsafe<int>(ref index);
+        uint spawnTick = buffer.ReadUnsafe<uint>(ref index);
+        return new SpawnedGhost(id, new NetworkTick(spawnTick));
+    }
+
+    public static void Write(this DynamicBuffer<BufferedLogPiece> buffer, SpawnedGhost value)
+    {
+        buffer.WriteUnsafe(value.ghostId);
+        buffer.WriteUnsafe(value.spawnTick.SerializedData);
     }
 
     public static unsafe T ReadUnsafe<T>(this ReadOnlySpan<byte> buffer, ref int index) where T : unmanaged

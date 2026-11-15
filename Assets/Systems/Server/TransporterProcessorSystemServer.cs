@@ -22,8 +22,8 @@ partial struct TransporterProcessorSystemServer : ISystem
         PrefabDatabase prefabDatabase = SystemAPI.GetSingleton<PrefabDatabase>();
         EntityCommandBuffer commandBuffer = default;
 
-        foreach (var (processor, memory, transporter, transform, localTransform) in
-            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Transporter>, RefRO<LocalToWorld>, RefRO<LocalTransform>>())
+        foreach (var (processor, memory, transporter, transform) in
+            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Transporter>, RefRO<LocalTransform>>())
         {
             ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
@@ -94,7 +94,7 @@ partial struct TransporterProcessorSystemServer : ISystem
                         {
                             Velocity = velocity,
                         });
-                        commandBuffer.SetComponent<LocalTransform>(newResource, LocalTransform.FromPosition(localTransform.ValueRO.TransformPoint(transporter.ValueRO.LoadPoint)));
+                        commandBuffer.SetComponent<LocalTransform>(newResource, LocalTransform.FromPosition(transform.ValueRO.TransformPoint(transporter.ValueRO.LoadPoint)));
                     }
 
                     transporter.ValueRW.CurrentLoad -= 1;

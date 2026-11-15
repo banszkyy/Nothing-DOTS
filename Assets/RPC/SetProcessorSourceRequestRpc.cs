@@ -5,7 +5,7 @@ using Unity.NetCode;
 [BurstCompile]
 public struct SetProcessorSourceRequestRpc : IRpcCommand
 {
-    public required FixedString64Bytes Source;
+    public required FixedString128Bytes Source;
     public required SpawnedGhost Entity;
     public required bool IsHotReload;
 }

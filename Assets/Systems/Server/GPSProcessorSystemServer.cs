@@ -10,12 +10,12 @@ partial struct GPSProcessorSystemServer : ISystem
     void ISystem.OnUpdate(ref SystemState state)
     {
         foreach (var (processor, memory, transform) in
-            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<LocalToWorld>>())
+            SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<LocalTransform>>())
         {
             ref MappedMemory mapped = ref ProcessorSystemServer.MappedMemory(memory);
 
             mapped.GPS.Position = transform.ValueRO.Position;
-            mapped.GPS.Forward = transform.ValueRO.Forward;
+            mapped.GPS.Forward = transform.ValueRO.Forward();
         }
     }
 }

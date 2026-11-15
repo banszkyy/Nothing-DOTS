@@ -305,16 +305,17 @@ GameObject:
   - component: {fileID: 581946412941356830}
   - component: {fileID: 7993248389885970180}
   - component: {fileID: 1437835957762175760}
+  - component: {fileID: -1139071617701657655}
   - component: {fileID: 41737087432463705}
   - component: {fileID: 6690235773295554373}
   - component: {fileID: 7525454188492156223}
   - component: {fileID: 6999790667405952416}
   - component: {fileID: 2229218544356369795}
-  - component: {fileID: 4967582089548011052}
   - component: {fileID: 3469643346778501767}
   - component: {fileID: 3585698864263757877}
   - component: {fileID: 426298694779023330}
   - component: {fileID: 577179973650460784}
+  - component: {fileID: 5786756978128168481}
   m_Layer: 6
   m_Name: Apc
   m_TagString: Untagged
@@ -413,13 +414,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CyclesPerTick: 200
-  MemorySize: 1024
-  TransmissionPoint: {fileID: 0}
-  StatusLED: {fileID: 5531386286674872900}
-  NetworkReceiveLED: {fileID: 2880261923365986716}
-  NetworkSendLED: {fileID: 5741459364462296722}
-  RadarLED: {fileID: 1779401877476348028}
-  CustomLED: {fileID: 8386661434416258083}
+  MemorySize: 2048
+  EmissionPower: 1
+  StatusLED: {fileID: 8681046985683895886}
+  NetworkReceiveLED: {fileID: 1386654647350174443}
+  NetworkSendLED: {fileID: 0}
+  CustomLED: {fileID: 0}
   USBLED: {fileID: 0}
   USBPosition: {fileID: 0}
   Script: 
@@ -448,6 +448,25 @@ MonoBehaviour:
   BulletReload: 0.2
   MagazineReload: 2
   MagazineSize: 8
+--- !u!114 &-1139071617701657655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8427767388040926130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63998bd03e1b88364a41236e9eea18cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadioAuthoring
+  TransmissionPoint: {fileID: 0}
+  TxPowerDbm: 30
+  RxGainDbi: 0
+  SensitivityDbm: -112
+  MinBeamHalvings: 0
+  MaxBeamHalvings: 2
+  BearingSectors: 16
 --- !u!114 &41737087432463705
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -517,19 +536,6 @@ MonoBehaviour:
   Prefabs: {fileID: 11400000, guid: 9fbd3be61b1b911759f2e0e4d52dafb8, type: 2}
   Prefab: {fileID: 11400000, guid: fbda40a2b4c99e1c9bc6f96f362b3124, type: 2}
   Team: 0
---- !u!114 &4967582089548011052
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8427767388040926130}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 126e16097065ae86e90421fd823227e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Radar: {fileID: 8079438957068892101}
 --- !u!114 &3469643346778501767
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -582,6 +588,19 @@ MonoBehaviour:
   MaxSpeed: 10
   Acceleration: 0.7
   Steering: 40
+--- !u!114 &5786756978128168481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8427767388040926130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 141cb5c1974dd794fa0a9ec2261dca44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadarSignatureAuthoring
+  RadarCrossSection: 1
 --- !u!1001 &1217862393180928036
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -942,33 +961,21 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 861edd50cb40d5741a04282eb5c9c6d3, type: 3}
+--- !u!1 &1386654647350174443 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9105337570131659809, guid: 861edd50cb40d5741a04282eb5c9c6d3,
+    type: 3}
+  m_PrefabInstance: {fileID: 7882085813096607434}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1544739137816927062 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8652205736085714332, guid: 861edd50cb40d5741a04282eb5c9c6d3,
     type: 3}
   m_PrefabInstance: {fileID: 7882085813096607434}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &2880261923365986716 stripped
+--- !u!1 &8681046985683895886 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 5375738558496952150, guid: 861edd50cb40d5741a04282eb5c9c6d3,
-    type: 3}
-  m_PrefabInstance: {fileID: 7882085813096607434}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &5531386286674872900 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2423400371679257742, guid: 861edd50cb40d5741a04282eb5c9c6d3,
-    type: 3}
-  m_PrefabInstance: {fileID: 7882085813096607434}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &5741459364462296722 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2508234059027157080, guid: 861edd50cb40d5741a04282eb5c9c6d3,
-    type: 3}
-  m_PrefabInstance: {fileID: 7882085813096607434}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &8386661434416258083 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1801901005128708841, guid: 861edd50cb40d5741a04282eb5c9c6d3,
+  m_CorrespondingSourceObject: {fileID: 1520964830518765700, guid: 861edd50cb40d5741a04282eb5c9c6d3,
     type: 3}
   m_PrefabInstance: {fileID: 7882085813096607434}
   m_PrefabAsset: {fileID: 0}

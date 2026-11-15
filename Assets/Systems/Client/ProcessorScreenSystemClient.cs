@@ -88,7 +88,7 @@ partial class ProcessorScreenSystemClient : SystemBase
     protected override void OnUpdate()
     {
         foreach (var (processor, screenOptions, transform, ghostInstance, entity) in
-            SystemAPI.Query<RefRO<Processor>, RefRO<ProcessorScreen>, RefRO<LocalToWorld>, RefRO<GhostInstance>>()
+            SystemAPI.Query<RefRO<Processor>, RefRO<ProcessorScreen>, RefRO<LocalTransform>, RefRO<GhostInstance>>()
             .WithEntityAccess())
         {
             bool isVisible = math.distance(MainCamera.Camera.transform.position, transform.ValueRO.Position) < 50;

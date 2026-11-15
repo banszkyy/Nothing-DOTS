@@ -4,6 +4,9 @@ using "netstack";
 struct Unit {
     float3 lastPos;
     float lastAuthAt;
+    float lastHeartbeatAt;
+    float lastRadarAt;
+    float lastNotifiedAt;
     i32 authNum;
 }
 
@@ -16,7 +19,6 @@ float3 serverLastDirection = new float3;
 List<Unit> allies = new List<Unit>(4);
 List<Unit> enemies = new List<Unit>(4);
 i32 unitIdCounter = 1;
-float lastEnemyNotify = 0f;
 float lastAdvertisement = 0f;
 
 int unitAt(List<Unit>& units, float3 position, float* distanceSqr) {
@@ -44,20 +46,21 @@ int unitOf(List<Unit>& units, i32 authNum) {
 
 void authAt(Unit& unit) {
     if (!address) return;
-    u8[] req = pack {
+    byte[] req = pack {
         new RadioHeader {
             header = RadioHeaderValues.Uplink,
         },
         new AuthChallenge {
             header = Header.AuthChallenge,
             position = unit.lastPos,
-            num = unit.authNum,
+            authNum = unit.authNum,
             src = address,
         }
     };
-    wsend(&req, req.Length, serverLastDirection, 8);
+    wsend(&req, serverLastDirection, 8);
     unit.lastAuthAt = time();
     debug(unit.lastPos, Color.Magenta);
+    printf("Auth at %f %f %f with %d\n", unit.lastPos.x, unit.lastPos.y, unit.lastPos.z, unit.authNum);
 }
 
 printf("I'm %d\n", [id]);
@@ -66,15 +69,17 @@ while (true) {
     LEDs.custom_led = true;
 
     while (true) {
-        byte[16] buffer;
+        byte[30] buffer;
         float3 direction;
-        int l = wreceive(&buffer, 16, &direction, (byte*)0);
+        int l = wreceive(&buffer, &direction, (byte*)0);
         if (!l) break;
 
         int o = 0;
 
         if (buffer[o] == (byte)RadioHeaderValues.Downlink) {
-            o++;
+            RadioHeader* header = &buffer[o] as RadioHeader*;
+            o += sizeof(RadioHeader);
+
             if (buffer[o] == (byte)Header.DhcpResponseOk) {
                 DhcpResponseOk* req = &buffer[o] as DhcpResponseOk*;
                 if (req.id == id) {
@@ -84,17 +89,20 @@ while (true) {
                 }
             } else if (buffer[o] == (byte)Header.Radar) {
                 Radar* req = &buffer[o] as Radar*;
-                if (req.meta & 0b_00000001) {
-                    debug(req.position, Color.Yellow);
+                if (req.emission && distancesqr(req.position, GPS.position) >= 4f * 4f) {
                     float d;
                     int u = unitAt(allies, req.position, &d);
                     if (u == -1 || d > DST_THRESHOLD_SQR) {
                         u = unitAt(enemies, req.position, &d);
                         if (u == -1 || d > DST_THRESHOLD_SQR) {
+                            printf("Suspicion at %f %f %f\n", [req.position.x, req.position.y, req.position.z]);
+                            debug(req.position, Color.Yellow);
                             enemies.add(new Unit {
                                 lastPos = req.position,
-                                lastAuthAt = 0,
                                 authNum = unitIdCounter,
+                                lastAuthAt = 0f,
+                                lastHeartbeatAt = time(),
+                                lastRadarAt = time(),
                             });
                             unitIdCounter++;
                         }
@@ -102,27 +110,35 @@ while (true) {
                 }
             } else if (buffer[o] == (byte)Header.AuthChallenge) {
                 AuthChallenge* req = &buffer[o] as AuthChallenge*;
-                u8[] res = pack {
+                if (distancesqr(req.position, GPS.position) < 4f * 4f) {
+                    byte[] res = pack {
                     new RadioHeader {
                         header = RadioHeaderValues.Uplink,
                     },
                     new AuthResponse {
                         header = Header.AuthResponse,
-                        num = req.num,
+                            authNum = req.authNum,
                         dst = req.src,
                     },
                 };
-                wsend(&res, res.Length);
+                    wsend(&res);
+                }
             } else if (buffer[o] == (byte)Header.AuthResponse) {
                 AuthResponse* req = &buffer[o] as AuthResponse*;
                 if (req.dst == address) {
-                    int u = unitOf(enemies, req.num);
+                    int u = unitOf(enemies, req.authNum);
                     if (u != -1) {
                         Unit w = enemies[u];
+                        w.lastHeartbeatAt = time();
                         enemies.swapback(u);
                         allies.add(w);
                     } else {
-                        printf("Unexpected auth response num\n");
+                        u = unitOf(allies, req.authNum);
+                        if (u != -1) {
+                            allies[u].lastHeartbeatAt = time();
+                        } else {
+                            printf("Unexpected auth response num %d\n", req.authNum);
+                        }
                     }
                 }
             }
@@ -132,7 +148,7 @@ while (true) {
     if (!address && time() - addressRequestedAt > 5f) {
         printf("Requesting address\n");
 
-        u8[] req = pack {
+        byte[] req = pack {
             new RadioHeader {
                 header = RadioHeaderValues.Uplink,
             },
@@ -141,11 +157,11 @@ while (true) {
                 id = id,
             },
         };
-        wsend(&req, req.Length);
+        wsend(&req);
         addressRequestedAt = time();
     } else {
         if (time() - lastAdvertisement > 5f) {
-            u8[] req = pack {
+            byte[] req = pack {
                 new RadioHeader {
                     header = RadioHeaderValues.Uplink,
                 },
@@ -154,7 +170,20 @@ while (true) {
                     src = address,
                 }
             };
-            wsend(&req, req.Length, serverLastDirection, 8);
+            wsend(&req, serverLastDirection, 8);
+
+            byte[] req = pack {
+                new RadioHeader {
+                    header = RadioHeaderValues.Uplink,
+                },
+                new AllyAt {
+                    header = Header.AllyAt,
+                    position = GPS.position,
+                }
+            };
+            wsend(&req, serverLastDirection, 8);
+
+            lastAdvertisement = time();
         }
 
         for (int i = 0; i < allies.length(); i++)
@@ -162,6 +191,22 @@ while (true) {
             Unit& u = allies[i];
 
             debug(u.lastPos, Color.Green);
+
+            if (u.lastAuthAt != 0f) {
+                if (time() - u.lastNotifiedAt > 4f) {
+                    u8[] req = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Uplink,
+                        },
+                        new AllyAt {
+                            header = Header.AllyAt,
+                            position = u.lastPos,
+                        }
+                    };
+                    wsend(&req, req.Length, serverLastDirection, 8);
+                    u.lastNotifiedAt = time();
+                }
+            }
 
             if (time() - u.lastAuthAt > 5f) {
                 authAt(u);
@@ -172,25 +217,34 @@ while (true) {
         {
             Unit& u = enemies[i];
 
-            if (time() - u.lastAuthAt > 5f) {
-                if (time() - lastEnemyNotify > 5f) {
+            if (u.lastAuthAt != 0f && time() - u.lastHeartbeatAt > 5f) {
+                debug(u.lastPos, Color.Red);
+                if (time() - u.lastNotifiedAt > 2f) {
                     u8[] req = pack {
                         new RadioHeader {
                             header = RadioHeaderValues.Uplink,
                         },
-                        new Enemy {
-                            header = Header.Enemy,
+                        new EnemyAt {
+                            header = Header.EnemyAt,
                             position = u.lastPos,
                         }
                     };
                     wsend(&req, req.Length, serverLastDirection, 8);
-                    lastEnemyNotify = time();
+                    u.lastNotifiedAt = time();
+
+                    if (time() - u.lastRadarAt > 6f) {
+                        enemies.swapback(i);
+                        i--;
+                        goto skip;
+                    }
                 }
             }
 
             if (time() - u.lastAuthAt > 1f) {
                 authAt(u);
             }
+
+            skip:
         }
     }
 }

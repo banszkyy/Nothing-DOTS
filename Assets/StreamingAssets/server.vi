@@ -19,45 +19,73 @@ bool clientByAddress(List<Client>& clients, i32 address, Client* result) {
     return false;
 }
 
-while (1) {
+bool clientById(List<Client>& clients, i32 id, Client* result) {
+    for (int i = 0; i < clients.length(); i++) {
+        if (clients[i].id == id) {
+            if (result) *result = clients[i];
+            return true;
+        }
+    }
+    return false;
+}
+
+while (true) {
     LEDs.custom_led = true;
 
-    while (1) {
-        byte[16] buffer;
+    while (true) {
+        byte[30] buffer;
         float3 direction;
-        int l = wreceive(&buffer, 16, &direction, (byte*)0);
+        int l = wreceive(&buffer, &direction, (byte*)0);
         if (!l) break;
         int o = 0;
 
         if (buffer[o] == (byte)RadioHeaderValues.Uplink) {
             RadioHeader* rh = &buffer[o] as RadioHeader*;
-            o++;
+            o += sizeof(RadioHeader);
 
             if (buffer[o] == (byte)Header.DhcpRequest) {
                 DhcpRequest* req = &buffer[o] as DhcpRequest*;
-                for (i32 i = 1; i < 621; i++) {
-                    if (!clientByAddress(clients, i, 0 as Client*)) {
-                        Client newClient;
-                        newClient.id = req.id;
-                        newClient.address = i;
-                        newClient.lastDirection = direction;
-                        clients.add(newClient);
+                Client already;
+                if (clientById(clients, req.id, &already)) {
+                    printf("Address %d already assigned to %d\n", [already.address, req.id]);
+                    ldebug(direction * new float3(1f, 0f, 1f) * 3, Color.Cyan);
 
-                        printf("Address %d assigned to %d\n", [i, req.id]);
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Downlink,
+                        },
+                        new DhcpResponseOk {
+                            header = Header.DhcpResponseOk,
+                            id = req.id,
+                            address = already.address,
+                        },
+                    };
+                    wsend(&res, res.Length, direction, 8);
+                } else {
+                    for (i32 i = 1; i < 621; i++) {
+                        if (!clientByAddress(clients, i, 0 as Client*)) {
+                            Client newClient;
+                            newClient.id = req.id;
+                            newClient.address = i;
+                            newClient.lastDirection = direction;
+                            clients.add(newClient);
 
-                        u8[] res = pack {
-                            new RadioHeader {
-                                header = RadioHeaderValues.Downlink,
-                            },
-                            new DhcpResponseOk {
-                                header = Header.DhcpResponseOk,
-                                id = req.id,
-                                address = i,
-                            },
-                        };
-                        wsend(&res, res.Length, direction, 8);
+                            printf("Address %d assigned to %d\n", [i, req.id]);
 
-                        break;
+                            u8[] res = pack {
+                                new RadioHeader {
+                                    header = RadioHeaderValues.Downlink,
+                                },
+                                new DhcpResponseOk {
+                                    header = Header.DhcpResponseOk,
+                                    id = req.id,
+                                    address = i,
+                                },
+                            };
+                            wsend(&res, res.Length, direction, 8);
+
+                            break;
+                        }
                     }
                 }
             } else if (buffer[o] == (byte)Header.AuthChallenge) {
@@ -70,7 +98,7 @@ while (1) {
                         new AuthResponse {
                             header = Header.AuthResponse,
                             dst = req.src,
-                            num = req.num,
+                            authNum = req.authNum,
                         },
                     };
                     wsend(&res, res.Length, direction, 8);
@@ -145,8 +173,20 @@ while (1) {
                         break;
                     }
                 }
-            } else if (buffer[o] == (byte)Header.Enemy) {
-                Enemy* req = &buffer[o] as Enemy*;
+            } else if (buffer[o] == (byte)Header.EnemyAt) {
+                EnemyAt* req = &buffer[o] as EnemyAt*;
+                u8[] res = pack {
+                    new RadioHeader {
+                        header = RadioHeaderValues.Downlink,
+                    },
+                    *req,
+                };
+
+                for (int i = 0; i < clients.length(); i++) {
+                    wsend(&res, res.Length, clients[i].lastDirection, 8);
+                }
+            } else if (buffer[o] == (byte)Header.AllyAt) {
+                AllyAt* req = &buffer[o] as AllyAt*;
                 u8[] res = pack {
                     new RadioHeader {
                         header = RadioHeaderValues.Downlink,

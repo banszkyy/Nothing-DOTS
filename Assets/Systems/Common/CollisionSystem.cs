@@ -1,5 +1,5 @@
 #if UNITY_EDITOR && EDITOR_DEBUG
-#define DEBUG_COLLISIONS
+#define _DEBUG_COLLISIONS
 #endif
 
 using System;
@@ -12,11 +12,9 @@ using Unity.Transforms;
 
 [BurstCompile]
 [UpdateInGroup(typeof(TransformSystemGroup))]
-[UpdateBefore(typeof(LocalToWorldSystem))]
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
 unsafe partial struct CollisionSystem : ISystem
 {
-    [BurstCompile]
     public static void Debug(
         in Collider collider, in float3 offset,
         in Color color, float duration = 0f, bool depthTest = true)
@@ -42,7 +40,6 @@ unsafe partial struct CollisionSystem : ISystem
         }
     }
 
-    [BurstCompile]
     public static bool Contains(
         in Collider collider, in float3 offset,
         in float3 point)
@@ -62,7 +59,6 @@ unsafe partial struct CollisionSystem : ISystem
     /// <summary>
     /// <seealso href="https://github.com/xhacker/raycast/blob/master/raycast/sphere.cpp">Source</seealso> 
     /// </summary>
-    [BurstCompile]
     static bool RaycastSphere(
         in float sphereRadius, in float3 sphereOffset,
         in Ray ray,
@@ -90,7 +86,6 @@ unsafe partial struct CollisionSystem : ISystem
     /// <summary>
     /// <seealso href="https://gamedev.stackexchange.com/a/18459">Source</seealso>
     /// </summary>
-    [BurstCompile]
     static bool RaycastAABB(
         in AABB aabb,
         in Ray ray,
@@ -129,7 +124,6 @@ unsafe partial struct CollisionSystem : ISystem
         return true;
     }
 
-    [BurstCompile]
     public static bool Raycast(
         in Collider collider, in float3 offset,
         in Ray ray,
@@ -153,18 +147,9 @@ unsafe partial struct CollisionSystem : ISystem
         }
     }
 
-    ComponentLookup<LocalTransform> localTransformQ;
-
-    void ISystem.OnCreate(ref SystemState state)
-    {
-        localTransformQ = state.GetComponentLookup<LocalTransform>(false);
-    }
-
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
-        localTransformQ.Update(ref state);
-
         var map = QuadrantSystem.GetMap(ref state);
 
         var enumerator = map.GetEnumerator();
@@ -204,9 +189,9 @@ unsafe partial struct CollisionSystem : ISystem
 
                 if (!a->ResolvedOffset.Equals(default))
                 {
-                    if (localTransformQ.HasComponent(a->Entity))
+                    if (SystemAPI.HasComponent<LocalTransform>(a->Entity))
                     {
-                        RefRW<LocalTransform> transform = localTransformQ.GetRefRW(a->Entity);
+                        RefRW<LocalTransform> transform = SystemAPI.GetComponentRW<LocalTransform>(a->Entity);
 #if DEBUG_COLLISIONS
                         DebugEx.Label(transform.ValueRO.Position, a->ResolvedOffset.ToString());
                         DebugEx.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + a->ResolvedOffset, Color.blue, 0.3f, false);

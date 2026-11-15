@@ -303,4 +303,19 @@ public static class UIExtensions
             container.Remove(childrenElement[i]);
         }
     }
+
+    public static void SetExclusiveClass(this VisualElement visualElement, string? className, ReadOnlySpan<string> classNames)
+    {
+        foreach (string v in classNames)
+        {
+            if (v == className)
+            {
+                visualElement.EnableInClassList(v, true);
+            }
+            else
+            {
+                visualElement.EnableInClassList(v, false);
+            }
+        }
+    }
 }

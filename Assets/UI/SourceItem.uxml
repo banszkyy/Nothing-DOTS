@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="TerminalDiagnosticsItem" src="project://database/Assets/UI/TerminalDiagnosticsItem.uxml?fileID=9197481963319205126&amp;guid=a1e4e6549353cff66b9c74b990c63867&amp;type=3#TerminalDiagnosticsItem"/>
+    <ui:Template name="TerminalProgressItem" src="project://database/Assets/UI/TerminalProgressItem.uxml?fileID=9197481963319205126&amp;guid=9eea0e1bced7ce10ba2cf37db8517d65&amp;type=3#TerminalProgressItem"/>
+    <ui:VisualElement style="flex-grow: 1;">
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row; align-items: center;">
+            <ui:Label text="Label" name="status-icon" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 4px; margin-bottom: 0; margin-left: 0; font-size: 10px; -unity-text-align: middle-left;"/>
+            <ui:Label text="file:///home/bb/Projects/Nothing-DOTS/Assets/StreamingAssets/authenticator.vi" name="source-uri" enable-rich-text="false" emoji-fallback-support="false" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; font-size: 8px; flex-grow: 1; -unity-text-align: middle-left;"/>
+            <ui:Button text="\udb80\ude38" name="button-hotreload" parse-escape-sequences="true" tooltip="Hot-reload" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px; font-size: 12px;"/>
+            <ui:Button text="\ueeff" name="button-compile" parse-escape-sequences="true" tooltip="Compile" style="margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px; padding-right: 2px; padding-left: 2px; width: 16px; height: 16px; font-size: 10px;"/>
+        </ui:VisualElement>
+        <ui:ScrollView name="scroll-progresses" style="overflow: hidden;">
+            <ui:Instance template="TerminalProgressItem"/>
+        </ui:ScrollView>
+        <ui:Foldout text="Diagnostics" value="false" name="foldout-diagnostics">
+            <ui:ScrollView name="scroll-diagnostics" style="overflow: hidden;">
+                <ui:Instance template="TerminalDiagnosticsItem"/>
+            </ui:ScrollView>
+        </ui:Foldout>
+    </ui:VisualElement>
+</ui:UXML>

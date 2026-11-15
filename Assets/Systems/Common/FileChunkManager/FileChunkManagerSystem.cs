@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -359,6 +360,28 @@ partial class FileChunkManagerSystem : SystemBase
         { return fileName; }
 
         return null;
+    }
+
+    [return: NotNullIfNotNull(nameof(fileName))]
+    public static string? ResolveFileUI(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)) return null!;
+        string? res = ResolveFile(fileName);
+        if (res is not null && res.StartsWith(BasePath)) res = Path.GetRelativePath(BasePath, res);
+        res = res?.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
+        return res ?? fileName;
+    }
+
+    public static string ResolveFileUI(Uri fileName, int localConnectionId, out bool isLocal)
+    {
+        if (fileName.Scheme == "netcode" && fileName.Host == localConnectionId.ToString())
+        {
+            isLocal = true;
+            return ResolveFileUI(fileName.PathAndQuery);
+        }
+
+        isLocal = false;
+        return fileName.ToString();
     }
 
     public static FileData? GetFileData(string fileName)

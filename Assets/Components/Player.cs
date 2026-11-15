@@ -1,5 +1,4 @@
 using System;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
@@ -11,7 +10,6 @@ public enum GameOutcome : byte
     Lost,
 }
 
-[BurstCompile]
 public struct Player : IComponentData
 {
     public const int UnassignedTeam = -1;

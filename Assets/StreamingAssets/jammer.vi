@@ -17,7 +17,7 @@ const int MaxCommandDataSize = 8;
 
 float2 currentDestination = new float2;
 
-while (1)
+while (true)
 {
     byte[MaxCommandDataSize] _command;
 

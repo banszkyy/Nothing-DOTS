@@ -1,0 +1,282 @@
+using "lib/api";
+using "lib/turret";
+using "lib/move";
+using "netstack";
+
+[UnitCommand(1, "󰍒")]
+struct CommandMoveTo
+{
+    [Context("position2")] float2 position;
+}
+
+[UnitCommand(2, "󰓾")]
+struct CommandAttackAt
+{
+    [Context("position3")] float3 position;
+}
+
+[UnitCommand(3, "󰹆")]
+struct CommandStop
+{
+    
+}
+
+const int MaxCommandDataSize = 8;
+
+struct Unit {
+    float3 lastPos;
+    float lastHeartbeat;
+}
+
+init_heap();
+
+i32 id = (time() as i32) ^ (GPS.position.x as i32) ^ (GPS.position.z as i32);
+i32 address = 0;
+float addressRequestedAt = 0f;
+float pingRequestedAt = 0f;
+float3 serverLastDirection = new float3;
+List<Unit> allies = new List<Unit>(4);
+List<Unit> enemies = new List<Unit>(4);
+
+float3 targetedPosition = new float3;
+float3 currentTarget = new float3;
+float3 currentUserTarget = new float3;
+float2 currentDestination = new float2;
+byte shouldShoot = false;
+float turretLastUseTime = 0f;
+
+int unitAt(List<Unit>& units, float3 position, float* distanceSqr) {
+    float d0 = 9999f;
+    int res = -1;
+    for (int i = 0; i < units.length(); i++) {
+        float d1 = distancesqr(units[i].lastPos, position);
+        if (d1 < d0) {
+            d0 = d1;
+            res = i;
+        }
+    }
+    *distanceSqr = d0;
+    return res;
+}
+
+bool canSeeEnemy(List<Unit>& allies, float3 enemyPosition) {
+    float3 dirToEnemy = enemyPosition - GPS.position;
+    float dToEnemy = length(dirToEnemy);
+    dirToEnemy /= dToEnemy;
+
+    for (int j = 0; j < allies.length(); j++) {
+        float3 dirToAlly = allies[j].lastPos - GPS.position;
+        float dToAlly = length(dirToAlly);
+        if (dToEnemy < dToAlly || (dToAlly > 0.01f && dToEnemy + 2f >= dToAlly)) {
+            dirToAlly /= dToAlly;
+            printf("dot(dirToEnemy, dirToAlly) = %f\n", dot(dirToEnemy, dirToAlly));
+            printf(" > 0.7f = %d\n", (int)(dot(dirToEnemy, dirToAlly) > 0.7f));
+            if (dot(dirToEnemy, dirToAlly) > 0.7f) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+printf("I'm %d\n", [id]);
+
+while (true) {
+    LEDs.custom_led = true;
+
+    while (true) {
+        byte[30] buffer;
+        float3 direction;
+        int l = wreceive(&buffer, &direction, (byte*)0);
+        if (!l) break;
+
+        int o = 0;
+
+        if (buffer[o] == (byte)RadioHeaderValues.Downlink) {
+            o++;
+            if (buffer[o] == (byte)Header.DhcpResponseOk) {
+                DhcpResponseOk* req = &buffer[o] as DhcpResponseOk*;
+                if (req.id == id)
+                {
+                    serverLastDirection = direction;
+                    address = req.address;
+                    printf("Received address %d\n", [address]);
+                }
+            } else if (buffer[o] == (byte)Header.AuthChallenge) {
+                AuthChallenge* req = &buffer[o] as AuthChallenge*;
+                if (distancesqr(req.position, GPS.position) < 4f * 4f) {
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Uplink,
+                        },
+                        new AuthResponse {
+                            header = Header.AuthResponse,
+                            authNum = req.authNum,
+                            dst = req.src,
+                        },
+                    };
+                    wsend(&res, res.Length);
+                }
+            } else if (buffer[o] == (byte)Header.Ping) {
+                Ping* req = &buffer[o] as Ping*;
+                if (address && req.dst == address) {
+                    u8[] res = pack {
+                        new RadioHeader {
+                            header = RadioHeaderValues.Uplink,
+                        },
+                        new Pong {
+                            header = Header.Pong,
+                            src = address,
+                            dst = req.src,
+                        },
+                    };
+                    wsend(&res, res.Length, serverLastDirection, 8);
+                }
+            } else if (buffer[o] == (byte)Header.Pong) {
+                Pong* req = &buffer[o] as Pong*;
+                if (address && req.dst == address) {
+                    printf("Pong from %d\n", [req.src]);
+                }
+            } else if (buffer[o] == (byte)Header.EnemyAt) {
+                EnemyAt* req = &buffer[o] as EnemyAt*;
+                float d;
+                int u = unitAt(&enemies, req.position, &d);
+                if (u != -1 && d < 4f * 4f) {
+                    enemies[u].lastPos = req.position;
+                    enemies[u].lastHeartbeat = time();
+                } else {
+                    u = unitAt(&allies, req.position, &d);
+                    if (u != -1 && d < 4f * 4f) {
+                    } else {
+                        enemies.add(new Unit {
+                            lastPos = req.position,
+                            lastHeartbeat = time(),
+                        });
+                    }
+                }
+            } else if (buffer[o] == (byte)Header.AllyAt) {
+                AllyAt* req = &buffer[o] as AllyAt*;
+                if (distancesqr(req.position, GPS.position) >= 4f * 4f) {
+                    float d;
+                    int u = unitAt(&allies, req.position, &d);
+                    if (u != -1 && d < 4f * 4f) {
+                        allies[u].lastPos = req.position;
+                        allies[u].lastHeartbeat = time();
+                    } else {
+                        u = unitAt(&enemies, req.position, &d);
+                        if (u != -1 && d < 4f * 4f) {
+                            enemies.swapback(u);
+                        }
+                        allies.add(new Unit {
+                            lastPos = req.position,
+                            lastHeartbeat = time(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    if (!address && time() - addressRequestedAt > 5f) {
+        printf("Requesting address\n");
+
+        u8[] req = pack {
+            new RadioHeader {
+                header = RadioHeaderValues.Uplink,
+            },
+            new DhcpRequest {
+                header = Header.DhcpRequest,
+                id = id,
+            },
+        };
+        wsend(&req, req.Length);
+        addressRequestedAt = time();
+    }
+
+    currentTarget = new float3;
+    shouldShoot = false;
+
+    for (int i = 0; i < allies.length(); i++) {
+        if (time() - allies[i].lastHeartbeat > 6f) {
+            allies.swapback(i);
+            i--;
+        } else {
+            debug(allies[i].lastPos, Color.Blue);
+        }
+    }
+
+    for (int i = 0; i < enemies.length(); i++) {
+        if (time() - enemies[i].lastHeartbeat > 6f) {
+            enemies.swapback(i);
+            i--;
+        } else {
+            if (canSeeEnemy(&allies, enemies[i].lastPos)) {
+                currentTarget = enemies[i].lastPos;
+                shouldShoot = true;
+                debug(currentTarget, Color.Red);
+            }
+        }
+    }
+
+    if (shouldShoot) {
+        debug(currentTarget, Color.Red);
+    }
+
+    byte[MaxCommandDataSize] _command;
+
+    int commandId = dequeue_command(&_command);
+
+    if (commandId == 1)
+    {
+        CommandMoveTo* command = &_command as CommandMoveTo*;
+        currentUserTarget = new float3;
+        currentDestination = command.position;
+    }
+    else if (commandId == 2)
+    {
+        CommandAttackAt* command = &_command as CommandAttackAt*;
+        currentUserTarget = command.position;
+        currentDestination = new float3;
+    }
+    else if (commandId == 3)
+    {
+        currentUserTarget = new float3;
+        currentDestination = new float3;
+    }
+
+    if (currentUserTarget.x || currentUserTarget.z)
+    {
+        currentTarget = currentUserTarget;
+        shouldShoot = true;
+    }
+
+    if (currentTarget.x != 0f &&
+        currentTarget.z != 0f)
+    {
+        turretLastUseTime = time();
+        if (shouldShoot && canSeeEnemy(&allies, currentTarget))
+        {
+            shootat(currentTarget, &targetedPosition);
+        }
+        else
+        {
+            targetat(currentTarget, &targetedPosition);
+        }
+    }
+    else if (time() - turretLastUseTime > 5f)
+    {
+        CombatTurret.target_rotation = 0f;
+        CombatTurret.target_angle = 0f;
+    }
+
+    if (currentDestination.x != 0f &&
+        currentDestination.y != 0f)
+    {
+        move_to(currentDestination.x, currentDestination.y);
+    }
+    else
+    {
+        stop_moving();
+    }
+}

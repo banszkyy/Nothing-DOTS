@@ -7,6 +7,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.NetCode;
 using Unity.Profiling;
 using Unity.Transforms;
 
@@ -24,6 +25,7 @@ public struct SendRequest
 }
 
 [BurstCompile]
+[UpdateBefore(typeof(ProcessorSystemServer))]
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
 partial struct WirelessTransmissionSystemServer : ISystem
 {
@@ -42,7 +44,7 @@ partial struct WirelessTransmissionSystemServer : ISystem
     {
         state.RequireForUpdate<RadioEnvironment>();
         processorComponentQ = state.GetComponentLookup<Processor>(false);
-        radioComponentQ = state.GetComponentLookup<Radio>(true);
+        radioComponentQ = state.GetComponentLookup<Radio>(false);
         transformComponentQ = state.GetComponentLookup<LocalTransform>(true);
         logsBufferQ = state.GetBufferLookup<BufferedLogPiece>(false);
     }
@@ -58,18 +60,18 @@ partial struct WirelessTransmissionSystemServer : ISystem
         var radioEnvironment = SystemAPI.GetSingleton<RadioEnvironment>();
 
         foreach (var (processor, radio, transform, logBuffer, log, entity) in
-            SystemAPI.Query<RefRW<Processor>, RefRO<Radio>, RefRO<LocalTransform>, DynamicBuffer<BufferedLogPiece>, RefRW<LogPieces>>()
+            SystemAPI.Query<RefRW<Processor>, RefRW<Radio>, RefRO<LocalTransform>, DynamicBuffer<BufferedLogPiece>, RefRW<LogPieces>>()
             .WithEntityAccess())
         {
-            if (processor.ValueRW.OutgoingTransmissions.Length == 0) continue;
-            BufferedUnitTransmissionOutgoing transmission = processor.ValueRW.OutgoingTransmissions[0];
+            if (radio.ValueRW.OutgoingTransmissions.Length == 0) continue;
+            BufferedUnitTransmissionOutgoing transmission = radio.ValueRW.OutgoingTransmissions[0];
             if (!transmission.Metadata.IsWireless) continue;
 
-            processor.ValueRW.OutgoingTransmissions.RemoveAt(0);
+            radio.ValueRW.OutgoingTransmissions.RemoveAt(0);
 
             new UnitLog_Transmission_WirelessOut(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex, transmission.Metadata.Wireless, transmission.Data).Write(logBuffer);
 
-            float3 sourcePoint = transform.ValueRO.TransformPoint(processor.ValueRO.WirelessTransmissionPoint);
+            float3 sourcePoint = transform.ValueRO.TransformPoint(radio.ValueRO.WirelessTransmissionPoint);
 
             NativeParallelHashMap<uint, NativeList<QuadrantEntity>>.ReadOnly map = QuadrantSystem.GetMap(state.WorldUnmanaged);
             Cell grid = Cell.ToGrid(sourcePoint);
@@ -139,10 +141,10 @@ partial struct WirelessTransmissionSystemServer : ISystem
                             if (!processorComponentQ.HasComponent(cell[i].Entity)) continue;
                             if (!radioComponentQ.HasComponent(cell[i].Entity)) continue;
                             RefRW<Processor> other = processorComponentQ.GetRefRW(cell[i].Entity);
-                            RefRO<Radio> otherRadio = radioComponentQ.GetRefRO(cell[i].Entity);
+                            RefRW<Radio> otherRadio = radioComponentQ.GetRefRW(cell[i].Entity);
                             RefRO<LocalTransform> otherTransform = transformComponentQ.GetRefRO(cell[i].Entity);
 
-                            float3 receiverPoint = otherTransform.ValueRO.TransformPoint(other.ValueRO.WirelessTransmissionPoint);
+                            float3 receiverPoint = otherTransform.ValueRO.TransformPoint(otherRadio.ValueRO.WirelessTransmissionPoint);
                             float3 receiveVector = sourcePoint - receiverPoint;
                             float3 receiveDirection = math.normalize(receiveVector);
 
@@ -188,7 +190,7 @@ partial struct WirelessTransmissionSystemServer : ISystem
 
                             other.ValueRW.NetworkReceiveLED.Blink(1);
 
-                            ref FixedList128Bytes<BufferedUnitTransmission> transmissions = ref other.ValueRW.IncomingTransmissions;
+                            ref FixedList128Bytes<BufferedUnitTransmission> transmissions = ref otherRadio.ValueRW.IncomingTransmissions;
 
                             IncomingWirelessUnitTransmissionMetadata otherIncomingMetadata = new()
                             {
@@ -198,7 +200,7 @@ partial struct WirelessTransmissionSystemServer : ISystem
 
                             if (logsBufferQ.TryGetBuffer(cell[i].Entity, out DynamicBuffer<BufferedLogPiece> otherLog))
                             {
-                                new UnitLog_Transmission_WirelessIn(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex, otherIncomingMetadata, transmission.Data).Write(logBuffer);
+                                new UnitLog_Transmission_WirelessIn(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex, otherIncomingMetadata, transmission.Data, SystemAPI.GetComponent<GhostInstance>(entity)).Write(logBuffer);
                             }
 
                             if (transmissions.Length >= transmissions.Capacity) transmissions.RemoveAt(0);

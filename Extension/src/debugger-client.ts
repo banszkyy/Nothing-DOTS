@@ -1,10 +1,13 @@
 'use strict'
 
 import * as vscode from 'vscode'
-import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode'
+import { ProviderResult } from 'vscode'
 import * as fs from 'fs'
+import * as os from 'os'
 import { extensionId } from './utils'
-import { GameUnit, log } from './extension'
+import { debuggerHub, GameUnit, log, token } from './extension'
+import path from 'path'
+import { PacketInspectorPanel, PacketSource } from './logs-view'
 
 /*
 type UnitModule = {
@@ -23,19 +26,15 @@ type UnitModuleTreeViewItem = UnitModule | UnitModuleType
 let unitModulesTreeView: vscode.TreeView<UnitModuleTreeViewItem> | null = null
 */
 
-const MaxUnitLogLength = 50
-
-let onStartDebugging = () => { }
-
-export function startDebugging(token: string, entity: string | null, ghost: string | null) {
-    log.debug(`[Debugger] Start debuging entity ${entity} ghost ${ghost} ...`)
+export function startDebugging(token: string, ghost: string, name: string) {
+    log.debug(`[Debugger] Start debuging ghost ${ghost} ...`)
     vscode.debug.startDebugging(undefined, {
         type: extensionId,
-        name: 'Debug Entity',
+        name: name,
         request: 'attach',
-        entity: entity,
         ghost: ghost,
         token: token,
+        sessionId: ghost,
     })
         .then(result => {
             if (!result) {
@@ -43,8 +42,6 @@ export function startDebugging(token: string, entity: string | null, ghost: stri
                 log.warn('[Debugger] Failed to start debugging')
             } else {
                 log.info('[Debugger] Debugging started')
-
-                onStartDebugging()
 
                 /*
                 const unitModulesTreeDataProvider = new class implements vscode.TreeDataProvider<UnitModuleTreeViewItem> {
@@ -89,33 +86,33 @@ export function startDebugging(token: string, entity: string | null, ghost: stri
         })
 }
 
+export type UnitLogItem = {
+    logType: string,
+    index: number,
+    entity: string,
+    timestamp: number,
+    content?: any,
+}
+
+export type UnitLogItemExtended = UnitLogItem & {
+    id: number
+}
+
 export function activate(context: vscode.ExtensionContext) {
     log.debug('[Debugger] Activating debugger ...')
 
-    onStartDebugging = () => {
-        unitLogs.splice(0, unitLogs.length)
-    }
-
-    let adapterFactory: vscode.DebugAdapterDescriptorFactory
-    let trackerFactory: vscode.DebugAdapterTrackerFactory
-
-    adapterFactory = new class implements vscode.DebugAdapterDescriptorFactory {
-        createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): ProviderResult<vscode.DebugAdapterDescriptor> {
-            log.trace(`[Debugger] Registering adapter descriptor with ${'127.0.0.1'}:${8053}`)
-            return new vscode.DebugAdapterServer(8053, '127.0.0.1')
+    const adapterFactory = new class implements vscode.DebugAdapterDescriptorFactory {
+        async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): Promise<vscode.DebugAdapterDescriptor> {
+            log.trace(`[Debugger] Registering adapter on session`, session)
+            if (!debuggerHub) throw new Error('Debugger hub not created')
+            return debuggerHub.createInlineImplementation(session)
         }
     }()
 
-    trackerFactory = new class implements vscode.DebugAdapterTrackerFactory {
+    const trackerFactory = new class implements vscode.DebugAdapterTrackerFactory {
         createDebugAdapterTracker(session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterTracker> {
-            log.trace(`[Debugger] Registering adapter tracker`, session)
+            log.trace(`[Debugger] Registering adapter tracker on session`, session)
             return {
-                //onDidSendMessage(message: any): void {
-                //    log.trace(`[Debugger] <<`, message)
-                //},
-                //onWillReceiveMessage(message) {
-                //    log.trace(`[Debugger] >>`, message)
-                //},
                 onWillStartSession() {
                     log.info(`[Debugger] Will start session`)
                 },
@@ -130,7 +127,7 @@ export function activate(context: vscode.ExtensionContext) {
                 },
             }
         }
-    }
+    }()
 
     log.debug('[Debugger] Registering adapter descriptor factory')
     context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory(extensionId, adapterFactory))
@@ -149,110 +146,87 @@ export function activate(context: vscode.ExtensionContext) {
         context.subscriptions.push(trackerFactory as { dispose(): void })
     }
 
-    context.subscriptions.push(vscode.commands.registerCommand(`${extensionId}.debug.attach`, (entity: string | GameUnit, token: string) => {
+    context.subscriptions.push(vscode.commands.registerCommand(`${extensionId}.debug.attach`, (ghost: string | GameUnit, name: string) => {
         log.debug('[Debugger] Try to start debugging ...')
 
-        if (!entity) {
-            log.warn('[Debugger] No entity provided')
-            vscode.window.showErrorMessage(`No entity provided`)
+        if (!ghost) {
+            log.warn('[Debugger] No ghost provided')
+            vscode.window.showErrorMessage(`No ghost provided`)
             return
         }
 
-        if (typeof entity === 'object') {
-            entity = entity.id
+        if (!token) {
+            log.warn('[Debugger] Not authenticated')
+            vscode.window.showErrorMessage(`Not authenticated`, 'Authenticate')
+                .then(v => {
+                    if (v === 'Authenticate') {
+                        vscode.commands.executeCommand(`${extensionId}.authenticate`)
+                    }
+                })
+            return
         }
 
-        startDebugging(token, entity, null)
+        if (typeof ghost === 'object') {
+            name = ghost.name
+            ghost = ghost.id
+        }
+
+        startDebugging(token, ghost, name)
     }))
 
-    vscode.debug.onDidStartDebugSession(e => log.trace('[Debugger] Debug session started:', e))
-    vscode.debug.onDidChangeActiveDebugSession(e => log.trace('[Debugger] Active debug session changed:', e))
-    vscode.debug.onDidTerminateDebugSession(e => log.trace('[Debugger] Debug session terminated:', e))
-    vscode.debug.onDidChangeBreakpoints(e => log.trace('[Debugger] Breakpoints changed:', e))
+    context.subscriptions.push(vscode.commands.registerCommand(`${extensionId}.debug.disconnect`, (ghost: string | GameUnit) => {
+        if (!ghost) {
+            log.warn('[Debugger] No ghost provided')
+            vscode.window.showErrorMessage(`No ghost provided`)
+            return
+        }
+
+        if (typeof ghost === 'object') {
+            ghost = ghost.id
+        }
+
+        const session = debuggerHub?.sessions.get(ghost)
+        if (!session) {
+            log.warn(`[Debugger] Session ${ghost} not found`)
+            vscode.window.showErrorMessage(`Session ${ghost} not found`)
+            return
+        }
+
+        session.terminateLocally('Initiated by the user')
+    }))
+
+    context.subscriptions.push(vscode.commands.registerCommand(`${extensionId}.unitLog.radio.view`, async (item: UnitLogItem) => {
+        const data = item.content?.['data']
+        if (!data) return
+
+        const filePath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), extensionId)), 'radio.bin')
+        fs.writeFileSync(filePath, Buffer.from(data, 'base64'))
+        log.debug(`Radar packet content written to "${filePath}"`)
+
+        const uri = vscode.Uri.file(filePath)
+
+        await vscode.commands.executeCommand('vscode.open', uri, { preview: true } as vscode.TextDocumentShowOptions, 'Radio Packet Content')
+    }))
+
+    vscode.debug.onDidStartDebugSession(e => {
+        log.trace('[Debugger] Debug session started:', e)
+    })
+    vscode.debug.onDidChangeActiveDebugSession(e => {
+        log.trace('[Debugger] Active debug session changed:', e)
+    })
+
+    vscode.debug.onDidTerminateDebugSession(e => {
+        log.trace('[Debugger] Debug session terminated:', e)
+    })
 
     const outputChannel = vscode.window.createOutputChannel("Nothingame Debug Host", { log: true })
 
-    type UnitLogItem = {
-        logType: string,
-        index: number,
-        timestamp?: number,
-        content?: any,
-    }
+    const packetSource = new PacketSource()
+    context.subscriptions.push(packetSource)
 
-    type UnitLogTreeViewItem = UnitLogItem | { key: string | number, value: any }
-
-    const unitLogs: Array<UnitLogItem> = []
-
-    const unitLogTreeDataProvider = new class implements vscode.TreeDataProvider<UnitLogTreeViewItem> {
-        constructor() { }
-
-        private _onDidChangeTreeData = new vscode.EventEmitter<UnitLogTreeViewItem | undefined>();
-        readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
-
-        refresh(): void {
-            this._onDidChangeTreeData.fire(undefined)
-        }
-
-        getTreeItem(element: UnitLogTreeViewItem): vscode.TreeItem {
-            if ('logType' in element) {
-                const res = new vscode.TreeItem(`${element.logType}`, vscode.TreeItemCollapsibleState.None)
-                res.id = `${element.index}`
-
-                res.iconPath = new vscode.ThemeIcon('debug-breakpoint-log')
-
-                if (element.content && Object.keys(element.content).length) {
-                    res.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed
-                }
-
-                if (element.timestamp) {
-                    const date = new Date(element.timestamp * 1000)
-                    res.description = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
-                }
-
-                return res
-            } else {
-                if (element.value === null) {
-                    return new vscode.TreeItem(`${element.key} = null`, vscode.TreeItemCollapsibleState.None)
-                } else if (typeof element.value === 'object') {
-                    return new vscode.TreeItem(`${element.key} = ...`, vscode.TreeItemCollapsibleState.Collapsed)
-                } else {
-                    return new vscode.TreeItem(`${element.key} = ${element.value}`, vscode.TreeItemCollapsibleState.None)
-                }
-            }
-        }
-
-        getChildren(element?: UnitLogTreeViewItem): Thenable<UnitLogTreeViewItem[]> {
-            if (!element) {
-                return Promise.resolve(unitLogs)
-            } else {
-                let content = null
-                if ('logType' in element) {
-                    content = element.content
-                } else {
-                    content = element.value
-                }
-
-                if (!content) return Promise.resolve([])
-
-                const res = []
-                if (Array.isArray(content)) {
-                    for (let i = 0; i < content.length; i++) {
-                        res.push({ key: i, value: content[i] })
-                    }
-                } else {
-                    for (const key in content) {
-                        const value = content[key]
-                        res.push({ key, value })
-                    }
-                }
-                return Promise.resolve(res)
-            }
-        }
-    }()
-
-    let treeViewRefreshTimeout: NodeJS.Timeout | null = null
-
-    context.subscriptions.push(vscode.window.createTreeView('unitLog', { treeDataProvider: unitLogTreeDataProvider }))
+    context.subscriptions.push(vscode.commands.registerCommand(`${extensionId}.unitLog.view`, () => {
+        PacketInspectorPanel.createOrShow(context.extensionUri, packetSource)
+    }))
 
     vscode.debug.onDidReceiveDebugSessionCustomEvent(e => {
         if (e.event === "adapterLog") {
@@ -265,16 +239,9 @@ export function activate(context: vscode.ExtensionContext) {
                 default: outputChannel.appendLine(e.body.message); break
             }
         } else if (e.event === "unitLog") {
-            const v = e.body as UnitLogItem
-            const last = unitLogs[0]
-            if (last && last.timestamp === v.timestamp) delete last.timestamp
-
-            if (unitLogs.unshift(v) >= MaxUnitLogLength) unitLogs.splice(MaxUnitLogLength)
-
-            if (!treeViewRefreshTimeout) treeViewRefreshTimeout = setTimeout(() => {
-                unitLogTreeDataProvider.refresh()
-                treeViewRefreshTimeout = null
-            }, 500)
+            for (const v of e.body.logs as ReadonlyArray<UnitLogItem> ?? []) {
+                packetSource.publish(v)
+            }
         } else {
             log.trace('[Debugger] Custom event received:', e)
         }

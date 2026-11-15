@@ -134,30 +134,39 @@ partial class ProcessorSourceSystemServer : SystemBase
                 }
             }
 
-            foreach (var (ghostInstance, processor) in
-                SystemAPI.Query<RefRO<GhostInstance>, RefRW<Processor>>())
+            FileId fileId = new(command.ValueRO.Source, ep);
+
+            if (compilerSystem.CompiledSources.TryGetValue(fileId, out CompiledSourceServer? source))
             {
-                if (!command.ValueRO.Entity.Equals(ghostInstance.ValueRO)) continue;
-
-                processor.ValueRW.SourceFile = new FileId(command.ValueRO.Source, ep);
-
-                if (compilerSystem.CompiledSources.TryGetValue(processor.ValueRO.SourceFile, out CompiledSourceServer? source))
+                if (EnableLogging) Debug.Log($"{DebugEx.ServerPrefix} Update source file `{command.ValueRO.Source}` ({source.LatestVersion} -> {source.LatestVersion + 1})");
+                source.LatestVersion++;
+                if (command.ValueRO.IsHotReload)
                 {
-                    if (EnableLogging) Debug.Log($"{DebugEx.ServerPrefix} Update source file `{command.ValueRO.Source}` ({source.LatestVersion} -> {source.LatestVersion + 1})");
-                    source.LatestVersion++;
-                    if (command.ValueRO.IsHotReload)
+                    source.HotReloadVersion = source.LatestVersion;
+                }
+            }
+            else
+            {
+                if (EnableLogging) Debug.Log($"{DebugEx.ServerPrefix} Creating new source file `{command.ValueRO.Source}`");
+                compilerSystem.AddEmpty(fileId, 1);
+            }
+
+            if (!command.ValueRO.Entity.Equals(default))
+            {
+                foreach (var (ghostInstance, processor) in
+                    SystemAPI.Query<RefRO<GhostInstance>, RefRW<Processor>>())
+                {
+                    if (!command.ValueRO.Entity.Equals(ghostInstance.ValueRO)) continue;
+
+                    processor.ValueRW.SourceFile = fileId;
+
+                    if (!compilerSystem.CompiledSources.ContainsKey(fileId))
                     {
-                        source.HotReloadVersion = source.LatestVersion;
+                        processor.ValueRW.CompiledSourceVersion = 0;
                     }
-                }
-                else
-                {
-                    if (EnableLogging) Debug.Log($"{DebugEx.ServerPrefix} Creating new source file `{command.ValueRO.Source}`");
-                    compilerSystem.AddEmpty(processor.ValueRO.SourceFile, 1);
-                    processor.ValueRW.CompiledSourceVersion = 0;
-                }
 
-                break;
+                    break;
+                }
             }
         }
 

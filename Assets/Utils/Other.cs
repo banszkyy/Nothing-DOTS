@@ -19,6 +19,11 @@ public static partial class Utils
         return q.GetSingleton<T>();
     }
 
+    public static Entity GetSingletonEntity<T>(this EntityManager entityManager) where T : unmanaged, IComponentData
+    {
+        using EntityQuery q = entityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
+        return q.GetSingletonEntity();
+    }
 
     public static bool TryGetComponentData<T>(this EntityManager entityManager, Entity entity, out T component) where T : unmanaged, IComponentData
     {

@@ -66,16 +66,17 @@ GameObject:
   - component: {fileID: 708321800321663630}
   - component: {fileID: 6438411673005903826}
   - component: {fileID: 4430010142439872546}
+  - component: {fileID: -8459408987758569069}
   - component: {fileID: 7127348398180061710}
   - component: {fileID: 9123539403250767302}
   - component: {fileID: 5822602674958806106}
   - component: {fileID: 5743960576650735482}
   - component: {fileID: 3254299251944173042}
-  - component: {fileID: 8455236590501514596}
   - component: {fileID: 216522245849925906}
   - component: {fileID: 1119543283634643085}
   - component: {fileID: 6408794492881663584}
   - component: {fileID: -6306880543239969134}
+  - component: {fileID: 1552670464451147537}
   m_Layer: 6
   m_Name: Tank
   m_TagString: Untagged
@@ -175,12 +176,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CyclesPerTick: 200
   MemorySize: 1024
-  TransmissionPoint: {fileID: 0}
-  StatusLED: {fileID: 7796085648097967963}
-  NetworkReceiveLED: {fileID: 507379431074911363}
-  NetworkSendLED: {fileID: 8025395626688777101}
-  RadarLED: {fileID: 4116654352881357938}
-  CustomLED: {fileID: 6093726751811578172}
+  EmissionPower: 1
+  StatusLED: {fileID: 6380310048370160465}
+  NetworkReceiveLED: {fileID: 0}
+  NetworkSendLED: {fileID: 0}
+  CustomLED: {fileID: 4035650431481804986}
   USBLED: {fileID: 0}
   USBPosition: {fileID: 0}
   Script: 
@@ -209,6 +209,25 @@ MonoBehaviour:
   BulletReload: 0
   MagazineReload: 3
   MagazineSize: 1
+--- !u!114 &-8459408987758569069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2198220952844499968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63998bd03e1b88364a41236e9eea18cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadioAuthoring
+  TransmissionPoint: {fileID: 0}
+  TxPowerDbm: 30
+  RxGainDbi: 0
+  SensitivityDbm: -112
+  MinBeamHalvings: 0
+  MaxBeamHalvings: 2
+  BearingSectors: 16
 --- !u!114 &7127348398180061710
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -278,19 +297,6 @@ MonoBehaviour:
   Prefabs: {fileID: 11400000, guid: 9fbd3be61b1b911759f2e0e4d52dafb8, type: 2}
   Prefab: {fileID: 11400000, guid: e0f18b7107699b5539cd55dc90db54bd, type: 2}
   Team: 0
---- !u!114 &8455236590501514596
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2198220952844499968}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 126e16097065ae86e90421fd823227e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Radar: {fileID: 4387523237411542620}
 --- !u!114 &216522245849925906
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -343,6 +349,19 @@ MonoBehaviour:
   MaxSpeed: 6
   Acceleration: 0.4
   Steering: 30
+--- !u!114 &1552670464451147537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2198220952844499968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 141cb5c1974dd794fa0a9ec2261dca44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadarSignatureAuthoring
+  RadarCrossSection: 1
 --- !u!1 &3090239875511047508
 GameObject:
   m_ObjectHideFlags: 0
@@ -947,33 +966,21 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 861edd50cb40d5741a04282eb5c9c6d3, type: 3}
---- !u!1 &507379431074911363 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5375738558496952150, guid: 861edd50cb40d5741a04282eb5c9c6d3,
-    type: 3}
-  m_PrefabInstance: {fileID: 5589221516452273109}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3855688339187822153 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8652205736085714332, guid: 861edd50cb40d5741a04282eb5c9c6d3,
     type: 3}
   m_PrefabInstance: {fileID: 5589221516452273109}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &6093726751811578172 stripped
+--- !u!1 &4035650431481804986 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 1801901005128708841, guid: 861edd50cb40d5741a04282eb5c9c6d3,
+  m_CorrespondingSourceObject: {fileID: 8471664475744002927, guid: 861edd50cb40d5741a04282eb5c9c6d3,
     type: 3}
   m_PrefabInstance: {fileID: 5589221516452273109}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &7796085648097967963 stripped
+--- !u!1 &6380310048370160465 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 2423400371679257742, guid: 861edd50cb40d5741a04282eb5c9c6d3,
-    type: 3}
-  m_PrefabInstance: {fileID: 5589221516452273109}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &8025395626688777101 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2508234059027157080, guid: 861edd50cb40d5741a04282eb5c9c6d3,
+  m_CorrespondingSourceObject: {fileID: 1520964830518765700, guid: 861edd50cb40d5741a04282eb5c9c6d3,
     type: 3}
   m_PrefabInstance: {fileID: 5589221516452273109}
   m_PrefabAsset: {fileID: 0}

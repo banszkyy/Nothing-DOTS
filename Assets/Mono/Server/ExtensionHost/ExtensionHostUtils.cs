@@ -1,30 +1,8 @@
-using Unity.Entities;
 using Unity.NetCode;
 
 static class ExtensionHostUtils
 {
-    public static string Stringify(Entity entity) => $"{entity.Index}:{entity.Version}";
-    public static string Stringify(SpawnedGhost ghost) => $"{ghost.ghostId}:{ghost.spawnTick.TickIndexForValidTick}";
-
-    public static bool TryParseEntity(string value, out Entity entity)
-    {
-        entity = default;
-
-        string[] parts = value.Split(':');
-        if (parts.Length != 2
-            || !int.TryParse(parts[0], out int entityIndex)
-            || !int.TryParse(parts[1], out int entityVersion))
-        {
-            return false;
-        }
-
-        entity = new Entity()
-        {
-            Index = entityIndex,
-            Version = entityVersion,
-        };
-        return true;
-    }
+    public static string Stringify(SpawnedGhost ghost) => $"{ghost.ghostId}:{ghost.spawnTick}";
 
     public static bool TryParseGhost(string value, out SpawnedGhost ghost)
     {

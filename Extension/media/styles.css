@@ -1,0 +1,165 @@
+:root {
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    color: var(--vscode-foreground);
+    background: var(--vscode-editor-background);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.brand {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.toolbar input {
+    flex: 1;
+    min-width: 100px;
+    padding: 5px 8px;
+    color: var(--vscode-input-foreground);
+    background: var(--vscode-input-background);
+    border: 1px solid var(--vscode-input-border);
+    outline-color: var(--vscode-focusBorder);
+}
+
+button {
+    color: var(--vscode-button-foreground);
+    background: var(--vscode-button-background);
+    border: none;
+    padding: 5px 12px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+.workspace {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.packet-list {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    font-family: var(--vscode-editor-font-family);
+    font-size: var(--vscode-editor-font-size);
+}
+
+.table-header,
+.packet-row {
+    display: grid;
+    grid-template-columns: 50px 100px 30px minmax(130px, 1fr) 100px 70px minmax(180px, 2fr);
+    gap: 8px;
+    align-items: center;
+    padding: 5px 10px;
+    min-width: 850px;
+}
+
+.table-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--vscode-sideBar-background);
+    font-weight: 600;
+}
+
+.packet-row {
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.packet-row:hover {
+    background: var(--vscode-list-hoverBackground);
+}
+
+.packet-row.selected {
+    background: var(--vscode-list-activeSelectionBackground);
+    color: var(--vscode-list-activeSelectionForeground);
+}
+
+.packet-type-icon {
+    width: 1rem;
+    height: 1rem;
+    display: inline-block;
+    align-self: center;
+    background-color: currentColor;
+    mask-size: 1rem !important;
+    -webkit-mask-size: 1rem !important;
+}
+
+.packet-direction-icon {
+    width: 1rem;
+    height: 1rem;
+    display: inline-block;
+    align-self: center;
+    background-color: currentColor;
+    mask-size: 1rem !important;
+    -webkit-mask-size: 1rem !important;
+}
+
+#packet-details {
+    height: 240px;
+    flex-shrink: 0;
+    overflow: auto;
+    border-top: 1px solid var(--vscode-panel-border);
+}
+
+.details-header {
+    padding: 10px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.details-content {
+    padding: 10px;
+}
+
+.details-content h3 {
+    font-size: 1em;
+    margin: 12px 0 8px;
+}
+
+.detail-row {
+    display: flex;
+    gap: 20px;
+    padding: 3px 0;
+}
+
+.detail-row span:first-child {
+    width: 110px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.payload {
+    font-family: var(--vscode-editor-font-family);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.empty-state {
+    padding: 30px;
+    text-align: center;
+    color: var(--vscode-descriptionForeground);
+}

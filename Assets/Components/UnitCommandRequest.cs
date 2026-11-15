@@ -1,7 +1,5 @@
-using Unity.Burst;
 using Unity.Collections;
 
-[BurstCompile]
 public readonly struct UnitCommandRequest
 {
     public readonly int Id;

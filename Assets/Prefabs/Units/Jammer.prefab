@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: -6280363364310306796}
   - component: {fileID: 581946412941356830}
   - component: {fileID: 7993248389885970180}
+  - component: {fileID: 2226328907267726050}
   - component: {fileID: 41737087432463705}
   - component: {fileID: 6690235773295554373}
   - component: {fileID: 7525454188492156223}
@@ -23,6 +24,7 @@ GameObject:
   - component: {fileID: 426298694779023330}
   - component: {fileID: 1601078595387597447}
   - component: {fileID: 8022878401587579355}
+  - component: {fileID: -9129457856881999664}
   m_Layer: 6
   m_Name: Jammer
   m_TagString: Untagged
@@ -121,15 +123,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CyclesPerTick: 150
   MemorySize: 1024
-  TransmissionPoint: {fileID: 0}
-  StatusLED: {fileID: 5531386286674872900}
-  NetworkReceiveLED: {fileID: 2880261923365986716}
-  NetworkSendLED: {fileID: 5741459364462296722}
-  RadarLED: {fileID: 0}
-  CustomLED: {fileID: 8386661434416258083}
+  EmissionPower: 1
+  StatusLED: {fileID: 8681046985683895886}
+  NetworkReceiveLED: {fileID: 0}
+  NetworkSendLED: {fileID: 0}
+  CustomLED: {fileID: 1797972805300555173}
   USBLED: {fileID: 0}
   USBPosition: {fileID: 0}
   Script: 
+--- !u!114 &2226328907267726050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8427767388040926130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63998bd03e1b88364a41236e9eea18cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadioAuthoring
+  TransmissionPoint: {fileID: 0}
+  TxPowerDbm: 30
+  RxGainDbi: 0
+  SensitivityDbm: -112
+  MinBeamHalvings: 0
+  MaxBeamHalvings: 2
+  BearingSectors: 16
 --- !u!114 &41737087432463705
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -264,6 +284,19 @@ MonoBehaviour:
   MaxSpeed: 15
   Acceleration: 1
   Steering: 30
+--- !u!114 &-9129457856881999664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8427767388040926130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 141cb5c1974dd794fa0a9ec2261dca44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadarSignatureAuthoring
+  RadarCrossSection: 1
 --- !u!1001 &630003423892420959
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -541,27 +574,15 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 7882085813096607434}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &2880261923365986716 stripped
+--- !u!1 &1797972805300555173 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 5375738558496952150, guid: 861edd50cb40d5741a04282eb5c9c6d3,
+  m_CorrespondingSourceObject: {fileID: 8471664475744002927, guid: 861edd50cb40d5741a04282eb5c9c6d3,
     type: 3}
   m_PrefabInstance: {fileID: 7882085813096607434}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &5531386286674872900 stripped
+--- !u!1 &8681046985683895886 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 2423400371679257742, guid: 861edd50cb40d5741a04282eb5c9c6d3,
-    type: 3}
-  m_PrefabInstance: {fileID: 7882085813096607434}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &5741459364462296722 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2508234059027157080, guid: 861edd50cb40d5741a04282eb5c9c6d3,
-    type: 3}
-  m_PrefabInstance: {fileID: 7882085813096607434}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &8386661434416258083 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1801901005128708841, guid: 861edd50cb40d5741a04282eb5c9c6d3,
+  m_CorrespondingSourceObject: {fileID: 1520964830518765700, guid: 861edd50cb40d5741a04282eb5c9c6d3,
     type: 3}
   m_PrefabInstance: {fileID: 7882085813096607434}
   m_PrefabAsset: {fileID: 0}

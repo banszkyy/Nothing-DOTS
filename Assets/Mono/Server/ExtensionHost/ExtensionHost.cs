@@ -1,255 +1,203 @@
-using UnityEngine;
 using System.Net.Sockets;
-using System.Threading;
-using OmniSharp.Extensions.LanguageServer.Server;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 using System;
-using Unity.Collections;
 using System.Collections.Generic;
-using Unity.Entities;
-using System.Linq;
 using System.Net;
-using System.IO;
+using System.Collections.Concurrent;
+using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol;
+using Microsoft.VisualStudio.Shared.VSCodeDebugProtocol.Messages;
+using Unity.NetCode;
+using Newtonsoft.Json.Linq;
+using StreamJsonRpc;
+using Microsoft.VisualStudio.Threading;
+using Unity.Entities;
+using Unity.Collections;
 
-class ExtensionHost : MonoBehaviour
+class ExtServer : Singleton<ExtServer>
 {
     TcpListenerManager? Listener;
-    readonly List<(LanguageServer Server, RpcStream Stream)> RpcHosts = new();
-    readonly List<(LanguageServer Server, TcpListenerManager Listener)> TcpHosts = new();
-    readonly bool UseRpc = false;
-    readonly bool UseTcp = true;
+    public readonly List<ExtensionClient> ConnectedExtensions = new();
+    readonly ConcurrentQueue<(Func<ResponseBody> Task, IRequestResponder RequestResponder)> PendingRequests = new();
 
-    CancellationTokenSource? CancellationTokenSource;
-    EntityQuery ProcessorQ;
-
-    static EntityManager E => ConnectionManager.ServerOrDefaultWorld.EntityManager;
-    static World W => ConnectionManager.ServerOrDefaultWorld;
-
-    void OnEnable()
+    public class UnityLogger : Logger
     {
-        CancellationTokenSource = new CancellationTokenSource();
-    }
+        public static UnityLogger Instance = new();
 
-    class UnityLogger : Microsoft.Extensions.Logging.ILogger
-    {
-        readonly string categoryName;
-
-        public UnityLogger(string categoryName)
+        public override void Error(string? value)
         {
-            this.categoryName = categoryName;
+            UnityEngine.Debug.LogError(value);
         }
 
-        class DummyScope : IDisposable
+        public override void Warn(string? value)
         {
-            public void Dispose()
-            {
-
-            }
+            UnityEngine.Debug.LogWarning(value);
         }
 
-        IDisposable Microsoft.Extensions.Logging.ILogger.BeginScope<TState>(TState state) => new DummyScope();
-
-        bool Microsoft.Extensions.Logging.ILogger.IsEnabled(LogLevel logLevel) => true;
-
-        void Microsoft.Extensions.Logging.ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        public override void WriteLine(string? value)
         {
-            switch (logLevel)
-            {
-                case LogLevel.Trace:
-                case LogLevel.Debug:
-                case LogLevel.Information:
-                    Debug.Log($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {formatter(state, exception)}");
-                    break;
-                case LogLevel.Warning:
-                    Debug.LogWarning($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {formatter(state, exception)}");
-                    break;
-                case LogLevel.Error:
-                case LogLevel.Critical:
-                    Debug.LogError($"{DebugEx.ServerPrefix} [LSP/{categoryName}] {formatter(state, exception)}");
-                    break;
-                case LogLevel.None:
-                default:
-                    break;
-            }
-            if (exception is not null) Debug.LogException(exception);
+
         }
-    }
 
-    class UnityLoggerProvider : ILoggerProvider
-    {
-        public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) => new UnityLogger(categoryName);
-
-        void IDisposable.Dispose()
+        public override void Dispose()
         {
 
         }
     }
+
+    public class ExtensionClient : IDisposable
+    {
+        public TcpClient Tcp { get; }
+        public JsonRpc Rpc { get; }
+        public string? Token { get; set; }
+        public DebugSessionMultiplexer DebugSessionMultiplexer { get; }
+
+        public ExtensionClient(TcpClient tcp, JsonRpc rpc)
+        {
+            Tcp = tcp;
+            Rpc = rpc;
+            DebugSessionMultiplexer = new DebugSessionMultiplexer(rpc);
+        }
+
+        public void Dispose()
+        {
+            DebugSessionMultiplexer.Dispose();
+            Rpc.Dispose();
+            Tcp.Dispose();
+        }
+    }
+
+    public void ScheduleRequest<TArgs, TResponse>(Func<TArgs, TResponse> work, IRequestResponder<TArgs> requestResponder)
+        where TArgs : class, new()
+        where TResponse : ResponseBody
+        => PendingRequests.Enqueue(new(() => work(requestResponder.Arguments), requestResponder));
 
     void Update()
     {
-        if (UseTcp)
+        while (PendingRequests.TryDequeue(out (Func<ResponseBody> Task, IRequestResponder RequestResponder) entry))
         {
-            if (Listener is not null && Listener.ConnectedClient is null && !Listener.IsListening)
+            try
             {
-                Debug.Log($"{DebugEx.ServerPrefix} [LSP] Destroying TCP listener (and will reopen)");
-                Listener.Dispose();
+                entry.RequestResponder.SetResponse(entry.Task());
             }
-
-            if (Listener is null)
+            catch (ProtocolException ex)
             {
-                Debug.Log($"{DebugEx.ServerPrefix} [LSP] Creating new TCP listener");
-                for (int i = 8052; i <= 65535; i++)
-                {
-                    try
-                    {
-                        Listener = TcpListenerManager.Listen(IPAddress.Parse("127.0.0.1"), i, "LSP");
-                        goto ok;
-                    }
-                    catch (SocketException)
-                    {
-
-                    }
-                }
-                throw new UnreachableException();
-            ok:;
+                entry.RequestResponder.SetError(ex);
             }
-
-            if (Listener?.ConnectedClient is not null)
+            catch (Exception ex)
             {
-                if (ProcessorQ == default)
-                {
-                    ProcessorQ = E.CreateEntityQuery(typeof(Processor));
-                }
-
-                NetworkStream stream = Listener.ConnectedClient.GetStream();
-                LanguageServer server = CreateHost(stream, stream);
-                server.Exit.Subscribe((v) =>
-                {
-                    Debug.Log($"{DebugEx.ServerPrefix} [LSP] Server exited {v}");
-                    server?.Dispose();
-                    Listener?.Dispose();
-                });
-                TcpHosts.Add((server, Listener));
-                Listener = null;
+                entry.RequestResponder.SetError(new ProtocolException($"Unhandled {ex.GetType().Name}", ex));
+                Debug.LogException(ex);
             }
         }
 
-        if (UseRpc)
+        if (Listener is not null && !Listener.IsListening)
         {
-            foreach (RpcStream stream in RpcStreamManagerSystem.GetInstance(ConnectionManager.ServerWorld ?? throw new NullReferenceException($"ServerWorld is null")).Streams)
+            Debug.Log($"{DebugEx.ServerPrefix} [ExtServer] Destroying TCP listener (and will reopen)");
+            Listener.Dispose();
+            Listener = null;
+        }
+
+        if (Listener is null)
+        {
+            for (int i = 8052; i <= 65535; i++)
             {
-                if (RpcHosts.Any(v => v.Stream == stream)) continue;
-                if (!stream.RemoteIdentifier.Name.ToString().StartsWith("bbl_ext_lsp_")) continue;
-
-                if (ProcessorQ == default)
+                try
                 {
-                    ProcessorQ = E.CreateEntityQuery(typeof(Processor));
+                    Listener = new TcpListenerManager(IPAddress.Parse("127.0.0.1"), i);
+                    Listener.OnClientConnected += OnClientConnected;
+                    Debug.Log($"{DebugEx.ServerPrefix} [ExtServer] Listening on {Listener.EndPoint}");
+                    goto ok;
                 }
-
-                NetcodeStreamAdapter adapter = new(stream);
-
-                LanguageServer? server = CreateHost(adapter, adapter);
-                RpcHosts.Add((server, stream));
-
-                server.Exit.Subscribe((v) =>
+                catch (SocketException)
                 {
-                    Debug.Log($"{DebugEx.ServerPrefix} [LSP] Server exited {v}");
-                    server?.Dispose();
-                    server = null;
-                    stream.Complete();
-                });
+
+                }
             }
+            throw new UnreachableException();
+        ok:;
+        }
+
+        for (int i = 0; i < ConnectedExtensions.Count; i++)
+        {
+            ExtensionClient v = ConnectedExtensions[i];
+
+            if (v.Tcp is null || !v.Tcp.Connected)
+            {
+                Debug.Log($"{DebugEx.ServerPrefix} [ExtServer] Removing dead extension connection");
+                v.Dispose();
+                ConnectedExtensions.RemoveAt(i--);
+                continue;
+            }
+
+            v.DebugSessionMultiplexer.Update();
         }
     }
 
-    LanguageServer CreateHost(Stream input, Stream output)
+    void OnClientConnected(TcpClient client)
     {
-        Debug.Log($"{DebugEx.ServerPrefix} [LSP] Creating server");
-        var server = LanguageServer.Create(options =>
+        Debug.Log($"{DebugEx.ServerPrefix} [ExtServer] Creating extension host");
+
+        NetworkStream stream = client.GetStream();
+        JsonRpc rpc = new(stream)
         {
-            options.WithInput(input);
-            options.WithOutput(output);
-
-            options.ConfigureLogging(x => x
-                .SetMinimumLevel(LogLevel.Information)
-#if UNITY_EDITOR
-                .Services.AddSingleton<ILoggerProvider, UnityLoggerProvider>()
-#else
-                .AddLanguageProtocolLogging()
-#endif
-            );
-
-            options.WithServices(x => x.AddLogging(b => b.SetMinimumLevel(LogLevel.Trace)));
-
-            options.OnRequest("units", (UnitsRequestParams request) => MainThreadManager.Instance.ScheduleAsync(() =>
-            {
-                if (!Guid.TryParse(request.Token, out Guid token)) return new();
-
-                if (!PlayerSystemServer.FindPlayer(W.Unmanaged, token, out Player player)) return new();
-
-                using NativeArray<Entity> entities = ProcessorQ.ToEntityArray(Allocator.Temp);
-                List<object> res = new(entities.Length);
-                for (int i = 0; i < entities.Length; i++)
-                {
-                    Entity entity = entities[i];
-
-                    if (E.HasComponent<UnitTeam>(entity))
-                    {
-                        int team = E.GetComponentData<UnitTeam>(entity).Team;
-                        if (team != player.Team) continue;
-                    }
-
-                    Processor processor = E.GetComponentData<Processor>(entity);
-
-                    string? source = DebugHost.GetFilePath(processor.SourceFile, token) ?? processor.SourceFile.ToString();
-
-                    res.Add(new
-                    {
-                        id = $"{entity.Index}:{entity.Version}",
-                        signal = !processor.Source.Code.IsCreated ? "off" : processor.DebugContext.IsBeingDebugged ? "debugged" : processor.Signal switch
-                        {
-                            LanguageCore.Runtime.Signal.None => "running",
-                            LanguageCore.Runtime.Signal.UserCrash => "crashed",
-                            LanguageCore.Runtime.Signal.StackOverflow => "crashed",
-                            LanguageCore.Runtime.Signal.Halt => "halted",
-                            LanguageCore.Runtime.Signal.UndefinedExternalFunction => "crashed",
-                            LanguageCore.Runtime.Signal.PointerOutOfRange => "crashed",
-                            _ => null,
-                        },
-                        source = source,
-                    });
-                }
-                return res;
-            }));
-
-            options.OnStarted((server, cancellationToken) =>
-            {
-                Debug.Log($"{DebugEx.ServerPrefix} [LSP] Server started");
-                return Task.CompletedTask;
-            });
+            SynchronizationContext = new NonConcurrentSynchronizationContext(sticky: false)
+        };
+        ExtensionClient newClient = new(client, rpc);
+        rpc.AddLocalRpcMethod("authenticate", (string token) =>
+        {
+            Debug.Log($"{DebugEx.ServerPrefix} [ExtServer] Received token \"{token}\" from {client.Client.RemoteEndPoint}");
+            newClient.Token = token;
+            return true;
         });
-        Debug.Log($"{DebugEx.ServerPrefix} [LSP] Initializing server");
-        _ = server.Initialize(CancellationTokenSource?.Token ?? CancellationToken.None)
-            .ContinueWith(task =>
-            {
-                if (task.IsCanceled)
-                {
-                    Debug.LogWarning($"{DebugEx.ServerPrefix} [LSP] Server initialization canceled");
-                }
-                else if (task.IsFaulted)
-                {
-                    Debug.LogError($"{DebugEx.ServerPrefix} [LSP] Server initialization failed");
-                    Debug.LogException(task.Exception);
-                }
-                else
-                {
-                    Debug.Log($"{DebugEx.ServerPrefix} [LSP] Server initialized");
-                }
-            }, TaskScheduler.Default);
+        rpc.AddLocalRpcMethod("units", (string token) => MainThreadManager.Instance.ScheduleAsync(() =>
+        {
+            List<object> res = new();
 
-        return server;
+            EntityManager e = ConnectionManager.ServerOrDefaultWorld.EntityManager;
+
+            using EntityQuery playersQ = e.CreateEntityQuery(typeof(Player), typeof(RealPlayer));
+            using NativeArray<Entity> players = playersQ.ToEntityArray(Allocator.Temp);
+
+            int team = -1;
+            int connectionId = -1;
+            foreach (Entity playerE in players)
+            {
+                Player player = e.GetComponentData<Player>(playerE);
+                if (!string.Equals(player.Guid.ToString(), token, StringComparison.InvariantCultureIgnoreCase)) continue;
+                team = player.Team;
+                connectionId = e.GetComponentData<RealPlayer>(playerE).ConnectionId;
+                break;
+            }
+
+            if (team == -1) return res;
+
+            using EntityQuery unitsQ = e.CreateEntityQuery(typeof(UnitTeam), typeof(Processor), typeof(GhostInstance));
+            using NativeArray<Entity> entities = unitsQ.ToEntityArray(Allocator.Temp);
+
+            foreach (Entity entity in entities)
+            {
+                GhostInstance ghost = e.GetComponentData<GhostInstance>(entity);
+                Processor processor = e.GetComponentData<Processor>(entity);
+
+                res.Add(new
+                {
+                    name = ProcessorDebugSystemServer.GetEntityName(e, entity, ghost),
+                    id = $"{ghost.ghostId}:{ghost.spawnTick}",
+                    signal = processor.Source.Code.IsCreated ? processor.Signal switch
+                    {
+                        LanguageCore.Runtime.Signal.Halt => "halted",
+                        LanguageCore.Runtime.Signal.None => processor.DebugContext.IsBeingDebugged ? "debugged" : "running",
+                        _ => "crashed",
+                    } : "off",
+                    source = processor.SourceFile == default ? null : processor.SourceFile.ToUri().ToString(),
+                });
+            }
+
+            return res;
+        }));
+
+        rpc.StartListening();
+
+        ConnectedExtensions.Add(newClient);
     }
 
     void OnDisable() => Dispose();
@@ -257,37 +205,30 @@ class ExtensionHost : MonoBehaviour
 
     void Dispose()
     {
-        CancellationTokenSource?.Cancel();
-        CancellationTokenSource = null;
-
         if (Listener is not null)
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [LSP] Disposing TCP listener");
+            Debug.Log($"{DebugEx.ServerPrefix} [ExtServer] Disposing TCP listener");
             Listener.Dispose();
             Listener = null;
         }
 
-        foreach (var (server, listener) in TcpHosts)
+        foreach (ExtensionClient v in ConnectedExtensions)
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [LSP] Disposing server");
-            server.Dispose();
-            listener.Dispose();
+            Debug.Log($"{DebugEx.ServerPrefix} [ExtServer] Disposing server");
+            v.Dispose();
         }
-        TcpHosts.Clear();
+        ConnectedExtensions.Clear();
+    }
 
-        foreach (var (server, stream) in RpcHosts)
+    public System.Threading.Tasks.Task StartDebuggingUnit(SpawnedGhost ghost, string name, ExtensionClient ext)
+    {
+        string sessionId = $"{ghost.ghostId}:{ghost.spawnTick}";
+        Debug.Log($"{DebugEx.ServerPrefix} [ExtServer] Starting debug session on ghost {ghost.ghostId}:{ghost.spawnTick}");
+        ext.DebugSessionMultiplexer.AddSession(sessionId, (to, from) => new DebugHost(this, to.Reader.AsStream(), from.Writer.AsStream(), UnityLogger.Instance));
+        return ext.DebugSessionMultiplexer.StartSession(sessionId, name, JObject.FromObject(new
         {
-            Debug.Log($"{DebugEx.ServerPrefix} [LSP] Disposing server");
-            server.Dispose();
-            stream.Complete();
-        }
-        RpcHosts.Clear();
-
-        try
-        {
-            if (ProcessorQ != default) ProcessorQ.Dispose();
-        }
-        catch (NullReferenceException) { }
-        ProcessorQ = default;
+            token = ext.Token,
+            ghost = $"{ghost.ghostId}:{ghost.spawnTick}",
+        }));
     }
 }

@@ -1,7 +1,8 @@
 :root {
     --error: #ff3f19;
     --warning: #ffa033;
-    --ok: #45ff7a;
+    --success: #45ff7a;
+    --info: #2ea9e7;
     --foregroundPrimary: #e0def4;
     --foregroundSecondary: #908caa;
     --windowBackground: #000000;
@@ -24,6 +25,8 @@
     min-width: 150px;
     border-color: var(--windowBorder);
     border-width: 1px;
+    max-width: 90%;
+    max-height: 90%;
 }
 
 Label { 
@@ -39,11 +42,15 @@ Label.warning {
 }
 
 Label.success {
-    color: var(--ok);
+    color: var(--success);
 }
 
 Label.secondary {
     color: var(--foregroundSecondary);
+}
+
+Label.info {
+    color: var(--info);
 }
 
 TextField > #unity-text-input {
@@ -531,4 +538,19 @@ ProgressBar Label {
     margin: 0px;
     padding: 0px;
     padding-left: 6px;
+}
+
+#foldout-diagnostics {
+    font-size: 8px;
+}
+
+#foldout-diagnostics Toggle {
+    border-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+#foldout-diagnostics Toggle #unity-checkmark {
+    width: 12px;
+    height: 12px;
 }

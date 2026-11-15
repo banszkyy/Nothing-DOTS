@@ -46,39 +46,22 @@ export void sleep(float sec)
 [External("wsend")] export void wsend(any* buffer, int length, float3 aim, byte beamHalvings);
 export inline void wsend(any* buffer, int length) { wsend(buffer, length, new float3, 0); }
 
+export inline int wreceive<L>(byte[L]* buffer, float3* direction, byte* marginDb) { wreceive(buffer, L, direction, marginDb); }
+export inline void wsend<L>(byte[L]* buffer, float3 aim, byte beamHalvings) { wsend(buffer, L, aim, beamHalvings); }
+export inline void wsend<L>(byte[L]* buffer) { wsend(buffer, L, new float3, 0); }
+
 [External("receive")] export int receive(any* buffer, int length, byte port = 0);
 [External("send")] export void send(any* buffer, int length, byte port = 0);
 
-
-[External("radar")] void _radar();
-
-export float3 radar(float direction)
-{
-    Radar.direction = direction;
-    //ldebug(new float3(cos(Radar.direction), 0f, sin(Radar.direction)) * 10f, Color.Cyan);
-    return radar();
+export struct RadarContact {
+    float3 pos;
+    float radialVel;
+    byte strength;
+    byte emission;
 }
-
-export float3 radar()
-{
-    Radar.response.point.x = 0f;
-    Radar.response.point.y = 0f;
-    Radar.response.point.z = 0f;
-
-    _radar();
-
-    while (Radar.response.point.x == 0f || Radar.response.point.y == 0f || Radar.response.point.z == 0f)
-    {
-
-    }
-
-    if (isnan(Radar.response.point.x) || isnan(Radar.response.point.y) || isnan(Radar.response.point.z))
-    {
-        return new float3;
-    }
-
-    return Radar.response.point;
-}
+[External("set_radar")] export float set_radar(float direction);
+[External("radar_query")] export int radar_query(RadarContact[]* buffer, int bufferSize);
+export inline int radar_query<L>(RadarContact[L]* buffer) { return radar_query(buffer, L); }
 
 export void toglobal(byte3* point)
 {

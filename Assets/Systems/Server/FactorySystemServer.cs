@@ -136,7 +136,7 @@ public partial struct FactorySystemServer : ISystem
         }
 
         foreach (var (factory, localToWorld, unitTeam, unitQueue) in
-                SystemAPI.Query<RefRW<Factory>, RefRO<LocalToWorld>, RefRO<UnitTeam>, DynamicBuffer<BufferedProducingUnit>>())
+                SystemAPI.Query<RefRW<Factory>, RefRO<LocalTransform>, RefRO<UnitTeam>, DynamicBuffer<BufferedProducingUnit>>())
         {
             if (factory.ValueRO.TotalProgress == default)
             {

@@ -107,6 +107,7 @@ public class UIManager : Singleton<UIManager>
     [SerializeField, NotNull] public UIElementReference Pause = default;
     [SerializeField, NotNull] public UIElementReference Buildings = default;
     [SerializeField, NotNull] public UIElementReference Units = default;
+    [SerializeField, NotNull] public UIElementReference Scripts = default;
 
     [Header("Views")]
     [SerializeField, NotNull] public VisualTreeAsset? Processor = default;
@@ -121,7 +122,8 @@ public class UIManager : Singleton<UIManager>
         Unit,
         Pause,
         Buildings,
-        Units
+        Units,
+        Scripts
     )).Value;
 
     [NotNull] Dictionary<UIElementReference, List<IUICleanup>>? OpenedUIs = default;

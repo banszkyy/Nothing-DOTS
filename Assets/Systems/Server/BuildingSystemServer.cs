@@ -302,7 +302,7 @@ public partial struct BuildingSystemServer : ISystem
         }
 
         foreach (var (placeholder, transform, owner, unitTeam, entity) in
-            SystemAPI.Query<RefRW<BuildingPlaceholder>, RefRO<LocalToWorld>, RefRO<GhostOwner>, RefRO<UnitTeam>>()
+            SystemAPI.Query<RefRW<BuildingPlaceholder>, RefRO<LocalTransform>, RefRO<GhostOwner>, RefRO<UnitTeam>>()
             .WithEntityAccess())
         {
             if (placeholder.ValueRO.CurrentProgress < placeholder.ValueRO.TotalProgress) continue;

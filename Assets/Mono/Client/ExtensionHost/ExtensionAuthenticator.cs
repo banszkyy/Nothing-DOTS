@@ -1,71 +1,55 @@
 using UnityEngine;
 using System.Net.Sockets;
-using System.Threading;
 using System.Net;
 using System.Threading.Tasks;
-using OmniSharp.Extensions.JsonRpc;
+using StreamJsonRpc;
+using System;
+using Newtonsoft.Json;
 
 class ExtensionAuthenticator : MonoBehaviour
 {
     TcpListenerManager? Listener;
-    JsonRpcServer? Server;
-    CancellationTokenSource? CancellationTokenSource;
+    JsonRpc? Server;
 
-    void OnEnable()
+    public class AuthenticateResponseParams
     {
-        CancellationTokenSource = new CancellationTokenSource();
+        [JsonProperty("success")] public required bool Success { get; set; }
+        [JsonProperty("token")] public required string? Token { get; set; }
     }
 
     void Update()
     {
-        if (Listener is null || (Listener.ConnectedClient is null && !Listener.IsListening))
+        if (Listener is not null && !Listener.IsListening)
         {
-            Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Disposing old TCP listener, creating new one");
+            Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Disposing old TCP listener");
             Listener?.Dispose();
-            Listener = TcpListenerManager.Listen(IPAddress.Parse("127.0.0.1"), 8051, "ExtClient");
+            Listener = null;
         }
 
-        if (Listener.ConnectedClient is null && Server is not null)
+        if (Listener is null)
         {
-            Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Disposing server");
-            Server?.Dispose();
-            Server = null;
+            Listener = new TcpListenerManager(IPAddress.Parse("127.0.0.1"), 8051);
+            Listener.OnClientConnected += OnClientConnected;
+            Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Listening on {Listener.EndPoint}");
         }
+    }
 
-        if (Listener.ConnectedClient is not null && Server is null)
+    void OnClientConnected(TcpClient client)
+    {
+        Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Creating RPC server");
+
+        NetworkStream stream = client.GetStream();
+        Server = new JsonRpc(stream);
+        Server.AddLocalRpcMethod("authenticate", new Func<Task<AuthenticateResponseParams>>(() => MainThreadManager.Instance.ScheduleAsync(static () =>
         {
-            Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Creating server");
-
-            NetworkStream stream = Listener.ConnectedClient.GetStream();
-            Server = JsonRpcServer.Create(options =>
+            Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Extension authenticated");
+            return new AuthenticateResponseParams()
             {
-                options.WithInput(stream);
-                options.WithOutput(stream);
-
-                options.OnRequest("authenticate", () => MainThreadManager.Instance.ScheduleAsync(() =>
-                {
-                    return PlayerSystemClient.GetInstance(ConnectionManager.ClientOrDefaultWorld.Unmanaged).PlayerGuid.ToString();
-                }));
-            });
-
-            _ = Server.Initialize(CancellationTokenSource?.Token ?? CancellationToken.None)
-                .ContinueWith(task =>
-                {
-                    if (task.IsCanceled)
-                    {
-                        Debug.LogWarning($"{DebugEx.ClientPrefix} [ExtClient] Server initialization canceled");
-                    }
-                    else if (task.IsFaulted)
-                    {
-                        Debug.LogError($"{DebugEx.ClientPrefix} [ExtClient] Server initialization failed");
-                        Debug.LogException(task.Exception);
-                    }
-                    else
-                    {
-                        Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Server initialized");
-                    }
-                }, TaskScheduler.Default);
-        }
+                Success = true,
+                Token = PlayerSystemClient.GetInstance(ConnectionManager.ClientOrDefaultWorld.Unmanaged).PlayerGuid.ToString(),
+            };
+        })));
+        Server.StartListening();
     }
 
     void OnDisable() => Dispose();
@@ -73,12 +57,9 @@ class ExtensionAuthenticator : MonoBehaviour
 
     void Dispose()
     {
-        CancellationTokenSource?.Cancel();
-        CancellationTokenSource = null;
-
         if (Server is not null)
         {
-            Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Disposing server");
+            Debug.Log($"{DebugEx.ClientPrefix} [ExtClient] Disposing RPC server");
             Server.Dispose();
             Server = null;
         }

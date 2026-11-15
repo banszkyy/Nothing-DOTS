@@ -19,11 +19,12 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 {
     ProcessorSource _originalSource;
     FileId _originalFile;
+    SpawnedGhost _ghost;
     Entity _entity;
     Guid _playerGuid;
     int _playerConnectionId;
     Entity _playerEntity;
-    readonly DebugHostManager _manager;
+    readonly ExtServer _manager;
     StopContext? _lastStopContext;
     uint _unitLogPosition;
     protected bool _isDisconnected;
@@ -38,14 +39,14 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
             Processor processor = e.GetComponentData<Processor>(_entity);
             return processor.DebugContext.IsBeingDebugged
                 && processor.DebugContext.Stopped
-                is ProcessorJob.StopReason.Pause
-                or ProcessorJob.StopReason.Breakpoint
-                or ProcessorJob.StopReason.Signal
-                or ProcessorJob.StopReason.RuntimeException
-                or ProcessorJob.StopReason.StepForward
-                or ProcessorJob.StopReason.StepIn
-                or ProcessorJob.StopReason.StepOut
-                or ProcessorJob.StopReason.StepInstruction;
+                is ProcessorDebugSystemServer.StopReason.Pause
+                or ProcessorDebugSystemServer.StopReason.Breakpoint
+                or ProcessorDebugSystemServer.StopReason.Signal
+                or ProcessorDebugSystemServer.StopReason.RuntimeException
+                or ProcessorDebugSystemServer.StopReason.StepForward
+                or ProcessorDebugSystemServer.StopReason.StepIn
+                or ProcessorDebugSystemServer.StopReason.StepOut
+                or ProcessorDebugSystemServer.StopReason.StepInstruction;
         }
     }
 
@@ -54,7 +55,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
     protected override CompilerSettings CompilerSettings => CompilerSystemServer.CompilerSettings;
 
-    public DebugHost(DebugHostManager manager, Stream stdIn, Stream stdOut, Logger log) : base(stdIn, stdOut, log)
+    public DebugHost(ExtServer manager, Stream stdIn, Stream stdOut, Logger log) : base(stdIn, stdOut, log)
     {
         _manager = manager;
     }
@@ -257,7 +258,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
         }
         else
         {
-            processor.DebugContext.Stopped = ProcessorJob.StopReason.No;
+            processor.DebugContext.Stopped = ProcessorDebugSystemServer.StopReason.No;
             processor.DebugContext.IsStopUnhandled = false;
             processor.DebugContext.SkipCurrentBreakpoint = true;
             _lastStopContext = null;
@@ -281,13 +282,13 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
     {
         processor.DebugContext.Stopped = reason switch
         {
-            StopReason_Crash => ProcessorJob.StopReason.Signal,
-            StopReason_Breakpoint => ProcessorJob.StopReason.Breakpoint,
-            StopReason_StepForward => ProcessorJob.StopReason.StepForwardUnfinished,
-            StopReason_StepIn => ProcessorJob.StopReason.StepInUnfinished,
-            StopReason_StepOut => ProcessorJob.StopReason.StepOutUnfinished,
-            StopReason_StepInstruction => ProcessorJob.StopReason.StepInstructionUnfinished,
-            StopReason_Pause => ProcessorJob.StopReason.Pause,
+            StopReason_Crash => ProcessorDebugSystemServer.StopReason.Signal,
+            StopReason_Breakpoint => ProcessorDebugSystemServer.StopReason.Breakpoint,
+            StopReason_StepForward => ProcessorDebugSystemServer.StopReason.StepForwardUnfinished,
+            StopReason_StepIn => ProcessorDebugSystemServer.StopReason.StepInUnfinished,
+            StopReason_StepOut => ProcessorDebugSystemServer.StopReason.StepOutUnfinished,
+            StopReason_StepInstruction => ProcessorDebugSystemServer.StopReason.StepInstructionUnfinished,
+            StopReason_Pause => ProcessorDebugSystemServer.StopReason.Pause,
             _ => throw new NotImplementedException(),
         };
         processor.DebugContext.IsStopUnhandled = true;
@@ -318,12 +319,6 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
     public void Update()
     {
-        if (Protocol.IsRunning && _isDisconnected)
-        {
-            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Disconnected");
-            Protocol.Stop();
-        }
-
         if (_entity == Entity.Null)
         {
             return;
@@ -335,6 +330,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
             Debug.Log($"{DebugEx.ServerPrefix} [DAP] Ending session - Entity destroyed");
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
             Protocol.SendEvent(new TerminatedEvent());
+            _ghost = default;
             _entity = Entity.Null;
             return;
         }
@@ -346,6 +342,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
             Debug.Log($"{DebugEx.ServerPrefix} [DAP] Ending session - Processor isn't being debugged");
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
             Protocol.SendEvent(new TerminatedEvent());
+            _ghost = default;
             _entity = Entity.Null;
             return;
         }
@@ -357,6 +354,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
             e.SetComponentData(_entity, processor);
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 1 });
             Protocol.SendEvent(new TerminatedEvent());
+            _ghost = default;
             _entity = Entity.Null;
             return;
         }
@@ -368,7 +366,18 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
             e.SetComponentData(_entity, processor);
             Protocol.SendEvent(new ExitedEvent() { ExitCode = 0 });
             Protocol.SendEvent(new TerminatedEvent());
+            _ghost = default;
             _entity = Entity.Null;
+            return;
+        }
+
+        if (Protocol.IsRunning && _isDisconnected)
+        {
+            Debug.Log($"{DebugEx.ServerPrefix} [DAP] Stopping protocol - Disconnected");
+            Protocol.Stop();
+
+            processor.DebugContext.IsBeingDebugged = false;
+            e.SetComponentData(_entity, processor);
             return;
         }
 
@@ -404,27 +413,19 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
         }
 
         {
+            List<UnitLogEventItem> items = new();
             ReadOnlySpan<byte> logBuffer = e.GetBuffer<BufferedLogPiece>(_entity, true).AsNativeArray().Reinterpret<byte>().AsReadOnlySpan();
-
             for (int i = 0; i < logBuffer.Length;)
             {
                 LogPieceType type = (LogPieceType)logBuffer[i];
                 switch (type)
                 {
-                    case LogPieceType.Message:
-                    {
-                        UnitLog_Message log = UnitLog_Message.Read(logBuffer, ref i);
-                        if (log.Header.Index <= _unitLogPosition) continue;
-                        _unitLogPosition = log.Header.Index;
-                        Protocol.SendEvent(new UnitLogEvent(log.Header));
-                        break;
-                    }
                     case LogPieceType.CombatTurret_Shoot:
                     {
                         UnitLog_CombatTurret_Shoot log = UnitLog_CombatTurret_Shoot.Read(logBuffer, ref i);
                         if (log.Header.Index <= _unitLogPosition) continue;
                         _unitLogPosition = log.Header.Index;
-                        Protocol.SendEvent(new UnitLogEvent(log.Header));
+                        items.Add(new(log.Header, _ghost));
                         break;
                     }
                     case LogPieceType.Command:
@@ -434,7 +435,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                         _unitLogPosition = log.Header.Index;
 
                         ReadOnlySpan<UnitCommandDefinition> commandDefinitions = processor.Source.UnitCommandDefinitions.AsSpan();
-                        var data = log.Data.AsReadOnlySpan();
+                        ReadOnlySpan<byte> data = log.Data.AsReadOnlySpan();
                         for (int j = 0; j < commandDefinitions.Length; j++)
                         {
                             if (commandDefinitions[j].Id == log.CommandId)
@@ -471,7 +472,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                                             throw new UnreachableException();
                                     }
                                 }
-                                Protocol.SendEvent(new UnitLogEvent(log.Header, new
+                                items.Add(new(log.Header, _ghost, new
                                 {
                                     id = log.CommandId,
                                     parameters,
@@ -480,7 +481,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                             }
                         }
 
-                        Protocol.SendEvent(new UnitLogEvent(log.Header, new
+                        items.Add(new(log.Header, _ghost, new
                         {
                             id = log.CommandId,
                             data = Convert.ToBase64String(data),
@@ -493,7 +494,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                         UnitLog_Radar log = UnitLog_Radar.Read(logBuffer, ref i);
                         if (log.Header.Index <= _unitLogPosition) continue;
                         _unitLogPosition = log.Header.Index;
-                        Protocol.SendEvent(new UnitLogEvent(log.Header, log.Success ? new
+                        items.Add(new(log.Header, _ghost, log.Success ? new
                         {
                             response = new
                             {
@@ -502,6 +503,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                                 clutter = log.RadarResponse.Clutter,
                                 fingerprint = log.RadarResponse.Fingerprint,
                                 meta = log.RadarResponse.Meta,
+                                contextualEntity = $"{log.ContextualEntity.ghostId}:{log.ContextualEntity.spawnTick}",
                             },
                         } : null));
                         break;
@@ -511,7 +513,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                         UnitLog_Transmission_WiredOut log = UnitLog_Transmission_WiredOut.Read(logBuffer, ref i);
                         if (log.Header.Index <= _unitLogPosition) continue;
                         _unitLogPosition = log.Header.Index;
-                        Protocol.SendEvent(new UnitLogEvent(log.Header, new
+                        items.Add(new(log.Header, _ghost, new
                         {
                             data = Convert.ToBase64String(log.Data.ToArray()),
                             meta = new
@@ -526,13 +528,14 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                         UnitLog_Transmission_WiredIn log = UnitLog_Transmission_WiredIn.Read(logBuffer, ref i);
                         if (log.Header.Index <= _unitLogPosition) continue;
                         _unitLogPosition = log.Header.Index;
-                        Protocol.SendEvent(new UnitLogEvent(log.Header, new
+                        items.Add(new(log.Header, _ghost, new
                         {
                             data = Convert.ToBase64String(log.Data.ToArray()),
                             meta = new
                             {
                                 port = log.Metadata.Port,
                             },
+                            contextualEntity = $"{log.ContextualEntity.ghostId}:{log.ContextualEntity.spawnTick}",
                         }));
                         break;
                     }
@@ -541,7 +544,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                         UnitLog_Transmission_WirelessOut log = UnitLog_Transmission_WirelessOut.Read(logBuffer, ref i);
                         if (log.Header.Index <= _unitLogPosition) continue;
                         _unitLogPosition = log.Header.Index;
-                        Protocol.SendEvent(new UnitLogEvent(log.Header, new
+                        items.Add(new(log.Header, _ghost, new
                         {
                             data = Convert.ToBase64String(log.Data.ToArray()),
                             meta = new
@@ -557,7 +560,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                         UnitLog_Transmission_WirelessIn log = UnitLog_Transmission_WirelessIn.Read(logBuffer, ref i);
                         if (log.Header.Index <= _unitLogPosition) continue;
                         _unitLogPosition = log.Header.Index;
-                        Protocol.SendEvent(new UnitLogEvent(log.Header, new
+                        items.Add(new(log.Header, _ghost, new
                         {
                             data = Convert.ToBase64String(log.Data.ToArray()),
                             meta = new
@@ -565,17 +568,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                                 direction = new { log.Metadata.Direction.x, log.Metadata.Direction.y, log.Metadata.Direction.z },
                                 margin_db = log.Metadata.MarginDb,
                             },
-                        }));
-                        break;
-                    }
-                    case LogPieceType.ProcessorSignal:
-                    {
-                        UnitLog_ProcessorSignal log = UnitLog_ProcessorSignal.Read(logBuffer, ref i);
-                        if (log.Header.Index <= _unitLogPosition) continue;
-                        _unitLogPosition = log.Header.Index;
-                        Protocol.SendEvent(new UnitLogEvent(log.Header, new
-                        {
-                            signal = log.Signal.ToString(),
+                            contextualEntity = $"{log.ContextualEntity.ghostId}:{log.ContextualEntity.spawnTick}",
                         }));
                         break;
                     }
@@ -587,6 +580,8 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
             }
 
         invalid:;
+
+            Protocol.SendEvent(new UnitLogEvent() { Logs = items });
         }
 
         if (processor.DebugContext.IsStopUnhandled)
@@ -614,7 +609,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
             switch (processor.DebugContext.Stopped)
             {
-                case ProcessorJob.StopReason.Pause:
+                case ProcessorDebugSystemServer.StopReason.Pause:
                     Protocol.SendEvent(new StoppedEvent()
                     {
                         Reason = StoppedEvent.ReasonValue.Pause,
@@ -623,7 +618,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     });
                     _lastStopContext = stopContext;
                     break;
-                case ProcessorJob.StopReason.Breakpoint:
+                case ProcessorDebugSystemServer.StopReason.Breakpoint:
                     bool shouldContinue = true;
                     List<int> hitBreakpoints = new();
 
@@ -719,7 +714,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
                     if (shouldContinue)
                     {
-                        processor.DebugContext.Stopped = ProcessorJob.StopReason.No;
+                        processor.DebugContext.Stopped = ProcessorDebugSystemServer.StopReason.No;
                         break;
                     }
 
@@ -732,7 +727,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     });
                     _lastStopContext = stopContext;
                     break;
-                case ProcessorJob.StopReason.Signal:
+                case ProcessorDebugSystemServer.StopReason.Signal:
                     if (processor.Signal == Signal.Halt)
                     {
                         Protocol.SendEvent(new StoppedEvent()
@@ -763,7 +758,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     }
                     _lastStopContext = stopContext;
                     break;
-                case ProcessorJob.StopReason.RuntimeException:
+                case ProcessorDebugSystemServer.StopReason.RuntimeException:
                     Protocol.SendEvent(new StoppedEvent()
                     {
                         Reason = StoppedEvent.ReasonValue.Exception,
@@ -773,11 +768,11 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     });
                     _lastStopContext = stopContext;
                     break;
-                case ProcessorJob.StopReason.StepForward:
+                case ProcessorDebugSystemServer.StopReason.StepForward:
                     if (sourceLocation.Location.IsDefault)
                     {
                         Log.Warn($"Cannot get source location at {processor.Registers.CodePointer}");
-                        processor.DebugContext.Stopped = ProcessorJob.StopReason.StepForwardUnfinished;
+                        processor.DebugContext.Stopped = ProcessorDebugSystemServer.StopReason.StepForwardUnfinished;
                         break;
                     }
 
@@ -785,7 +780,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     {
                         if (sourceLocation.Location == _lastStopContext.Location.Location || stacktrace.Count > _lastStopContext.StackTrace.Length)
                         {
-                            processor.DebugContext.Stopped = ProcessorJob.StopReason.StepForwardUnfinished;
+                            processor.DebugContext.Stopped = ProcessorDebugSystemServer.StopReason.StepForwardUnfinished;
                             break;
                         }
                     }
@@ -798,11 +793,11 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     });
                     _lastStopContext = stopContext;
                     break;
-                case ProcessorJob.StopReason.StepIn:
+                case ProcessorDebugSystemServer.StopReason.StepIn:
                     if (sourceLocation.Location.IsDefault)
                     {
                         Log.Warn($"Cannot get source location at {processor.Registers.CodePointer}");
-                        processor.DebugContext.Stopped = ProcessorJob.StopReason.StepInUnfinished;
+                        processor.DebugContext.Stopped = ProcessorDebugSystemServer.StopReason.StepInUnfinished;
                         break;
                     }
 
@@ -810,7 +805,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     {
                         if (sourceLocation.Location == _lastStopContext.Location.Location)
                         {
-                            processor.DebugContext.Stopped = ProcessorJob.StopReason.StepInUnfinished;
+                            processor.DebugContext.Stopped = ProcessorDebugSystemServer.StopReason.StepInUnfinished;
                             break;
                         }
                     }
@@ -823,11 +818,11 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     });
                     _lastStopContext = stopContext;
                     break;
-                case ProcessorJob.StopReason.StepOut:
+                case ProcessorDebugSystemServer.StopReason.StepOut:
                     if (sourceLocation.Location.IsDefault)
                     {
                         Log.Warn($"Cannot get source location at {processor.Registers.CodePointer}");
-                        processor.DebugContext.Stopped = ProcessorJob.StopReason.StepOutUnfinished;
+                        processor.DebugContext.Stopped = ProcessorDebugSystemServer.StopReason.StepOutUnfinished;
                         break;
                     }
 
@@ -835,7 +830,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     {
                         if (sourceLocation.Location == _lastStopContext.Location.Location || stacktrace.Count >= _lastStopContext.StackTrace.Length)
                         {
-                            processor.DebugContext.Stopped = ProcessorJob.StopReason.StepOutUnfinished;
+                            processor.DebugContext.Stopped = ProcessorDebugSystemServer.StopReason.StepOutUnfinished;
                             break;
                         }
                     }
@@ -848,7 +843,7 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     });
                     _lastStopContext = stopContext;
                     break;
-                case ProcessorJob.StopReason.StepInstruction:
+                case ProcessorDebugSystemServer.StopReason.StepInstruction:
                     Protocol.SendEvent(new StoppedEvent()
                     {
                         Reason = StoppedEvent.ReasonValue.Step,
@@ -857,12 +852,12 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
                     });
                     _lastStopContext = stopContext;
                     break;
-                case ProcessorJob.StopReason.StepForwardUnfinished:
-                case ProcessorJob.StopReason.StepInUnfinished:
-                case ProcessorJob.StopReason.StepOutUnfinished:
-                case ProcessorJob.StopReason.StepInstructionUnfinished:
+                case ProcessorDebugSystemServer.StopReason.StepForwardUnfinished:
+                case ProcessorDebugSystemServer.StopReason.StepInUnfinished:
+                case ProcessorDebugSystemServer.StopReason.StepOutUnfinished:
+                case ProcessorDebugSystemServer.StopReason.StepInstructionUnfinished:
                     break;
-                case ProcessorJob.StopReason.No:
+                case ProcessorDebugSystemServer.StopReason.No:
                     Protocol.SendEvent(new ContinuedEvent()
                     {
                         AllThreadsContinued = true,
@@ -913,7 +908,8 @@ partial class DebugHost : BytecodeDebugAdapterBase, IDisposable
 
         _originalSource = default;
         _originalFile = default;
-        _entity = default;
+        _ghost = default;
+        _entity = Entity.Null;
         _playerGuid = default;
         _playerConnectionId = default;
         _playerEntity = default;

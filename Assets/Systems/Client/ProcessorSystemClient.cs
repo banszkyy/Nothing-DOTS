@@ -1,29 +1,17 @@
-using System;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.NetCode;
-using Unity.Rendering;
 
 [BurstCompile]
 [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.LocalSimulation)]
 partial struct ProcessorSystemClient : ISystem
 {
-    ComponentLookup<URPMaterialPropertyEmissionColor> _emissionColorQ;
     public NativeList<UserUIElement> uiElements;
-
-    const float LedIntensity = 8f;
-    static float4 Off => default;
-    static float4 Green => new float4(0.1f, 1f, 0.2f, 1f) * LedIntensity;
-    static float4 Amber => new float4(1f, 0.8f, 0f, 1f) * LedIntensity;
-    static float4 Red => new float4(1f, 0.1f, 0f, 1f) * LedIntensity;
-    static float4 Blue => new float4(0.1f, 0.2f, 1f, 1f) * LedIntensity;
 
     [BurstCompile]
     void ISystem.OnCreate(ref SystemState state)
     {
-        _emissionColorQ = state.GetComponentLookup<URPMaterialPropertyEmissionColor>();
         uiElements = new(256, Allocator.Persistent);
     }
 
@@ -31,60 +19,6 @@ partial struct ProcessorSystemClient : ISystem
     void ISystem.OnUpdate(ref SystemState state)
     {
         EntityCommandBuffer commandBuffer = default;
-
-        _emissionColorQ.Update(ref state);
-
-        foreach (RefRW<Processor> processor in
-            SystemAPI.Query<RefRW<Processor>>())
-        {
-            if (processor.ValueRO.StatusLED.Entity != Entity.Null)
-            {
-                _emissionColorQ.GetRefRW(processor.ValueRO.StatusLED.Entity).ValueRW.Value = processor.ValueRO.StatusLED.Status switch
-                {
-                    ProcessorStatus.Off => Off,
-                    ProcessorStatus.Running => Green,
-                    ProcessorStatus.Halted => Amber,
-                    ProcessorStatus.Error => Red,
-                    _ => throw new UnreachableException(),
-                };
-            }
-
-            if (processor.ValueRO.NetworkSendLED.Entity != Entity.Null)
-            {
-                _emissionColorQ.GetRefRW(processor.ValueRO.NetworkSendLED.Entity).ValueRW.Value =
-                    processor.ValueRW.NetworkSendLED.ReceiveBlink() ? Blue : Off;
-            }
-
-            if (processor.ValueRO.NetworkReceiveLED.Entity != Entity.Null)
-            {
-                _emissionColorQ.GetRefRW(processor.ValueRO.NetworkReceiveLED.Entity).ValueRW.Value =
-                    processor.ValueRW.NetworkReceiveLED.ReceiveBlink(out byte status) ?
-                    (status switch
-                    {
-                        2 => Red,
-                        _ => Blue,
-                    }) :
-                    Off;
-            }
-
-            if (processor.ValueRO.RadarLED.Entity != Entity.Null)
-            {
-                _emissionColorQ.GetRefRW(processor.ValueRO.RadarLED.Entity).ValueRW.Value =
-                    processor.ValueRW.RadarLED.ReceiveBlink() ? Blue : Off;
-            }
-
-            if (processor.ValueRO.USBLED.Entity != Entity.Null)
-            {
-                _emissionColorQ.GetRefRW(processor.ValueRO.USBLED.Entity).ValueRW.Value =
-                    processor.ValueRW.USBLED.ReceiveBlink() ? Blue : Off;
-            }
-
-            if (processor.ValueRO.CustomLED.Entity != Entity.Null)
-            {
-                _emissionColorQ.GetRefRW(processor.ValueRO.CustomLED.Entity).ValueRW.Value =
-                    processor.ValueRW.CustomLED.ReceiveBlink() ? Green : Off;
-            }
-        }
 
         foreach (var (request, command, entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<UIElementUpdateRpc>>()

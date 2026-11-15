@@ -1,3 +1,4 @@
+#if false
 #if UNITY_EDITOR && EDITOR_DEBUG
 #define _DEBUG_LINES
 #endif
@@ -161,10 +162,10 @@ public partial struct UnitRadarSystemServer : ISystem
             };
             if (targetSize < .7) continue;
 
-            float3 target = entities[i].Position + entities[i].Collider.Type switch
+            float3 target = entities[i].Collider.Type switch
             {
-                ColliderType.Sphere => entities[i].Collider.Sphere.Offset,
-                ColliderType.AABB => entities[i].Collider.AABB.AABB.Center,
+                ColliderType.Sphere => entities[i].Position + entities[i].Collider.Sphere.Offset,
+                ColliderType.AABB => math.clamp(ray.Start, entities[i].Position + entities[i].Collider.AABB.AABB.Min, entities[i].Position + entities[i].Collider.AABB.AABB.Max),
                 _ => default,
             };
 
@@ -285,3 +286,5 @@ public partial struct UnitRadarSystemServer : ISystem
         return false;
     }
 }
+
+#endif

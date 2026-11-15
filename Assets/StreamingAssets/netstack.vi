@@ -22,7 +22,8 @@ export enum Header : u8
     AuthChallenge,
     AuthResponse,
     Radar,
-    Enemy,
+    EnemyAt,
+    AllyAt,
     AuthenticatorAdvertisement,
     PlayerInterfaceAdvertisement,
 }
@@ -69,14 +70,14 @@ export struct AuthChallenge
 {
     Header header;
     float3 position;
-    i32 num;
+    i32 authNum;
     i32 src;
 }
 
 export struct AuthResponse
 {
     Header header;
-    i32 num;
+    i32 authNum;
     i32 dst;
 }
 
@@ -85,13 +86,18 @@ export struct Radar
     Header header;
     i32 dst;
     float3 position;
-    byte speedSignal;
-    byte clutter;
-    byte fingerprint;
-    byte meta;
+    float radialVel;
+    byte emission;
+    byte strength;
 }
 
-export struct Enemy
+export struct EnemyAt
+{
+    Header header;
+    float3 position;
+}
+
+export struct AllyAt
 {
     Header header;
     float3 position;

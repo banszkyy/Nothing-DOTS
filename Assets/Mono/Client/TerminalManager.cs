@@ -550,22 +550,20 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 return;
             }
 
-            if (world.IsLocal())
+            if (true)
             {
+                NetcodeUtils.CreateRPC(world.Unmanaged, new StartDebugRequestRpc()
+                {
+                    Entity = world.EntityManager.GetComponentData<GhostInstance>(unitEntity),
+                });
                 ui.ButtonDebug.SetEnabled(false);
-                Application.OpenURL($"vscode://banszky.nothingame/debug?entity={ExtensionHostUtils.Stringify(unitEntity)}&token={default(Guid)}");
             }
             else
             {
                 Guid guid = PlayerSystemClient.GetInstance(world.Unmanaged).PlayerGuid;
-                if (guid == default)
-                {
-                    Debug.LogError($"{DebugEx.ClientPrefix} Invalid local guid {guid}");
-                    return;
-                }
                 SpawnedGhost ghost = world.EntityManager.GetComponentData<GhostInstance>(unitEntity);
                 ui.ButtonDebug.SetEnabled(false);
-                Application.OpenURL($"vscode://banszky.nothingame/debug?ghost={ExtensionHostUtils.Stringify(ghost)}&token={guid}");
+                Application.OpenURL($"vscode://banszky.nothingame/debug?ghost={ExtensionHostUtils.Stringify(ghost)}&token={guid}&name=${Uri.EscapeUriString(ProcessorDebugSystemServer.GetEntityName(world.EntityManager, unitEntity, ghost))}");
             }
         });
 
@@ -1098,7 +1096,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                 if (diagnosticAt.File.Scheme == "netcode" && diagnosticAt.File.Host == _localConnectionId.ToString())
                                 {
                                     isExternal = false;
-                                    localPath = FileChunkManagerSystem.ResolveFile(diagnosticAt.File.PathAndQuery);
+                                    localPath = FileChunkManagerSystem.ResolveFile(diagnosticAt.File.PathAndQuery)?.Replace(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "~");
                                     //element.DiagnosticButtonVscode.style.display = DisplayStyle.Flex;
                                     //var b = element.DiagnosticButtonVscode;
                                     //element.DiagnosticButtonVscode.clickable = new Clickable(() =>
@@ -1390,7 +1388,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                     LogPieceType type = (LogPieceType)buffer[i];
                     switch (type)
                     {
-                        case LogPieceType.Message: { var v = UnitLog_Message.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
                         case LogPieceType.CombatTurret_Shoot: { var v = UnitLog_CombatTurret_Shoot.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
                         case LogPieceType.Command: { var v = UnitLog_Command.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
                         case LogPieceType.Radar: { var v = UnitLog_Radar.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
@@ -1398,7 +1395,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                         case LogPieceType.Transmission_WiredIn: { var v = UnitLog_Transmission_WiredIn.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
                         case LogPieceType.Transmission_WirelessOut: { var v = UnitLog_Transmission_WirelessOut.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
                         case LogPieceType.Transmission_WirelessIn: { var v = UnitLog_Transmission_WirelessIn.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
-                        case LogPieceType.ProcessorSignal: { var v = UnitLog_ProcessorSignal.Read(buffer, ref i); _logs.AddSorted((v.Header.Timestamp, v), ItemComparison); break; }
                         case LogPieceType.Unknown0:
                         case LogPieceType.Unknown1:
                         default: Debug.LogError($"Invalid log piece type {(int)type}"); goto skip;
@@ -1413,12 +1409,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                 LogPieceHeader header = default;
                 switch (item.Item)
                 {
-                    case UnitLog_Message v:
-                        header = v.Header;
-                        element.LogSummaryLabel.text = $"Message";
-                        element.LogDetailsFoldout.style.display = DisplayStyle.None;
-                        element.LogIcon.style.display = DisplayStyle.None;
-                        break;
                     case UnitLog_CombatTurret_Shoot v:
                         header = v.Header;
                         element.LogSummaryLabel.text = $"Turret Shoot";
@@ -1480,30 +1470,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                         element.LogSummaryLabel.text = $"Transmission In (Wireless)";
                         element.LogDetailsLabel.text =
                             $"Data: {string.Join(" ", v.Data.ToArray().Select(v => Convert.ToString(v, 16).PadLeft(2, '0')))}";
-                        break;
-                    case UnitLog_ProcessorSignal v:
-                        header = v.Header;
-                        element.LogIcon.text = v.Signal switch
-                        {
-                            Signal.None => $"\uf2db",
-                            Signal.UserCrash => $"<color=red>\uf06a</color>",
-                            Signal.StackOverflow => $"<color=red>\uf06a</color>",
-                            Signal.Halt => $"\uf04c",
-                            Signal.UndefinedExternalFunction => $"<color=red>\uf06a</color>",
-                            Signal.PointerOutOfRange => $"<color=red>\uf06a</color>",
-                            _ => $"<color=red>\uf06a</color>",
-                        };
-                        element.LogSummaryLabel.text = $"Processor: {v.Signal switch
-                        {
-                            Signal.None => $"Signal: None",
-                            Signal.UserCrash => $"Signal: UserCrash",
-                            Signal.StackOverflow => $"Signal: StackOverflow",
-                            Signal.Halt => $"Signal: Halt",
-                            Signal.UndefinedExternalFunction => $"Signal: UndefinedExternalFunction",
-                            Signal.PointerOutOfRange => $"Signal: PointerOutOfRange",
-                            _ => $"Signal: {(int)v.Signal}",
-                        }}";
-                        element.LogDetailsLabel.style.display = DisplayStyle.None;
                         break;
                     default:
                         element.LogSummaryLabel.text = item.GetType().Name;

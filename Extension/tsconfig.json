@@ -26,6 +26,9 @@
 		"strictFunctionTypes": true,
 		"strictPropertyInitialization": true,
 		"skipLibCheck": true,
+		"types": [
+			"node"
+		]
 	},
 	"include": [
 		"src"

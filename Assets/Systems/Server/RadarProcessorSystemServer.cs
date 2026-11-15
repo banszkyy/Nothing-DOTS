@@ -1,3 +1,4 @@
+#if false
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -33,3 +34,4 @@ partial struct RadarProcessorSystemServer : ISystem
         }
     }
 }
+#endif
