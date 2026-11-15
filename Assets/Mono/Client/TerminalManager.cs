@@ -313,7 +313,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
 
     [Header("UI")]
     [SerializeField, NotNull] VisualTreeAsset? FileItem = default;
-    [SerializeField, NotNull] VisualTreeAsset? ProgressItem = default;
     [SerializeField, NotNull] VisualTreeAsset? DiagnosticsItem = default;
     [SerializeField, NotNull] Texture2D? DiagnosticsErrorIcon = default;
     [SerializeField, NotNull] Texture2D? DiagnosticsWarningIcon = default;
@@ -768,54 +767,6 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         "overall-indicator-halted",
         "overall-indicator-debugging",
     };
-
-    static bool ReadKey(out char c)
-    {
-        c = default;
-        if (Keyboard.current.digit0Key.wasPressedThisFrame) c = '0';
-        else if (Keyboard.current.digit1Key.wasPressedThisFrame) c = '1';
-        else if (Keyboard.current.digit2Key.wasPressedThisFrame) c = '2';
-        else if (Keyboard.current.digit3Key.wasPressedThisFrame) c = '3';
-        else if (Keyboard.current.digit4Key.wasPressedThisFrame) c = '4';
-        else if (Keyboard.current.digit5Key.wasPressedThisFrame) c = '5';
-        else if (Keyboard.current.digit6Key.wasPressedThisFrame) c = '6';
-        else if (Keyboard.current.digit7Key.wasPressedThisFrame) c = '7';
-        else if (Keyboard.current.digit8Key.wasPressedThisFrame) c = '8';
-        else if (Keyboard.current.digit9Key.wasPressedThisFrame) c = '9';
-        else if (Keyboard.current.aKey.wasPressedThisFrame) c = 'a';
-        else if (Keyboard.current.bKey.wasPressedThisFrame) c = 'b';
-        else if (Keyboard.current.cKey.wasPressedThisFrame) c = 'c';
-        else if (Keyboard.current.dKey.wasPressedThisFrame) c = 'd';
-        else if (Keyboard.current.eKey.wasPressedThisFrame) c = 'e';
-        else if (Keyboard.current.fKey.wasPressedThisFrame) c = 'f';
-        else if (Keyboard.current.gKey.wasPressedThisFrame) c = 'g';
-        else if (Keyboard.current.hKey.wasPressedThisFrame) c = 'h';
-        else if (Keyboard.current.iKey.wasPressedThisFrame) c = 'i';
-        else if (Keyboard.current.jKey.wasPressedThisFrame) c = 'j';
-        else if (Keyboard.current.kKey.wasPressedThisFrame) c = 'k';
-        else if (Keyboard.current.lKey.wasPressedThisFrame) c = 'l';
-        else if (Keyboard.current.mKey.wasPressedThisFrame) c = 'm';
-        else if (Keyboard.current.nKey.wasPressedThisFrame) c = 'n';
-        else if (Keyboard.current.oKey.wasPressedThisFrame) c = 'o';
-        else if (Keyboard.current.pKey.wasPressedThisFrame) c = 'p';
-        else if (Keyboard.current.qKey.wasPressedThisFrame) c = 'q';
-        else if (Keyboard.current.rKey.wasPressedThisFrame) c = 'r';
-        else if (Keyboard.current.sKey.wasPressedThisFrame) c = 's';
-        else if (Keyboard.current.tKey.wasPressedThisFrame) c = 't';
-        else if (Keyboard.current.uKey.wasPressedThisFrame) c = 'u';
-        else if (Keyboard.current.vKey.wasPressedThisFrame) c = 'v';
-        else if (Keyboard.current.wKey.wasPressedThisFrame) c = 'w';
-        else if (Keyboard.current.xKey.wasPressedThisFrame) c = 'x';
-        else if (Keyboard.current.yKey.wasPressedThisFrame) c = 'y';
-        else if (Keyboard.current.zKey.wasPressedThisFrame) c = 'z';
-        else if (Keyboard.current.spaceKey.wasPressedThisFrame) c = ' ';
-        else if (Keyboard.current.enterKey.wasPressedThisFrame) c = '\r';
-        else if (Keyboard.current.commaKey.wasPressedThisFrame) c = ',';
-        else if (Keyboard.current.periodKey.wasPressedThisFrame) c = '.';
-        else if (Keyboard.current.minusKey.wasPressedThisFrame) c = '-';
-        else return false;
-        return true;
-    }
 
     static ProcessorState MakeProcessorState(ref Processor processor, Span<byte> memory) => new(
         new BytecodeInterpreterSettings(BytecodeInterpreterSettings.Default)

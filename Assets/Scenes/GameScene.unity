@@ -695,8 +695,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   FileItem: {fileID: 9197481963319205126, guid: f38b8fac42e49f32f9b892e445389217,
     type: 3}
-  ProgressItem: {fileID: 9197481963319205126, guid: 9eea0e1bced7ce10ba2cf37db8517d65,
-    type: 3}
   DiagnosticsItem: {fileID: 9197481963319205126, guid: a1e4e6549353cff66b9c74b990c63867,
     type: 3}
   DiagnosticsErrorIcon: {fileID: 2800000, guid: fd88a9ee3ce329be3b568bfc0a5d009c,
@@ -797,50 +795,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TargetFPS: 30
---- !u!1 &400543303
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 400543304}
-  - component: {fileID: 400543305}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &400543304
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 400543303}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1551354253}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &400543305
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 400543303}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 642331075324eb3b5b873c036e186ba2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClientTest
 --- !u!1 &408300742
 GameObject:
   m_ObjectHideFlags: 0
@@ -934,50 +888,6 @@ Transform:
   - {fileID: 1707058890}
   m_Father: {fileID: 1001118307}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &544153151
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 544153152}
-  - component: {fileID: 544153153}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &544153152
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 544153151}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1323827596}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &544153153
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 544153151}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f70ed3c05a503283ba9b19a7c78c373, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ServerTest
 --- !u!1 &627452865
 GameObject:
   m_ObjectHideFlags: 0
@@ -1071,7 +981,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 674731386}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa91757d8f92a15259e1fafd4f3c86f1, type: 3}
   m_Name: 
@@ -1955,8 +1865,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1042296848}
   - component: {fileID: 1042296849}
-  - component: {fileID: 1042296851}
-  - component: {fileID: 1042296850}
   m_Layer: 0
   m_Name: ExtensionHostClient
   m_TagString: Untagged
@@ -1991,30 +1899,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b89ed41ba06eff915a7317a4b26cd729, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExtensionAuthenticator
---- !u!114 &1042296850
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1042296847}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd2a285f7bc70ccd880c7c2b6fcc9bd3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LanguageBridge
---- !u!114 &1042296851
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1042296847}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8349ac2507b2038a9a68a5abdc38fe3f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DebugBridge
 --- !u!1 &1048161964
 GameObject:
   m_ObjectHideFlags: 0
@@ -2686,7 +2570,6 @@ Transform:
   m_Children:
   - {fileID: 78294157}
   - {fileID: 674731387}
-  - {fileID: 544153152}
   m_Father: {fileID: 1001118307}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1324360064
@@ -3326,7 +3209,6 @@ Transform:
   - {fileID: 1096260432}
   - {fileID: 1042296848}
   - {fileID: 1299890547}
-  - {fileID: 400543304}
   - {fileID: 1349835121}
   - {fileID: 190266725}
   - {fileID: 1626854114}
@@ -3821,14 +3703,6 @@ MonoBehaviour:
   ProgressItem: {fileID: 9197481963319205126, guid: 9eea0e1bced7ce10ba2cf37db8517d65,
     type: 3}
   DiagnosticsItem: {fileID: 9197481963319205126, guid: a1e4e6549353cff66b9c74b990c63867,
-    type: 3}
-  DiagnosticsErrorIcon: {fileID: 2800000, guid: fd88a9ee3ce329be3b568bfc0a5d009c,
-    type: 3}
-  DiagnosticsWarningIcon: {fileID: 2800000, guid: 9efd02a879f5572c7a155bd661ecd8e1,
-    type: 3}
-  DiagnosticsInfoIcon: {fileID: 2800000, guid: e0262276e200d20deab1d0862cb35804, type: 3}
-  DiagnosticsHintIcon: {fileID: 2800000, guid: 43af2427fe56c85c8a3b930f8f6cdc37, type: 3}
-  DiagnosticsOptimizationNoticeIcon: {fileID: 2800000, guid: 520a4c9cc1fadeffdb6f3cc49a92e250,
     type: 3}
 --- !u!1 &1905869801
 GameObject:

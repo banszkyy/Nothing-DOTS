@@ -16,11 +16,6 @@ public class ScriptsManager : Singleton<ScriptsManager>, IUISetup, IUICleanup
     [SerializeField, NotNull] VisualTreeAsset? SourceItem = default;
     [SerializeField, NotNull] VisualTreeAsset? ProgressItem = default;
     [SerializeField, NotNull] VisualTreeAsset? DiagnosticsItem = default;
-    [SerializeField, NotNull] Texture2D? DiagnosticsErrorIcon = default;
-    [SerializeField, NotNull] Texture2D? DiagnosticsWarningIcon = default;
-    [SerializeField, NotNull] Texture2D? DiagnosticsInfoIcon = default;
-    [SerializeField, NotNull] Texture2D? DiagnosticsHintIcon = default;
-    [SerializeField, NotNull] Texture2D? DiagnosticsOptimizationNoticeIcon = default;
 
     [NotNull] SourcesSchema? ui = default;
     int _localConnectionId = -1;
