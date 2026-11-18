@@ -94,7 +94,7 @@ public partial struct UnitsSystemServer : ISystem
                 NetworkId = networkId.Value,
             });
 
-            if (SystemAPI.TryGetComponent(newUnit, out Processor proc))
+            if (SystemAPI.TryGetComponent(unit.Prefab, out Processor proc))
             {
                 DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(newUnit);
                 memory.ResizeUninitialized(proc.MemorySize);
@@ -144,23 +144,23 @@ public partial struct UnitsSystemServer : ISystem
                 continue;
             }
 
-            DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayer);
+            //DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayer);
             DynamicBuffer<BufferedUnit> units = SystemAPI.GetBuffer<BufferedUnit>(SystemAPI.GetSingletonEntity<UnitDatabase>());
 
             foreach (BufferedUnit unit in units)
             {
-                if (!unit.RequiredResearch.IsEmpty)
-                {
-                    bool can = false;
-                    foreach (BufferedAcquiredResearch research in acquiredResearches)
-                    {
-                        if (research.Name != unit.RequiredResearch) continue;
-                        can = true;
-                        break;
-                    }
-
-                    if (!can) continue;
-                }
+                //if (!unit.RequiredResearch.IsEmpty)
+                //{
+                //    bool can = false;
+                //    foreach (BufferedAcquiredResearch research in acquiredResearches)
+                //    {
+                //        if (research.Name != unit.RequiredResearch) continue;
+                //        can = true;
+                //        break;
+                //    }
+                //
+                //    if (!can) continue;
+                //}
 
                 NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new UnitsResponseRpc()
                 {

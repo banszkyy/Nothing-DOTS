@@ -13,6 +13,7 @@ public class HUDManager : Singleton<HUDManager>
 
     void OnEnable()
     {
+        UI.Register(_ui);
         ui = new(_ui.rootVisualElement);
         ConnectionManager.ClientOrDefaultWorld.GetSystem<DebugLabelSystemClient>().IsEnabled = ui.DebugOverlayToggle.value;
         ConnectionManager.ClientOrDefaultWorld.Unmanaged.GetSystem<DebugLinesSystemClient>().IsEnabled = ui.DebugOverlayToggle.value;

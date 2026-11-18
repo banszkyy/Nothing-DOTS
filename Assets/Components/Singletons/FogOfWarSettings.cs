@@ -93,10 +93,10 @@ public class FogOfWarSettings : IComponentData
     /// <summary>
     /// Converts world coordinate to unit world coordinates.
     /// </summary>
-    public int GetUnitX(float x) => (int)MathF.Round((x - LevelMidPoint.x) / UnitScale);
+    public int GetUnitX(float x) => (int)math.round((x - LevelMidPoint.x) / UnitScale);
 
     /// <summary>
     /// Converts world coordinate to unit world coordinates.
     /// </summary>
-    public int GetUnitY(float y) => (int)MathF.Round((y - LevelMidPoint.z) / UnitScale);
+    public int GetUnitY(float y) => (int)math.round((y - LevelMidPoint.z) / UnitScale);
 }

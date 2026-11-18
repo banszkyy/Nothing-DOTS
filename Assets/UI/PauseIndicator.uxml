@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Styles/Style.uss?fileID=7433441132597879392&amp;guid=c2d58f7c49026b5c192353093602f48b&amp;type=3#Style"/>
+    <ui:VisualElement picking-mode="Ignore" style="font-size: 12px; align-items: center;">
+        <ui:VisualElement style="background-color: rgb(200, 33, 36); margin-top: 20px; margin-right: 0; margin-bottom: 0; margin-left: 0;">
+            <ui:Label text="PAUSED" style="-unity-font-style: bold; font-size: 16px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-right: 4px; padding-left: 4px; color: rgb(255, 255, 255);"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

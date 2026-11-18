@@ -9,6 +9,11 @@ public class GameOutcomeManager : MonoBehaviour
 
     float _refreshAt = default;
 
+    void OnEnable()
+    {
+        UI.Register(_ui);
+    }
+
     void Update()
     {
         float now = Time.time;

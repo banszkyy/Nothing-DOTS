@@ -222,9 +222,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RadioAuthoring
   TransmissionPoint: {fileID: 0}
-  TxPowerDbm: 30
+  TxPowerDbm: 25
   RxGainDbi: 0
-  SensitivityDbm: -112
+  SensitivityDbm: -62
   MinBeamHalvings: 0
   MaxBeamHalvings: 2
   BearingSectors: 16

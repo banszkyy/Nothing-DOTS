@@ -68,7 +68,12 @@ public partial class VisualEffectSystemClient : SystemBase
                         v.Reinit();
                     },
                     actionOnRelease: static v => v.gameObject.SetActive(false),
-                    actionOnDestroy: static v => Object.Destroy(v.gameObject));
+                    actionOnDestroy: static v =>
+                    {
+                        if (v == null) return;
+                        if (v.gameObject == null) return;
+                        Object.Destroy(v.gameObject);
+                    });
             }
         }
 

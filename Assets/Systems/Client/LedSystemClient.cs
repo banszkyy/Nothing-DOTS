@@ -29,6 +29,7 @@ partial struct LedSystemClient : ISystem
     void ISystem.OnUpdate(ref SystemState state)
     {
         _emissionColorQ.Update(ref state);
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
 
         foreach (RefRW<Processor> processor in
             SystemAPI.Query<RefRW<Processor>>())
@@ -48,13 +49,13 @@ partial struct LedSystemClient : ISystem
             if (processor.ValueRO.NetworkSendLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.NetworkSendLED.Entity).ValueRW.Value =
-                    processor.ValueRW.NetworkSendLED.ReceiveBlink((float)SystemAPI.Time.ElapsedTime, LedFlashTime) ? Blue : Off;
+                    processor.ValueRW.NetworkSendLED.ReceiveBlink((float)t.ElapsedTime, LedFlashTime) ? Blue : Off;
             }
 
             if (processor.ValueRO.NetworkReceiveLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.NetworkReceiveLED.Entity).ValueRW.Value =
-                    processor.ValueRW.NetworkReceiveLED.ReceiveBlink((float)SystemAPI.Time.ElapsedTime, LedFlashTime, out byte status) ?
+                    processor.ValueRW.NetworkReceiveLED.ReceiveBlink((float)t.ElapsedTime, LedFlashTime, out byte status) ?
                     (status switch
                     {
                         2 => Red,
@@ -63,16 +64,10 @@ partial struct LedSystemClient : ISystem
                     Off;
             }
 
-            if (processor.ValueRO.USBLED.Entity != Entity.Null)
-            {
-                _emissionColorQ.GetRefRW(processor.ValueRO.USBLED.Entity).ValueRW.Value =
-                    processor.ValueRW.USBLED.ReceiveBlink((float)SystemAPI.Time.ElapsedTime, LedFlashTime) ? Blue : Off;
-            }
-
             if (processor.ValueRO.CustomLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.CustomLED.Entity).ValueRW.Value =
-                    processor.ValueRW.CustomLED.ReceiveBlink((float)SystemAPI.Time.ElapsedTime, LedFlashTime) ? Green : Off;
+                    processor.ValueRW.CustomLED.ReceiveBlink((float)t.ElapsedTime, LedFlashTime) ? Green : Off;
             }
         }
 
@@ -82,13 +77,13 @@ partial struct LedSystemClient : ISystem
             if (processor.ValueRO.RequestLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.RequestLED.Entity).ValueRW.Value =
-                    processor.ValueRW.RequestLED.ReceiveBlink((float)SystemAPI.Time.ElapsedTime, LedFlashTime) ? Blue : Off;
+                    processor.ValueRW.RequestLED.ReceiveBlink((float)t.ElapsedTime, LedFlashTime) ? Blue : Off;
             }
 
             if (processor.ValueRO.ResponseLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.ResponseLED.Entity).ValueRW.Value =
-                    processor.ValueRW.ResponseLED.ReceiveBlink((float)SystemAPI.Time.ElapsedTime, LedFlashTime) ? Blue : Off;
+                    processor.ValueRW.ResponseLED.ReceiveBlink((float)t.ElapsedTime, LedFlashTime) ? Blue : Off;
             }
         }
     }

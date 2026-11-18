@@ -29,7 +29,7 @@ partial struct BufferedFileSenderSystem : ISystem
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetcodeEndPoint ep = new(request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
-            if (!state.World.IsServer()) ep = NetcodeEndPoint.Server;
+            if (!state.WorldUnmanaged.IsServer()) ep = NetcodeEndPoint.Server;
 
             FileData? localFile = FileChunkManagerSystem.GetFileData(command.ValueRO.FileName.ToString());
 
@@ -99,7 +99,7 @@ partial struct BufferedFileSenderSystem : ISystem
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetcodeEndPoint ep = new(request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
-            if (!state.World.IsServer()) ep = NetcodeEndPoint.Server;
+            if (!state.WorldUnmanaged.IsServer()) ep = NetcodeEndPoint.Server;
 
             bool found = false;
 
@@ -148,7 +148,7 @@ partial struct BufferedFileSenderSystem : ISystem
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetcodeEndPoint ep = new(request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
-            if (!state.World.IsServer()) ep = NetcodeEndPoint.Server;
+            if (!state.WorldUnmanaged.IsServer()) ep = NetcodeEndPoint.Server;
 
             for (int i = sendingFiles.Length - 1; i >= 0; i--)
             {
@@ -175,7 +175,7 @@ partial struct BufferedFileSenderSystem : ISystem
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetcodeEndPoint ep = new(request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
-            if (!state.World.IsServer()) ep = NetcodeEndPoint.Server;
+            if (!state.WorldUnmanaged.IsServer()) ep = NetcodeEndPoint.Server;
 
             if (DebugLog) Debug.Log($"{DebugEx.Prefix(state.WorldUnmanaged)} [T#{command.ValueRO.TransactionId}] Closing transaction `{command.ValueRO.TransactionId}`");
 

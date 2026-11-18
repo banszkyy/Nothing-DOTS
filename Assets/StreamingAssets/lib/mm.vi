@@ -25,26 +25,13 @@ struct MappedMemory_Extractor
     byte extract;
 }
 
+/*
 struct MappedMemory_Transporter
 {
     byte load_direction;
     int current_load;
 }
-
-export struct RadarResponse
-{
-    float3 point;
-    byte speedSignal;
-    byte clutter;
-    byte fingerprint;
-    byte meta;
-}
-
-struct MappedMemory_Radar
-{
-    float direction;
-    RadarResponse response;
-}
+*/
 
 struct MappedMemory_GPS
 {
@@ -52,11 +39,13 @@ struct MappedMemory_GPS
     float3 forward;
 }
 
+/*
 struct MappedMemory_Facility
 {
     byte signal;
     TechnologyHash* hash_location;
 }
+*/
 
 struct MappedMemory_RadioJammer
 {
@@ -68,21 +57,20 @@ struct MappedMemory_RadarJammer
     byte signal;
 }
 
-export alias TechnologyHash byte[30];
+//export alias TechnologyHash byte[30];
 
 
 const int MappedMemoryStart = 1;
 
-const int GenericModulesSize = sizeof(MappedMemory_GPS) + sizeof(MappedMemory_Radar) + sizeof(MappedMemory_Vehicle) + sizeof(MappedMemory_Leds);
+const int GenericModulesSize = sizeof(MappedMemory_GPS) + sizeof(MappedMemory_Vehicle) + sizeof(MappedMemory_Leds);
 
 [MSILIncompatible] export const MappedMemory_GPS*            GPS =             MappedMemoryStart + 0;
-[MSILIncompatible] export const MappedMemory_Radar*          Radar =           GPS + sizeof(MappedMemory_GPS);
-[MSILIncompatible] export const MappedMemory_Vehicle*        Vehicle =         Radar + sizeof(MappedMemory_Radar);
+[MSILIncompatible] export const MappedMemory_Vehicle*        Vehicle =         GPS + sizeof(MappedMemory_GPS);
 [MSILIncompatible] export const MappedMemory_Leds*           LEDs =            Vehicle + sizeof(MappedMemory_Vehicle);
 
 [MSILIncompatible] export const MappedMemory_CombatTurret*   CombatTurret =    MappedMemoryStart + GenericModulesSize;
 [MSILIncompatible] export const MappedMemory_Extractor*      Extractor =       MappedMemoryStart + GenericModulesSize;
-[MSILIncompatible] export const MappedMemory_Transporter*    Transporter =     MappedMemoryStart + GenericModulesSize;
-[MSILIncompatible] export const MappedMemory_Facility*       Facility =        MappedMemoryStart + GenericModulesSize;
+//[MSILIncompatible] export const MappedMemory_Transporter*    Transporter =     MappedMemoryStart + GenericModulesSize;
+//[MSILIncompatible] export const MappedMemory_Facility*       Facility =        MappedMemoryStart + GenericModulesSize;
 [MSILIncompatible] export const MappedMemory_RadioJammer*    RadioJammer =     MappedMemoryStart + GenericModulesSize;
 [MSILIncompatible] export const MappedMemory_RadarJammer*    RadarJammer =     MappedMemoryStart + GenericModulesSize;

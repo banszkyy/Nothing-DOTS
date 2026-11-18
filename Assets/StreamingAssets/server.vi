@@ -47,7 +47,7 @@ while (true) {
                 DhcpRequest* req = &buffer[o] as DhcpRequest*;
                 Client already;
                 if (clientById(clients, req.id, &already)) {
-                    printf("Address %d already assigned to %d\n", [already.address, req.id]);
+                    printf("Address %d already assigned to %d\n", already.address, req.id);
                     ldebug(direction * new float3(1f, 0f, 1f) * 3, Color.Cyan);
 
                     u8[] res = pack {
@@ -62,6 +62,7 @@ while (true) {
                     };
                     wsend(&res, res.Length, direction, 8);
                 } else {
+                    bool ok = false;
                     for (i32 i = 1; i < 621; i++) {
                         if (!clientByAddress(clients, i, 0 as Client*)) {
                             Client newClient;
@@ -70,7 +71,7 @@ while (true) {
                             newClient.lastDirection = direction;
                             clients.add(newClient);
 
-                            printf("Address %d assigned to %d\n", [i, req.id]);
+                            printf("Address %d assigned to %d\n", i, req.id);
 
                             u8[] res = pack {
                                 new RadioHeader {
@@ -83,10 +84,11 @@ while (true) {
                                 },
                             };
                             wsend(&res, res.Length, direction, 8);
-
+                            ok = true;
                             break;
                         }
                     }
+                    if (!ok) printf("Failed to assign address to %d\n", req.id);
                 }
             } else if (buffer[o] == (byte)Header.AuthChallenge) {
                 AuthChallenge* req = &buffer[o] as AuthChallenge*;

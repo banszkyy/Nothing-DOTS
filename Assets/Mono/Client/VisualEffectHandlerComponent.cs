@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Pool;
 using UnityEngine.VFX;
 
-class VisualEffectHandlerComponent : MonoBehaviour
+class VisualEffectHandlerComponent : MonoBehaviour, IPausableBehavior
 {
     internal float Lifetime;
     internal float Age;
@@ -12,6 +12,19 @@ class VisualEffectHandlerComponent : MonoBehaviour
     [NotNull] internal VisualEffect? VisualEffect = null;
     internal Light? Light;
     internal ObjectPool<VisualEffectHandlerComponent>? Pool;
+
+    void Start()
+    {
+        PauseManager.Instance.Register(this);
+    }
+
+    void OnDestroy()
+    {
+        if (PauseManager.InstanceOrNull != null)
+        {
+            PauseManager.InstanceOrNull.Unregister(this);
+        }
+    }
 
     public void Reinit()
     {

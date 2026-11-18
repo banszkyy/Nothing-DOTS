@@ -12,6 +12,9 @@ partial struct VehicleSystem : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (transform, vehicle) in
             SystemAPI.Query<RefRW<LocalTransform>, RefRW<Vehicle>>())
         {

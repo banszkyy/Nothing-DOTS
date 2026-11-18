@@ -7,7 +7,7 @@ struct Radio : IComponentData
     public float3 WirelessTransmissionPoint;
     public float TxPowerDbm;
     public float RxGainDbi;
-    public float SensitivityDbm;
+    public float NoiseFigureDb;
     public byte MinBeamHalvings;
     public byte MaxBeamHalvings;
     public byte BearingSectors;

@@ -9,6 +9,9 @@ partial struct GPSProcessorSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (processor, memory, transform) in
             SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<LocalTransform>>())
         {

@@ -18,6 +18,9 @@ partial struct CombatTurretProcessorSystem : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         DynamicBuffer<BufferedProjectile> projectiles = SystemAPI.GetSingletonBuffer<BufferedProjectile>(true);
         EntityCommandBuffer commandBuffer = default;
         Unity.Mathematics.Random random;

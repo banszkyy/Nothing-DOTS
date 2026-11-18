@@ -11,6 +11,9 @@ partial struct RadarJammerProcessorSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (processor, memory, radarJammer) in
             SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<RadarJammer>>())
         {

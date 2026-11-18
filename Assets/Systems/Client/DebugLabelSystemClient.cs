@@ -47,17 +47,22 @@ public partial class DebugLabelSystemClient : SystemBase
                     Position = command.ValueRO.Position,
                     Color = command.ValueRO.Color,
                     Text = command.ValueRO.Text,
-                    DieAt = (float)SystemAPI.Time.ElapsedTime + Lifetime,
+                    Age = 0f,
                 });
             }
         }
 
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+
         foreach (var labels in
             SystemAPI.Query<DynamicBuffer<BufferedWorldLabel>>())
         {
-            for (int i = 0; i < labels.Length; i++)
+            if (!t.IsPaused)
             {
-                if (labels[i].DieAt >= SystemAPI.Time.ElapsedTime) labels.RemoveAtSwapBack(i--);
+                for (int i = 0; i < labels.Length; i++)
+                {
+                    if ((labels.RefOf(i).Age += SystemAPI.Time.DeltaTime) >= Lifetime) labels.RemoveAtSwapBack(i--);
+                }
             }
 
             for (int i = IsEnabled ? System.Math.Min(labels.Length, _instances.Count) - 1 : -1; i >= 0; i--)

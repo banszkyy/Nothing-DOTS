@@ -153,6 +153,7 @@ public static partial class DebugEx
     }
 #endif
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawSphere(float3 pos, float radius, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
@@ -174,22 +175,27 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawBoxAligned(float3 start, float3 size, Color color, float duration = 0f, bool depthTest = true)
         => DrawBox(start + size * 0.5f, size, color, duration, depthTest);
 
+    [Conditional("UNITY_EDITOR")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawBox(AABB aabb, Color color, float duration = 0f, bool depthTest = true)
         => DrawBox(aabb.Center, aabb.Size, color, duration, depthTest);
 
+    [Conditional("UNITY_EDITOR")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawBox(AABB aabb, float3 offset, Color color, float duration = 0f, bool depthTest = true)
         => DrawBox(aabb.Center + offset, aabb.Size, color, duration, depthTest);
 
+    [Conditional("UNITY_EDITOR")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawBox(Bounds bounds, Color color, float duration = 0f, bool depthTest = true)
         => DrawBox(bounds.center, bounds.size, color, duration, depthTest);
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawBox(float3 pos, float3 size, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
@@ -214,6 +220,7 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawAxes(float3 pos, float scale = 1f, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
@@ -223,10 +230,12 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawLine(Vector3 start, Vector3 end, Color color, float duration = 0f, bool depthTest = true)
         => Debug.DrawLine(start, end, color, duration, depthTest);
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawPoint(float3 position, float scale, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
@@ -240,6 +249,7 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawTriangle(float3 a, float3 b, float3 c, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
@@ -249,6 +259,7 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawTriangle(float3x3 tri, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
@@ -258,6 +269,7 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawRectangle(float3 start, float3 end, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
@@ -268,6 +280,7 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawFOV(float3 origin, float3 direction, float angle, float distance, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
@@ -288,13 +301,14 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR")]
     public static void DrawCone(Vector3 origin, Vector3 direction, float height, float angleRadians, Color color, float duration = 0f, bool depthTest = true)
     {
 #if UNITY_EDITOR
         direction.Normalize();
 
-        int N = Mathf.Max(8, Mathf.CeilToInt(angleRadians * (Mathf.Rad2Deg / 10f)));
-        int M = Mathf.Max(1, Mathf.CeilToInt(height * 0.4f));
+        int N = Mathf.Max(8, Mathf.CeilToInt(angleRadians * Mathf.Rad2Deg / 60f));
+        int M = Mathf.Max(1, Mathf.CeilToInt(height * 0.2f));
 
         float radius = height * Mathf.Tan(angleRadians);
 
@@ -339,7 +353,7 @@ public static partial class DebugEx
 #endif
     }
 
-    [Conditional("DEBUG")]
+    [Conditional("UNITY_EDITOR"), Conditional("DEBUG")]
     public static void Assert([DoesNotReturnIf(false)] bool condition)
     {
         if (!condition) throw new Exception($"Assertion condition is false");

@@ -11,6 +11,9 @@ partial struct VirtualPlayerSystemServer : ISystem
 {
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (player, playerV, playerE) in SystemAPI.Query<RefRO<Player>, RefRO<VirtualPlayer>>().WithEntityAccess())
         {
             if (player.ValueRO.Outcome != GameOutcome.None) continue;

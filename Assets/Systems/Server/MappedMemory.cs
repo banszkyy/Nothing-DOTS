@@ -61,16 +61,6 @@ public struct MappedMemory_Transporter
 }
 
 /// <summary>
-/// Size: 20
-/// </summary>
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct MappedMemory_Radar
-{
-    public f32 RadarDirection;
-    public RadarResponse RadarResponse;
-}
-
-/// <summary>
 /// Size: 16
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -139,16 +129,15 @@ public struct MappedMemory_RadarJammer
 public struct MappedMemory
 {
     [FieldOffset(0)] public MappedMemory_GPS GPS;
-    [FieldOffset(24)] public MappedMemory_Radar Radar;
-    [FieldOffset(44)] public MappedMemory_Vehicle Vehicle;
-    [FieldOffset(46)] public MappedMemory_LEDS Leds;
+    [FieldOffset(24)] public MappedMemory_Vehicle Vehicle;
+    [FieldOffset(26)] public MappedMemory_LEDS Leds;
 
-    const int GenericModulesSize = 47;
+    const int GenericModulesSize = 27;
 
     [FieldOffset(GenericModulesSize)] public MappedMemory_CombatTurret CombatTurret;
     [FieldOffset(GenericModulesSize)] public MappedMemory_Extractor Extractor;
-    [FieldOffset(GenericModulesSize)] public MappedMemory_Transporter Transporter;
-    [FieldOffset(GenericModulesSize)] public MappedMemory_Facility Facility;
+    //[FieldOffset(GenericModulesSize)] public MappedMemory_Transporter Transporter;
+    //[FieldOffset(GenericModulesSize)] public MappedMemory_Facility Facility;
     [FieldOffset(GenericModulesSize)] public MappedMemory_RadioJammer RadioJammer;
     [FieldOffset(GenericModulesSize)] public MappedMemory_RadarJammer RadarJammer;
 }

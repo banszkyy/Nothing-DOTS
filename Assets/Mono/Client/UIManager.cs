@@ -163,11 +163,6 @@ public class UIManager : Singleton<UIManager>
         _escGrabbed = _escGrabbed && _escPressed;
     }
 
-    // void LateUpdate()
-    // {
-    //     if (GrapESC()) CloseAllUI();
-    // }
-
     public bool GrapESC()
     {
         if (_escGrabbed || !Input.GetKeyDown(KeyCode.Escape)) return false;
@@ -177,23 +172,15 @@ public class UIManager : Singleton<UIManager>
 
     public void CloseAllUI()
     {
-        for (int i = 0; i < UIs.Length; i++)
+        foreach (UIElementReference ui in UIs)
         {
-            CloseUI(UIs[i]);
-        }
-    }
-
-    public void CloseAllUI(UIElementReference except)
-    {
-        for (int i = 0; i < UIs.Length; i++)
-        {
-            if (UIs[i] == except) continue;
-            CloseUI(UIs[i]);
+            CloseUI(ui);
         }
     }
 
     public void CloseUI(UIElementReference ui)
     {
+        if (ui.Document != null) UI.Deregister(ui.Document);
         Tooltips.Instance.OnDocumentHidden(ui);
         if (OpenedUIs.TryGetValue(ui, out List<IUICleanup>? cleanup))
         {
@@ -220,6 +207,7 @@ public class UIManager : Singleton<UIManager>
     {
         CloseAllUI();
         ui.IsVisible = true;
+        if (ui.Document != null) UI.Register(ui.Document);
         return new UISetup(ui, this);
     }
 }

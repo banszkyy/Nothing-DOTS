@@ -364,13 +364,13 @@ unsafe partial struct ProcessorSystemServer : ISystem
                         if (!debugLines[i].Value.Position.Equals(lines[j].Position)) continue;
                         lines.Set(j, debugLines[i].Value with
                         {
-                            DieAt = (float)SystemAPI.Time.ElapsedTime + DebugLinesSystemClient.Lifetime
+                            Age = 0f
                         });
                         goto next;
                     }
                     lines.Add(debugLines[i].Value with
                     {
-                        DieAt = (float)SystemAPI.Time.ElapsedTime + DebugLinesSystemClient.Lifetime
+                        Age = 0f
                     });
                 next:;
                 }
@@ -384,13 +384,13 @@ unsafe partial struct ProcessorSystemServer : ISystem
                         if (math.distancesq(worldLabels[i].Value.Position, labels[j].Position) >= 1f) continue;
                         labels.Set(j, worldLabels[i].Value with
                         {
-                            DieAt = (float)SystemAPI.Time.ElapsedTime + DebugLabelSystemClient.Lifetime
+                            Age = 0f
                         });
                         goto next;
                     }
                     labels.Add(worldLabels[i].Value with
                     {
-                        DieAt = (float)SystemAPI.Time.ElapsedTime + DebugLabelSystemClient.Lifetime
+                        Age = 0f
                     });
                 next:;
                 }
@@ -521,6 +521,9 @@ unsafe partial struct ProcessorSystemServer : ISystem
             }
         }
 
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         debugLines.Clear();
         worldLabels.Clear();
 
@@ -629,7 +632,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
     }
 }
 
-[BurstCompile]
 unsafe partial struct ProcessorChunkJob : IJobChunk
 {
 #if UNITY_PROFILER

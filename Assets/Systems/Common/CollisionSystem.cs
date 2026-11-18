@@ -150,6 +150,9 @@ unsafe partial struct CollisionSystem : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         var map = QuadrantSystem.GetMap(ref state);
 
         var enumerator = map.GetEnumerator();
@@ -189,15 +192,12 @@ unsafe partial struct CollisionSystem : ISystem
 
                 if (!a->ResolvedOffset.Equals(default))
                 {
-                    if (SystemAPI.HasComponent<LocalTransform>(a->Entity))
-                    {
-                        RefRW<LocalTransform> transform = SystemAPI.GetComponentRW<LocalTransform>(a->Entity);
+                    RefRW<LocalTransform> transform = SystemAPI.GetComponentRW<LocalTransform>(a->Entity);
 #if DEBUG_COLLISIONS
-                        DebugEx.Label(transform.ValueRO.Position, a->ResolvedOffset.ToString());
-                        DebugEx.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + a->ResolvedOffset, Color.blue, 0.3f, false);
+                    DebugEx.Label(transform.ValueRO.Position, a->ResolvedOffset.ToString());
+                    DebugEx.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + a->ResolvedOffset, Color.blue, 0.3f, false);
 #endif
-                        transform.ValueRW.Position += a->ResolvedOffset;
-                    }
+                    transform.ValueRW.Position += a->ResolvedOffset;
                     a->ResolvedOffset = default;
                 }
             }

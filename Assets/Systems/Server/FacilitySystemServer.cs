@@ -1,3 +1,4 @@
+#if false
 using Unity.Burst;
 using Unity.Entities;
 using Unity.NetCode;
@@ -133,6 +134,9 @@ public partial struct FacilitySystemServer : ISystem
             }
         }
 
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (facility, unitTeam, queue, hashIn, hashOut) in
             SystemAPI.Query<RefRW<Facility>, RefRO<UnitTeam>, DynamicBuffer<BufferedResearch>, DynamicBuffer<BufferedTechnologyHashIn>, DynamicBuffer<BufferedTechnologyHashOut>>())
         {
@@ -215,7 +219,7 @@ public partial struct FacilitySystemServer : ISystem
             Entity playerConnection = default;
             if (SystemAPI.TryGetComponent(playerEntity, out RealPlayer realPlayer))
             {
-                if (state.World.IsLocal())
+                if (state.WorldUnmanaged.IsLocal())
                 {
                     if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
                     NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ResearchDoneRpc()
@@ -244,7 +248,7 @@ public partial struct FacilitySystemServer : ISystem
                     }
                     else
                     {
-                        Debug.LogError(string.Format($"{DebugEx.ServerPrefix} Failed to notify player of finished research: No connection found"));
+                        Debug.LogError($"{DebugEx.ServerPrefix} Failed to notify player of finished research: No connection found");
                     }
                 }
             }
@@ -257,3 +261,4 @@ public partial struct FacilitySystemServer : ISystem
         }
     }
 }
+#endif

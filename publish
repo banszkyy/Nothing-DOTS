@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+rm -rf ./Build/linux-x64
+mkdir ./Build/linux-x64
+unity build --target StandaloneLinux64 --output-path ./Build/linux-x64/meow
+
+cd Build
+zip -r linux-x64.zip linux-x64/
+cd ..

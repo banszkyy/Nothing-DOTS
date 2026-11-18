@@ -12,8 +12,11 @@ public partial struct RadarControlSystem : ISystem
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
-        float dt = SystemAPI.Time.DeltaTime;
-        double now = SystemAPI.Time.ElapsedTime;
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
+        float dt = t.DeltaTime;
+        double now = t.ElapsedTime;
 
         foreach ((var radar, var transform) in SystemAPI.Query<RefRW<Radar>, RefRO<LocalTransform>>())
         {

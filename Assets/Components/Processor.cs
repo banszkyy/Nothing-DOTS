@@ -165,20 +165,11 @@ struct Processor : IComponentData
     public bool IsKeyRequested;
     public FixedList128Bytes<byte> InputKey;
 
-    /// <summary>
-    /// XZ direction in local space
-    /// </summary>
-    public float2 RadarRequest;
-    public RadarResponse RadarResponse;
-
     public ulong StdOutBufferCursor;
     public FixedList512Bytes<byte> StdOutBuffer;
 
     [GhostField] public StatusLED<ProcessorStatus> StatusLED;
     [GhostField] public BlinkingStatusLED NetworkReceiveLED;
     [GhostField] public BlinkingLED NetworkSendLED;
-    [GhostField] public BlinkingLED USBLED;
     [GhostField] public BlinkingLED CustomLED;
-    public float3 USBPosition;
-    public quaternion USBRotation;
 }

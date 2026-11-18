@@ -69,7 +69,7 @@ public class EntityInfoUIManager : Singleton<EntityInfoUIManager>
 
             item.CanvasGroup.alpha = math.clamp(1f - ((screenPoint.z - StartFadeDistance) / (DisappearDistance - StartFadeDistance)), 0f, 1f);
 
-            if (item.SelectionStatusIndicator.enabled = item.SelectionStatus is SelectionStatus.Selected or SelectionStatus.Candidate)
+            void ResizeSelectionIndicator(RectTransform rectTransform, Span<Vector3> worldCorners)
             {
                 Vector3 c = item.Bounds.center;
                 Vector3 e = item.Bounds.extents;
@@ -96,8 +96,18 @@ public class EntityInfoUIManager : Singleton<EntityInfoUIManager>
                 Vector2 a = min;
                 Vector2 b = max;
                 Vector2 center = (b + a) * 0.5f;
-                item.SelectionStatusIndicator.rectTransform.sizeDelta = b - a;
-                item.SelectionStatusIndicator.rectTransform.anchoredPosition = center - (Vector2)screenPoint;
+                rectTransform.sizeDelta = b - a;
+                rectTransform.anchoredPosition = center - (Vector2)screenPoint;
+            }
+
+            if (item.SelectionStatusIndicator.enabled = item.SelectionStatus == SelectionStatus.Selected)
+            {
+                ResizeSelectionIndicator(item.SelectionStatusIndicator.rectTransform, worldCorners);
+            }
+
+            if (item.CandidateStatusIndicator.enabled = item.SelectionStatus == SelectionStatus.Candidate)
+            {
+                ResizeSelectionIndicator(item.CandidateStatusIndicator.rectTransform, worldCorners);
             }
 
             // item.Label.text = item.Team.ToString();

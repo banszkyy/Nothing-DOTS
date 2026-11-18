@@ -12,6 +12,9 @@ partial struct RigidbodySystemServer : ISystem
 {
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         TerrainSystemServer terrainSystem = TerrainSystemServer.GetInstance(state.WorldUnmanaged);
 
         foreach (var (rigidbody, collider, transform) in

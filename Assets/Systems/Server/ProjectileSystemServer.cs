@@ -26,6 +26,9 @@ partial struct ProjectileSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime _t = SystemAPI.GetSingleton<PausableTime>();
+        if (_t.IsPaused) return;
+
         EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
         TerrainSystemServer terrainSystem = TerrainSystemServer.GetInstance(state.WorldUnmanaged);
 

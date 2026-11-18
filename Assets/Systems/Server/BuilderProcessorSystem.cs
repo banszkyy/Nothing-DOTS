@@ -12,6 +12,9 @@ partial struct BuilderProcessorSystem : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (processor, memory, builderTurret) in
             SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<BuilderTurret>>()
             .WithAll<Builder>())

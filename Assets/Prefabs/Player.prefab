@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 7377966097319251468}
   - component: {fileID: -7915354625371160890}
   - component: {fileID: 4414200999462057608}
-  - component: {fileID: 473896567900110651}
   - component: {fileID: 5909849468710769312}
   - component: {fileID: 2950959835788761047}
   m_Layer: 0
@@ -73,38 +72,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c79d771cedb4794bf100ce60df5f764, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DefaultGhostMode: 1
-  SupportedGhostModes: 3
-  OptimizationMode: 1
-  Importance: 1
-  prefabId: 71f673ee2f763e7bc877987e74e01299
   HasOwner: 0
   SupportAutoCommandTarget: 1
   TrackInterpolationDelay: 0
   GhostGroup: 0
   UsePreSerialization: 0
+  UseSingleBaseline: 0
   RollbackPredictedSpawnedGhostState: 0
   RollbackPredictionOnStructuralChanges: 1
---- !u!114 &473896567900110651
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3425909852624401331}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dae87aa9bd063ca99864d6ad31aaeec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Materials:
-  - {fileID: 2100000, guid: da9f92d5d3c71417eb7a9a5ac51436d9, type: 2}
-  - {fileID: 2100000, guid: 1a3a0be045ab4f09490dda6c8f50b811, type: 2}
-  - {fileID: 2100000, guid: 2fe71e9d468beb93e824ead0fba2c64f, type: 2}
-  - {fileID: 2100000, guid: 747ab9c9e4e123a9f844d4a1af666c47, type: 2}
-  - {fileID: 2100000, guid: d670c83df74c310f58fb1b33e7205975, type: 2}
-  - {fileID: 2100000, guid: c58c8f774a8c80e74bbc3e0f057b38df, type: 2}
-  - {fileID: 2100000, guid: 3848308bb085981c9a8d37c39a3d26a4, type: 2}
+  DefaultGhostMode: 1
+  SupportedGhostModes: 3
+  OptimizationMode: 1
+  Importance: 1
+  MaxSendRate: 0
+  prefabId: 71f673ee2f763e7bc877987e74e01299
 --- !u!114 &5909849468710769312
 MonoBehaviour:
   m_ObjectHideFlags: 0

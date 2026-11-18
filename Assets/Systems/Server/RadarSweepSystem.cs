@@ -12,7 +12,10 @@ public partial struct RadarSweepSystem : ISystem
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
-        double now = SystemAPI.Time.ElapsedTime;
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
+        double now = t.ElapsedTime;
         ComponentLookup<Velocity> velocities = SystemAPI.GetComponentLookup<Velocity>(true);
         ComponentLookup<Processor> processors = SystemAPI.GetComponentLookup<Processor>(true);
 

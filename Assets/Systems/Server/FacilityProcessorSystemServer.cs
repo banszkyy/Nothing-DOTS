@@ -1,3 +1,4 @@
+#if false
 using Unity.Entities;
 using Unity.Burst;
 using LanguageCore.Runtime;
@@ -10,6 +11,9 @@ partial struct FacilityProcessorSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (processor, memory, facility, techIn, techOut) in
             SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Facility>, DynamicBuffer<BufferedTechnologyHashIn>, DynamicBuffer<BufferedTechnologyHashOut>>())
         {
@@ -49,3 +53,4 @@ partial struct FacilityProcessorSystemServer : ISystem
         }
     }
 }
+#endif

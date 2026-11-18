@@ -51,6 +51,8 @@ public class SelectionManager : Singleton<SelectionManager>
     Entity _firstHit = Entity.Null;
     Vector3 _unitCommandUIWorldPositionData;
     Vector3 _unitCommandUIPosition;
+    Entity _doubleClickInitiated;
+    [SerializeField, ReadOnly] float _lastLeftClickTime;
 
     public bool IsUnitCommandsActive => UnitCommandsUI.isActiveAndEnabled;
 
@@ -106,6 +108,17 @@ public class SelectionManager : Singleton<SelectionManager>
             return;
         }
 
+        if (Input.GetMouseButtonUp(0))
+        {
+            FinishBoxSelect();
+        }
+
+        if (UI.IsPointerOverUI())
+        {
+            UpdateBoxSelect(true);
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             if (UnitCommandsUI.gameObject.activeSelf)
@@ -116,11 +129,6 @@ public class SelectionManager : Singleton<SelectionManager>
             {
                 BeginBoxSelect();
             }
-        }
-
-        if (Input.GetMouseButtonUp(0))
-        {
-            FinishBoxSelect();
         }
 
         if (Input.GetMouseButtonDown(1))
@@ -184,7 +192,7 @@ public class SelectionManager : Singleton<SelectionManager>
         _selectionStart = WorldRaycast(ray, out float distance) ? ray.GetPoint(distance) : ray.GetPoint(WorldRaycastDistanceLimit);
     }
 
-    void UpdateBoxSelect()
+    void UpdateBoxSelect(bool overUi = false)
     {
         ClearSelectionCandidates();
 
@@ -211,6 +219,7 @@ public class SelectionManager : Singleton<SelectionManager>
 
         if (Vector2.Distance(startPoint, endPoint) < BoxSelectDistanceThreshold)
         {
+            if (overUi) return;
             if (!Raycast(MainCamera.Camera.ScreenPointToRay(Input.mousePosition), Layer, out Hit hit)) return;
             Entity selectableHit = hit.Entity.Entity;
             SelectUnitCandidate(selectableHit, SelectionStatus.Candidate);
@@ -265,7 +274,6 @@ public class SelectionManager : Singleton<SelectionManager>
 
         if (startPoint.z <= 0f)
         {
-            //Debug.LogWarning($"{DebugEx.ClientPrefix} Invalid selection box");
             return;
         }
 
@@ -274,13 +282,36 @@ public class SelectionManager : Singleton<SelectionManager>
         if (Vector2.Distance(startPoint, endPoint) < BoxSelectDistanceThreshold)
         {
             if (!Raycast(MainCamera.Camera.ScreenPointToRay(Input.mousePosition), Layer, out Hit hit)) return;
-            VirtualGhostEntity virtualGhostEntity = CreateVirtualGhostEntity(entityManager, hit.Entity.Entity);
-            if (GetUnitStatus(virtualGhostEntity.Entity).Status == SelectionStatus.Selected &&
-                _selected.Count > 0 &&
-                Input.GetKey(KeyCode.LeftShift))
-            { DeselectUnit(virtualGhostEntity); }
+
+            if (!Input.GetKey(KeyCode.LeftShift)
+                && _doubleClickInitiated == hit.Entity.Entity
+                && Time.time - _lastLeftClickTime < 0.2f)
+            {
+                _lastLeftClickTime = default;
+                _doubleClickInitiated = default;
+
+                foreach (Entity unit in UnitsInRect(MainCamera.Camera.pixelRect))
+                {
+                    VirtualGhostEntity virtualGhostEntity = CreateVirtualGhostEntity(entityManager, unit);
+                    SelectUnit(virtualGhostEntity, SelectionStatus.Selected);
+                }
+            }
             else
-            { SelectUnit(virtualGhostEntity, SelectionStatus.Selected); }
+            {
+                VirtualGhostEntity virtualGhostEntity = CreateVirtualGhostEntity(entityManager, hit.Entity.Entity);
+                if (GetUnitStatus(virtualGhostEntity.Entity).Status == SelectionStatus.Selected
+                    && _selected.Count > 0
+                    && Input.GetKey(KeyCode.LeftShift))
+                {
+                    DeselectUnit(virtualGhostEntity);
+                }
+                else
+                {
+                    SelectUnit(virtualGhostEntity, SelectionStatus.Selected);
+                    _lastLeftClickTime = Time.time;
+                    _doubleClickInitiated = hit.Entity.Entity;
+                }
+            }
             return;
         }
 
@@ -534,7 +565,7 @@ public class SelectionManager : Singleton<SelectionManager>
         }
     }
 
-    static IReadOnlyCollection<Entity> UnitsInRect(Rect rect)
+    static List<Entity> UnitsInRect(Rect rect)
     {
         using EntityQuery selectablesQ = ConnectionManager.ClientOrDefaultWorld.EntityManager.CreateEntityQuery(typeof(LocalToWorld), typeof(SelectableUnit));
         using NativeArray<Entity> selectableEntities = selectablesQ.ToEntityArray(Allocator.Temp);
@@ -544,10 +575,11 @@ public class SelectionManager : Singleton<SelectionManager>
             Entity selectableEntity = selectableEntities[i];
             LocalToWorld transform = ConnectionManager.ClientOrDefaultWorld.EntityManager.GetComponentData<LocalToWorld>(selectableEntity);
             Vector3 point = MainCamera.Camera.WorldToScreenPoint(transform.Position);
-            if (point.x < rect.xMin ||
-                point.y < rect.yMin ||
-                point.x > rect.xMax ||
-                point.y > rect.yMax)
+            if (point.x < rect.xMin
+                || point.y < rect.yMin
+                || point.x > rect.xMax
+                || point.y > rect.yMax
+                || point.z < 0)
             { continue; }
             result.Add(selectableEntity);
         }

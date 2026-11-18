@@ -1,3 +1,4 @@
+#if false
 using Unity.Burst;
 using Unity.Entities;
 using Unity.NetCode;
@@ -93,3 +94,4 @@ public partial struct ResearchSystemServer : ISystem
         }
     }
 }
+#endif

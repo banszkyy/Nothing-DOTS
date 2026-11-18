@@ -61,9 +61,10 @@
     "vstuc.displayBackgroundProcesses": true,
     "omnisharp.useModernNet": false,
     "material-icon-theme.folders.associations": {
+        "Models": "container",
         "StreamingAssets": "include",
         "Buffered": "constant",
-        "Editor": "Unity",
+        "Editor": "unity",
         "URPSettings": "config",
         "InputSettings": "config",
         "TextMesh Pro": "font",

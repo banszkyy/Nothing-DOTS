@@ -41,6 +41,7 @@ public class ChatManager : Singleton<ChatManager>
 
     void OnEnable()
     {
+        UI.Register(_ui);
         ui = new ChatSchema(_ui.rootVisualElement);
 
         ui.ButtonSend.clicked += OnButtonSend;

@@ -335,7 +335,7 @@ public partial struct PlayerSystemServer : ISystem
                         });
                         commandBuffer.SetComponent<LocalTransform>(playerInterface, LocalTransform.FromPosition(spawns[i].Position));
 
-                        if (SystemAPI.TryGetComponent(playerInterface, out Processor proc))
+                        if (SystemAPI.TryGetComponent(prefabs.PlayerInterface, out Processor proc))
                         {
                             DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(playerInterface);
                             memory.ResizeUninitialized(proc.MemorySize);
@@ -354,7 +354,7 @@ public partial struct PlayerSystemServer : ISystem
                         });
                         commandBuffer.SetComponent<LocalTransform>(builder, LocalTransform.FromPosition(spawns[i].Position + new Unity.Mathematics.float3(2f, 0f, 2f)));
 
-                        if (SystemAPI.TryGetComponent(builder, out Processor proc))
+                        if (SystemAPI.TryGetComponent(prefabs.Builder, out Processor proc))
                         {
                             DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(builder);
                             memory.ResizeUninitialized(proc.MemorySize);

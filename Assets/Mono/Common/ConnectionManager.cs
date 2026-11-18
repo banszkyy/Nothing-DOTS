@@ -23,6 +23,7 @@ public class ConnectionManager : Singleton<ConnectionManager>
     [SerializeField, NotNull] GameObject? ServerObjects = default;
     [SerializeField, NotNull] GameObject? ClientObjects = default;
     [SerializeField, NotNull] GameObject? StagingObjects = default;
+    [SerializeField, NotNull] GameObject? EditorObjects = default;
 
 #if UNITY_EDITOR && EDITOR_DEBUG
     [Header("Debug")]
@@ -36,6 +37,8 @@ public class ConnectionManager : Singleton<ConnectionManager>
 
     void Start()
     {
+        Destroy(EditorObjects);
+
 #if UNITY_EDITOR && EDITOR_DEBUG
         if (AutoHost)
         {

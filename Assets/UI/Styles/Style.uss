@@ -310,7 +310,7 @@ Scroller {
 
 ProgressBar > #unity-progress-bar {
     min-height: auto;
-    max-height: auto;
+    max-height: none;
     flex-grow: 1;
 }
 

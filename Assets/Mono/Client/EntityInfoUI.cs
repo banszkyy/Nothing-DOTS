@@ -33,6 +33,7 @@ public class EntityInfoUI : MonoBehaviour
     [SerializeField, NotNull] public EntityInfoUIBar2? ReloadProgress = default;
     [SerializeField, NotNull] public CanvasGroup? CanvasGroup = default;
     [SerializeField, NotNull] public Image? SelectionStatusIndicator = default;
+    [SerializeField, NotNull] public Image? CandidateStatusIndicator = default;
     [SerializeField, NotNull] public Text? Label = default;
 
     [Header("Debug")]

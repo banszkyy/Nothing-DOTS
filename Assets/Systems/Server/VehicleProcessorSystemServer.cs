@@ -9,6 +9,9 @@ partial struct VehicleProcessorSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (processor, memory, vehicle) in
             SystemAPI.Query<RefRO<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<Vehicle>>())
         {

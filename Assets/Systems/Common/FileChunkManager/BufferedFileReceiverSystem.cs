@@ -29,7 +29,7 @@ partial struct BufferedFileReceiverSystem : ISystem
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetcodeEndPoint ep = new(request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
-            if (!state.World.IsServer()) ep = NetcodeEndPoint.Server;
+            if (!state.WorldUnmanaged.IsServer()) ep = NetcodeEndPoint.Server;
 
             bool added = false;
             BufferedReceivingFile fileHeader = new()
@@ -71,7 +71,7 @@ partial struct BufferedFileReceiverSystem : ISystem
             if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
             commandBuffer.DestroyEntity(entity);
             NetcodeEndPoint ep = new(request.ValueRO.SourceConnection == default ? default : SystemAPI.GetComponentRO<NetworkId>(request.ValueRO.SourceConnection).ValueRO, request.ValueRO.SourceConnection);
-            if (!state.World.IsServer()) ep = NetcodeEndPoint.Server;
+            if (!state.WorldUnmanaged.IsServer()) ep = NetcodeEndPoint.Server;
 
             int fileIndex = -1;
             for (int i = 0; i < receivingFiles.Length; i++)

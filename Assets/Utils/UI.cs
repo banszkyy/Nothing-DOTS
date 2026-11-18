@@ -1,17 +1,14 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using SaintsField;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 public class UI : PrivateSingleton<UI>
 {
-#if EDITOR_DEBUG
+#if UNITY_EDITOR
     [Header("Debug")]
-    [SerializeField, ReadOnly] UIDocument?[]? _uiDocuments;
     [SerializeField, ReadOnly] UIDocument? _focusedDocument;
     [SerializeField, ReadOnly] bool _isUiFocused;
-    float _uiDocumentsTime;
 
     void Update()
     {
@@ -26,19 +23,9 @@ public class UI : PrivateSingleton<UI>
     }
 #endif
 
-    static ImmutableArray<UIDocument?> UIDocuments
-    {
-        get
-        {
-            UI v = Instance;
-            if (v._uiDocuments == null || Time.time - v._uiDocumentsTime > 10f)
-            {
-                v._uiDocumentsTime = Time.time;
-                v._uiDocuments = FindObjectsByType<UIDocument?>(FindObjectsInactive.Include);
-            }
-            return v._uiDocuments.AsImmutableArrayUnsafe();
-        }
-    }
+    readonly HashSet<UIDocument?> _uiDocuments = new();
+
+    static IReadOnlyCollection<UIDocument?> UIDocuments => Instance._uiDocuments;
 
     public static bool IsMouseHandled => IsUIFocused || IsPointerOverUI();
 
@@ -79,4 +66,8 @@ public class UI : PrivateSingleton<UI>
         }
         return false;
     }
+
+    public static bool Register(UIDocument document) => Instance._uiDocuments.Add(document);
+
+    public static bool Deregister(UIDocument document) => Instance._uiDocuments.Remove(document);
 }

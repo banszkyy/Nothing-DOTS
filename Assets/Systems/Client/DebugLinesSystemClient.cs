@@ -20,15 +20,13 @@ partial struct DebugLinesSystemClient : ISystem
 
     void ISystem.OnUpdate(ref SystemState state)
     {
-        if (!Batches.IsCreated) Batches = CreateBatches(state.EntityManager);
+        if (!Batches.IsCreated)
+        {
+            DebugLinesSettings settings = SystemAPI.ManagedAPI.GetSingleton<DebugLinesSettings>();
+            Batches = CreateBatches(state.EntityManager, settings);
+        }
 
         EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
-        NativeArray<Segments.Segment> batches = new(Batches.Length, Allocator.Temp);
-
-        for (int i = 0; i < Batches.Length; i++)
-        {
-            batches[i] = Segments.Core.GetSegment(state.EntityManager, Batches[i]);
-        }
 
         foreach (var (request, command, entity) in
             SystemAPI.Query<RefRO<ReceiveRpcCommandRequest>, RefRO<DebugLineRpc>>()
@@ -45,9 +43,19 @@ partial struct DebugLinesSystemClient : ISystem
                 {
                     Position = command.ValueRO.Position,
                     Color = command.ValueRO.Color,
-                    DieAt = (float)SystemAPI.Time.ElapsedTime + Lifetime,
+                    Age = 0f,
                 });
             }
+        }
+
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
+        NativeArray<Segments.Segment> batches = new(Batches.Length, Allocator.Temp);
+
+        for (int i = 0; i < Batches.Length; i++)
+        {
+            batches[i] = Segments.Core.GetSegment(state.EntityManager, Batches[i]);
         }
 
         foreach (var lines in
@@ -60,7 +68,7 @@ partial struct DebugLinesSystemClient : ISystem
 
             for (int i = 0; i < lines.Length; i++)
             {
-                if (lines[i].DieAt <= SystemAPI.Time.ElapsedTime) lines.RemoveAtSwapBack(i--);
+                if ((lines.RefOf(i).Age += SystemAPI.Time.DeltaTime) >= Lifetime) lines.RemoveAtSwapBack(i--);
                 else if (IsEnabled) batches[lines[i].Color - 1].Buffer.Add(lines[i].Position);
             }
 
@@ -73,9 +81,8 @@ partial struct DebugLinesSystemClient : ISystem
         batches.Dispose();
     }
 
-    NativeArray<Entity>.ReadOnly CreateBatches(EntityManager entityManager)
+    NativeArray<Entity>.ReadOnly CreateBatches(EntityManager entityManager, DebugLinesSettings settings)
     {
-        DebugLinesSettings settings = SystemAPI.ManagedAPI.GetSingleton<DebugLinesSettings>();
         NativeArray<Entity> _batches = new(settings.Materials.Length, Allocator.Persistent);
         for (int i = 0; i < settings.Materials.Length; i++)
         {

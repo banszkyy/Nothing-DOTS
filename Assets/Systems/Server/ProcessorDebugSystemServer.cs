@@ -7,7 +7,6 @@ using Unity.NetCode;
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
 partial struct ProcessorDebugSystemServer : ISystem
 {
-    [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
         EntityCommandBuffer commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);

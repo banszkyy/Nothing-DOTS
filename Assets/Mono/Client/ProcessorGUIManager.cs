@@ -39,6 +39,11 @@ public class ProcessorGUIManager : MonoBehaviour
         visualElement.style.height = userElement.Size.y == 0 ? new StyleLength(StyleKeyword.Auto) : new StyleLength(new Length(userElement.Size.y, LengthUnit.Pixel));
     }
 
+    void OnEnable()
+    {
+        UI.Register(_ui);
+    }
+
     unsafe void Update()
     {
         NativeList<UserUIElement> uiElements = ConnectionManager.ClientOrDefaultWorld.Unmanaged.GetSystem<ProcessorSystemClient>().uiElements;

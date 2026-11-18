@@ -145,20 +145,22 @@ while (true) {
         }
     }
 
-    if (!address && time() - addressRequestedAt > 5f) {
-        printf("Requesting address\n");
+    if (!address) {
+        if (time() - addressRequestedAt > 5f) {
+            printf("Requesting address\n");
 
-        byte[] req = pack {
-            new RadioHeader {
-                header = RadioHeaderValues.Uplink,
-            },
-            new DhcpRequest {
-                header = Header.DhcpRequest,
-                id = id,
-            },
-        };
-        wsend(&req);
-        addressRequestedAt = time();
+            byte[] req = pack {
+                new RadioHeader {
+                    header = RadioHeaderValues.Uplink,
+                },
+                new DhcpRequest {
+                    header = Header.DhcpRequest,
+                    id = id,
+                },
+            };
+            wsend(&req);
+            addressRequestedAt = time();
+        }
     } else {
         if (time() - lastAdvertisement > 5f) {
             byte[] req = pack {

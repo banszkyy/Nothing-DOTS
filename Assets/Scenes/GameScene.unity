@@ -135,7 +135,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &13680550
 Transform:
   m_ObjectHideFlags: 0
@@ -151,7 +151,39 @@ Transform:
   m_Children:
   - {fileID: 722635784}
   - {fileID: 1000078655}
+  - {fileID: 1545962553}
   m_Father: {fileID: 1001118307}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &15512329
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 15512330}
+  m_Layer: 0
+  m_Name: Aim
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &15512330
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 15512329}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -25.8, y: 0, z: -20.6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1545962553}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &42151242
 GameObject:
@@ -222,6 +254,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c31296253f786e3b4c64f8f4ee20b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &47712088
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 47712089}
+  - component: {fileID: 47712090}
+  m_Layer: 0
+  m_Name: PauseManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &47712089
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 47712088}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 513005738}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &47712090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 47712088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4145c7ddaacd1dd8b8a1359410c28da2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseManager
+  UI: {fileID: 1246217402}
 --- !u!1 &78294156
 GameObject:
   m_ObjectHideFlags: 0
@@ -272,7 +349,7 @@ MonoBehaviour:
       type: 3}
     Script: radar.vi
     Team: 1
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: 0.8209028
       y: 7.6438694
@@ -280,7 +357,7 @@ MonoBehaviour:
       type: 3}
     Script: gunner.vi
     Team: 1
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: 6.9787016
       y: 6.827549
@@ -288,7 +365,7 @@ MonoBehaviour:
       type: 3}
     Script: 
     Team: 0
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: 4.0745807
       y: -3.4665556
@@ -296,7 +373,7 @@ MonoBehaviour:
       type: 3}
     Script: 
     Team: 1
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: 3.5500383
       y: 0.2533423
@@ -304,7 +381,7 @@ MonoBehaviour:
       type: 3}
     Script: 
     Team: 1
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: 1.7074406
       y: 0.2554555
@@ -312,7 +389,7 @@ MonoBehaviour:
       type: 3}
     Script: 
     Team: 1
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: 0.6688123
       y: -7.1431036
@@ -344,7 +421,7 @@ MonoBehaviour:
       type: 3}
     Script: client.vi
     Team: 1
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: -5.2254915
       y: 5.510104
@@ -360,7 +437,7 @@ MonoBehaviour:
       type: 3}
     Script: jammer.vi
     Team: 1
-    Enabled: 1
+    Enabled: 0
     Spawn:
       x: 10.495483
       y: 0.5822334
@@ -379,13 +456,13 @@ MonoBehaviour:
     RandomPosition: 1
   - Prefab: {fileID: 8427767388040926130, guid: cc59288c4e704e5c696de44ebc0bbb67,
       type: 3}
-    Script: unit-6.bbc
+    Script: 
     Team: 1
     Enabled: 1
-    Count: 2
-    Density: 26.92
-    Start: {x: 0, y: -0.07706027}
-    End: {x: 0, y: 0}
+    Count: 500
+    Density: 0
+    Start: {x: -100, y: -100}
+    End: {x: 100, y: 100}
     RandomRotation: 1
     RandomPosition: 1
   Deterministic: 1
@@ -886,6 +963,7 @@ Transform:
   - {fileID: 1115681834}
   - {fileID: 1085858980}
   - {fileID: 1707058890}
+  - {fileID: 47712089}
   m_Father: {fileID: 1001118307}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &627452865
@@ -1562,6 +1640,7 @@ MonoBehaviour:
   ServerObjects: {fileID: 1323827595}
   ClientObjects: {fileID: 1551354252}
   StagingObjects: {fileID: 1439197459}
+  EditorObjects: {fileID: 13680549}
   DebugNickname: bruh
   DebugSavefile: 
   DebugPort: 7777
@@ -2268,6 +2347,62 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
+--- !u!1 &1246217400
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1246217401}
+  - component: {fileID: 1246217402}
+  m_Layer: 5
+  m_Name: PauseIndicator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1246217401
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246217400}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1986858266}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1246217402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1246217400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: e27247f89a346a617aef1483c286524b, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: a59e37b10d1281e0fa378dfa0cfc72af,
+    type: 3}
+  m_SortingOrder: -1
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1255222289
 GameObject:
   m_ObjectHideFlags: 0
@@ -2554,7 +2689,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1323827596
 Transform:
   m_ObjectHideFlags: 0
@@ -3168,6 +3303,61 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90c31296253f786e3b4c64f8f4ee20b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1545962552
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1545962553}
+  - component: {fileID: 1545962554}
+  m_Layer: 0
+  m_Name: RadioTuner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1545962553
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1545962552}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 15512330}
+  m_Father: {fileID: 13680550}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1545962554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1545962552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 211bb1317bfe050f5b9cb8ed84d222db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RadioTuner
+  Transmitter: {fileID: 1481212850362372391, guid: d4fc572603c70bac2a0edfe0708a3b4b,
+    type: 3}
+  Receivers:
+  - {fileID: 295818823888049838, guid: d85fde38f63c042bfa3d4c4d23646b48, type: 3}
+  - {fileID: 1481212850362372391, guid: d4fc572603c70bac2a0edfe0708a3b4b, type: 3}
+  RadioEnvironment: {fileID: 3324655299745719128, guid: 283214f7a330a791ab4082e3d83db157,
+    type: 3}
+  Aim: 1
+  AimPosition: {fileID: 15512330}
+  BeamHalvings: 0
 --- !u!1 &1551354252
 GameObject:
   m_ObjectHideFlags: 0
@@ -3968,6 +4158,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1662892097}
+  - {fileID: 1246217401}
   - {fileID: 1482451156}
   - {fileID: 1516148611}
   - {fileID: 757861201}

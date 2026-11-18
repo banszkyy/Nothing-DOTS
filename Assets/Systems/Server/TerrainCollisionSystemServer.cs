@@ -47,6 +47,9 @@ partial struct TerrainCollisionSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         TerrainSystemServer terrainSystem = TerrainSystemServer.GetInstance(state.WorldUnmanaged);
 
         foreach (var (transform, terrainUnit) in

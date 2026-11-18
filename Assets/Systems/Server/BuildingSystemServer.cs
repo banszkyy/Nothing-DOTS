@@ -10,7 +10,8 @@ using Unity.Transforms;
 [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.LocalSimulation)]
 public partial struct BuildingSystemServer : ISystem
 {
-    [BurstCompile]
+    // TODO: burst compatibility
+    //[BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
         EntityCommandBuffer commandBuffer = default;
@@ -382,26 +383,26 @@ public partial struct BuildingSystemServer : ISystem
                 continue;
             }
 
-            DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayer);
+            //DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayer);
             DynamicBuffer<BufferedBuilding> buildings = SystemAPI.GetBuffer<BufferedBuilding>(SystemAPI.GetSingletonEntity<BuildingDatabase>());
 
             foreach (BufferedBuilding building in buildings)
             {
-                if (!building.RequiredResearch.IsEmpty)
-                {
-                    foreach (BufferedAcquiredResearch research in acquiredResearches)
-                    {
-                        if (research.Name != building.RequiredResearch) continue;
-                        goto _;
-                    }
-                }
+                //if (!building.RequiredResearch.IsEmpty)
+                //{
+                //    foreach (BufferedAcquiredResearch research in acquiredResearches)
+                //    {
+                //        if (research.Name != building.RequiredResearch) continue;
+                //        goto _;
+                //    }
+                //}
 
                 NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new BuildingsResponseRpc()
                 {
                     Name = building.Name,
                 }, request.ValueRO.SourceConnection);
 
-            _:;
+                //_:;
             }
         }
     }
@@ -431,11 +432,12 @@ public partial struct BuildingSystemServer : ISystem
 
         if (SystemAPI.TryGetComponent(building.PlaceholderPrefab, out Collider collider))
         {
-            var map = QuadrantSystem.GetMap(ConnectionManager.ServerOrDefaultWorld.Unmanaged);
+            var map = QuadrantSystem.GetMap(state.WorldUnmanaged);
 
+            //TODO: burst compatibility
             if (!TerrainGenerator.Instance.TrySampleFast(new(position.x, position.z), out position.y))
             {
-                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Invalid position (terrain isn't loaded yet)"));
+                Debug.LogWarning($"{DebugEx.ServerPrefix} Invalid position (terrain isn't loaded yet)");
                 return false;
             }
 
@@ -448,7 +450,7 @@ public partial struct BuildingSystemServer : ISystem
 
             if (!isValid)
             {
-                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Invalid position (something is in the way)"));
+                Debug.LogWarning($"{DebugEx.ServerPrefix} Invalid position (something is in the way)");
                 return false;
             }
         }
@@ -468,23 +470,23 @@ public partial struct BuildingSystemServer : ISystem
         }
         else
         {
-            if (!building.RequiredResearch.IsEmpty)
-            {
-                DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(player);
-                bool can = false;
-                foreach (var research in acquiredResearches)
-                {
-                    if (research.Name != building.RequiredResearch) continue;
-                    can = true;
-                    break;
-                }
-
-                if (!can)
-                {
-                    Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not researched", building.Name));
-                    return false;
-                }
-            }
+            //if (!building.RequiredResearch.IsEmpty)
+            //{
+            //    DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(player);
+            //    bool can = false;
+            //    foreach (var research in acquiredResearches)
+            //    {
+            //        if (research.Name != building.RequiredResearch) continue;
+            //        can = true;
+            //        break;
+            //    }
+            //
+            //    if (!can)
+            //    {
+            //        Debug.Log(string.Format($"{DebugEx.ServerPrefix} Can't place building \"{{0}}\": not researched", building.Name));
+            //        return false;
+            //    }
+            //}
 
             if (_player.Resources < building.RequiredResources)
             {
@@ -530,7 +532,7 @@ public partial struct BuildingSystemServer : ISystem
         {
             NetworkId = networkId.Value,
         });
-        if (SystemAPI.TryGetComponent(newEntity, out Processor proc))
+        if (SystemAPI.TryGetComponent(building.PlaceholderPrefab, out Processor proc))
         {
             DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(newEntity);
             memory.ResizeUninitialized(proc.MemorySize);

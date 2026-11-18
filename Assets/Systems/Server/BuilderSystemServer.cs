@@ -13,6 +13,9 @@ public partial struct BuilderSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         var map = QuadrantSystem.GetMap(ref state);
 
         foreach (var turret in

@@ -19,6 +19,9 @@ partial struct ExtractorProcessorSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         PrefabDatabase prefabDatabase = SystemAPI.GetSingleton<PrefabDatabase>();
         EntityCommandBuffer commandBuffer = default;
 

@@ -464,8 +464,6 @@ static class SaveManager
                     });
                     writer.Write(v.IsKeyRequested);
                     writer.WriteUnsafe(v.InputKey);
-                    writer.Write(v.RadarRequest);
-                    writer.WriteUnsafe(v.RadarResponse);
                     writer.Write(v.StdOutBufferCursor);
                     writer.WriteUnsafe(v.StdOutBuffer);
                 },
@@ -485,8 +483,6 @@ static class SaveManager
                     });
                     v.IsKeyRequested = reader.ReadBool();
                     v.InputKey = reader.ReadFixedList128Unsafe<byte>();
-                    v.RadarRequest = reader.ReadFloat2();
-                    v.RadarResponse = reader.ReadUnsafe<RadarResponse>();
                     v.StdOutBufferCursor = reader.ReadUlong();
                     v.StdOutBuffer = reader.ReadFixedList512Unsafe<byte>();
                 }

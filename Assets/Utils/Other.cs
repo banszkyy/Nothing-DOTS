@@ -19,6 +19,12 @@ public static partial class Utils
         return q.GetSingleton<T>();
     }
 
+    public static ref T GetSingletonRW<T>(this EntityManager entityManager) where T : unmanaged, IComponentData
+    {
+        using EntityQuery q = entityManager.CreateEntityQuery(ComponentType.ReadWrite<T>());
+        return ref q.GetSingletonRW<T>().ValueRW;
+    }
+
     public static Entity GetSingletonEntity<T>(this EntityManager entityManager) where T : unmanaged, IComponentData
     {
         using EntityQuery q = entityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());

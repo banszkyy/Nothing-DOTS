@@ -1,12 +1,14 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using Unity.Mathematics;
 using UnityEngine;
 
 public static partial class DebugEx
 {
+    [Conditional("UNITY_EDITOR"), Conditional("EDITOR_DEBUG")]
     public static void Label(float3 position, string text, float lifetimeSec)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR && EDITOR_DEBUG && !ENABLE_BURST_AOT
         DebugDrawer? drawer = DebugDrawer.InstanceOrNull;
         if (drawer == null) return;
         drawer._labels.Add(new DebugDrawer.DebugLabel(
@@ -20,9 +22,10 @@ public static partial class DebugEx
 #endif
     }
 
+    [Conditional("UNITY_EDITOR"), Conditional("EDITOR_DEBUG")]
     public static void Label(float3 position, string text, int lifetimeTicks = 1)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
+#if UNITY_EDITOR && EDITOR_DEBUG && !ENABLE_BURST_AOT
         DebugDrawer? drawer = DebugDrawer.InstanceOrNull;
         if (drawer == null) return;
         drawer._labels.Add(new DebugDrawer.DebugLabel(
@@ -79,13 +82,10 @@ public class DebugDrawer : Singleton<DebugDrawer>
             RenderLabel(label.Position, label.Color, label.Text);
         }
     }
-#endif
-
     static readonly Dictionary<Color, GUIStyle> Skins = new();
 
-    static void RenderLabel(in Vector3 position, in Color color, string text)
+    public static void RenderLabel(in Vector3 position, in Color color, string text)
     {
-#if UNITY_EDITOR
         Vector3 screenPosition = MainCamera.Camera.WorldToScreenPoint(position);
         if (screenPosition.y < 0
             || screenPosition.y > MainCamera.Camera.pixelHeight
@@ -114,6 +114,6 @@ public class DebugDrawer : Singleton<DebugDrawer>
             (Vector2.up * MainCamera.Camera.pixelHeight);
         GUI.Label(new Rect(alignedPosition / pixelRatio, size / pixelRatio), text, style);
         UnityEditor.Handles.EndGUI();
-#endif
     }
+#endif
 }

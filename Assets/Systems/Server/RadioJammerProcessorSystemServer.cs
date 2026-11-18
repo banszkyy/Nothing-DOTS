@@ -7,7 +7,9 @@ partial struct RadioJammerProcessorSystemServer : ISystem
 {
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
-    {
+    {        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         foreach (var (processor, memory, radioJammer) in
             SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<RadioJammer>>())
         {

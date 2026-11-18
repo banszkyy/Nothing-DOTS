@@ -58,7 +58,7 @@ class RadarAuthoring : MonoBehaviour
                 CosElec = authoring.CosElec,
                 MaxContacts = authoring.maxContacts,
                 ReqCenter = fwd,
-                ReqSector = MathF.PI,
+                ReqSector = math.PI,
                 ReqHalvings = 0,
                 ReqDirty = false,
                 Aim = fwd,

@@ -1,3 +1,4 @@
+#if false
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -19,6 +20,9 @@ partial struct TransporterProcessorSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         PrefabDatabase prefabDatabase = SystemAPI.GetSingleton<PrefabDatabase>();
         EntityCommandBuffer commandBuffer = default;
 
@@ -129,3 +133,4 @@ partial struct TransporterProcessorSystemServer : ISystem
         }
     }
 }
+#endif

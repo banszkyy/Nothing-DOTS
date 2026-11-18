@@ -5,7 +5,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
+public class PauseMenuManager : Singleton<PauseMenuManager>, IUISetup, IUICleanup
 {
     [Header("UI Assets")]
 
@@ -49,6 +49,8 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
 
         this.ui.ButtonExit.clicked += OnButtonExit;
         this.ui.ButtonSave.clicked += OnButtonSave;
+
+        PauseManager.Instance.Pause();
     }
 
     void OnButtonExit()
@@ -126,5 +128,7 @@ public class PauseManager : Singleton<PauseManager>, IUISetup, IUICleanup
         refreshAt = float.PositiveInfinity;
         ui.ButtonExit.clicked -= OnButtonExit;
         ui.ButtonSave.clicked -= OnButtonSave;
+
+        PauseManager.Instance.Resume();
     }
 }

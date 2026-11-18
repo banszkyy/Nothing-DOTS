@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
@@ -178,13 +179,20 @@ public struct Cell : IEquatable<Cell>
         return new Color(c.x, c.y, c.z);
     }
 
+    [Conditional("UNITY_EDITOR"), Conditional("EDITOR_DEBUG")]
     public static void Draw(Cell cell, float duration = 0.1f)
     {
-#if UNITY_EDITOR && EDITOR_DEBUG
-        float3 start = ToWorld(cell) + new float3(0f, 1f, 0f);
-        float3 end = start + new float3(Size, 0f, Size);
+        float3 start = ToWorld(cell);
+        float3 end = start + new float3(Size, 1f, Size);
         DebugEx.DrawRectangle(start, end, Color(cell.key), duration);
-#endif
+    }
+
+    [Conditional("UNITY_EDITOR"), Conditional("EDITOR_DEBUG")]
+    public static void Draw(Cell cell, Color color, float duration = 0.1f)
+    {
+        float3 start = ToWorld(cell);
+        float3 end = start + new float3(Size, 1f, Size);
+        DebugEx.DrawRectangle(start, end, color, duration);
     }
 }
 

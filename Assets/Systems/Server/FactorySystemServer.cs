@@ -75,7 +75,7 @@ public partial struct FactorySystemServer : ISystem
                 continue;
             }
 
-            DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayerE);
+            //DynamicBuffer<BufferedAcquiredResearch> acquiredResearches = SystemAPI.GetBuffer<BufferedAcquiredResearch>(requestPlayerE);
 
             foreach (var (ghostInstance, ghostEntity) in
                 SystemAPI.Query<RefRO<GhostInstance>>()
@@ -98,22 +98,22 @@ public partial struct FactorySystemServer : ISystem
                     break;
                 }
 
-                if (!unit.RequiredResearch.IsEmpty)
-                {
-                    bool can = false;
-                    foreach (var research in acquiredResearches)
-                    {
-                        if (research.Name != unit.RequiredResearch) continue;
-                        can = true;
-                        break;
-                    }
-
-                    if (!can)
-                    {
-                        Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Can't queue unit \"{{0}}\": not researched", unit.Name));
-                        break;
-                    }
-                }
+                //if (!unit.RequiredResearch.IsEmpty)
+                //{
+                //    bool can = false;
+                //    foreach (var research in acquiredResearches)
+                //    {
+                //        if (research.Name != unit.RequiredResearch) continue;
+                //        can = true;
+                //        break;
+                //    }
+                //
+                //    if (!can)
+                //    {
+                //        Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Can't queue unit \"{{0}}\": not researched", unit.Name));
+                //        break;
+                //    }
+                //}
 
                 if (requestPlayer.Resources < unit.RequiredResources)
                 {
@@ -134,6 +134,9 @@ public partial struct FactorySystemServer : ISystem
                 break;
             }
         }
+
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
 
         foreach (var (factory, localToWorld, unitTeam, unitQueue) in
                 SystemAPI.Query<RefRW<Factory>, RefRO<LocalTransform>, RefRO<UnitTeam>, DynamicBuffer<BufferedProducingUnit>>())
@@ -177,7 +180,7 @@ public partial struct FactorySystemServer : ISystem
                     SourceFile = finishedUnit.Source,
                 });
             }
-            if (SystemAPI.TryGetComponent(newUnit, out Processor proc))
+            if (SystemAPI.TryGetComponent(finishedUnit.Prefab, out Processor proc))
             {
                 DynamicBuffer<ProcessorMemoryBuffer> memory = commandBuffer.SetBuffer<ProcessorMemoryBuffer>(newUnit);
                 memory.ResizeUninitialized(proc.MemorySize);

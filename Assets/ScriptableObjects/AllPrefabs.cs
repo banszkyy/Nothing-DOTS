@@ -10,6 +10,7 @@ using SaintsField.Playa;
 using Unity.Entities.Hybrid.Baking;
 using UnityEngine;
 using Unity.NetCode;
+
 #if UNITY_EDITOR
 using UnityEditor;
 using Unity.EditorCoroutines.Editor;
@@ -34,6 +35,8 @@ class AllPrefabs : ScriptableObject
     [SerializeField, NotNull, ReadOnly] public BuildingPrefab[]? Buildings = default;
     [SerializeField, NotNull, ReadOnly] public ProjectilePrefab[]? Projectiles = default;
     [SerializeField, NotNull, ReadOnly] public ResearchMetadata[]? Researches = default;
+
+    public IEnumerable<GameObject> EveryUnitLike => Units.Select(v => v.Prefab).Concat(Buildings.Select(v => v.Prefab));
 
 #if UNITY_EDITOR
     [Button("Load Files")]

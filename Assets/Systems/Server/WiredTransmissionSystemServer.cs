@@ -49,6 +49,9 @@ partial struct WiredTransmissionSystemServer : ISystem
     [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
+        PausableTime t = SystemAPI.GetSingleton<PausableTime>();
+        if (t.IsPaused) return;
+
         processorQ.Update(ref state);
         radioQ.Update(ref state);
         logsBufferQ.Update(ref state);
