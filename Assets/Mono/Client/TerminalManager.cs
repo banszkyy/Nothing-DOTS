@@ -655,7 +655,9 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
             }
             else
             {
+#if UNITY_EDITOR
                 Debug.LogWarning(error);
+#endif
                 blocks = ImmutableArray<HeapUtils.HeapBlock>.Empty;
             }
         }
@@ -684,21 +686,27 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
         if (heapTotalMemory < 0 || heapTotalMemory >= memory.Length || blocks.Any(v => v.Size < 0 || v.Size >= memory.Length))
         {
             heapTotalMemory = 0;
+#if UNITY_EDITOR
             Debug.LogWarning($"Invalid heap total memory, zeroing");
+#endif
             blocks = ImmutableArray<HeapUtils.HeapBlock>.Empty;
         }
 
         if (stackTotalMemory >= memory.Length)
         {
             stackTotalMemory = 0;
+#if UNITY_EDITOR
             Debug.LogWarning($"Invalid stack total memory, zeroing");
+#endif
         }
 
         int internals = Math.Max(0, totalMemory - stackTotalMemory - heapTotalMemory);
 
         if (heapTotalMemory == 0 && stackTotalMemory == 0)
         {
+#if UNITY_EDITOR
             Debug.LogWarning($"Empty memory");
+#endif
             ui.PanelHeap.style.display = DisplayStyle.None;
             return;
         }

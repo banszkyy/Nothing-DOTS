@@ -579,8 +579,6 @@ MonoBehaviour:
   NetworkReceiveLED: {fileID: 0}
   NetworkSendLED: {fileID: 0}
   CustomLED: {fileID: 3664223584183137764}
-  USBLED: {fileID: 0}
-  USBPosition: {fileID: 0}
   Script: 
 --- !u!114 &3694215652677040203
 MonoBehaviour:
@@ -595,7 +593,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Prefabs: {fileID: 11400000, guid: 9fbd3be61b1b911759f2e0e4d52dafb8, type: 2}
-  Prefab: {fileID: 11400000, guid: e2b9043e7f8756d9c914380e76e03b77, type: 2}
+  Prefab: {fileID: 0}
   LoadPoint: {fileID: 6861355488853584980}
 --- !u!114 &7649168981226902965
 MonoBehaviour:

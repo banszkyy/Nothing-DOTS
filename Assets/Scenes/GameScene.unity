@@ -2671,7 +2671,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1583b83e2a4c6480dac8567a843cf06d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UI
-  _uiDocuments: []
   _focusedDocument: {fileID: 0}
   _isUiFocused: 0
 --- !u!1 &1323827595
@@ -4270,6 +4269,7 @@ MonoBehaviour:
   UnitCommandsUI: {fileID: 203869837}
   UnitCommandItemUI: {fileID: 9197481963319205126, guid: 433be92ce1f6d95a188352be01004cd8,
     type: 3}
+  _lastLeftClickTime: 0
 --- !u!224 &68985201133882456 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2390019628025388661, guid: f8b2a0b992465d02abbbb626b593ec70,

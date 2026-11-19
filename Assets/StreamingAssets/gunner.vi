@@ -255,13 +255,10 @@ while (true) {
         currentTarget.z != 0f)
     {
         turretLastUseTime = time();
-        if (shouldShoot && canSeeEnemy(&allies, currentTarget))
+        bool targeted = targetat(currentTarget, &targetedPosition);
+        if (targeted && shouldShoot && canSeeEnemy(&allies, currentTarget))
         {
-            shootat(currentTarget, &targetedPosition);
-        }
-        else
-        {
-            targetat(currentTarget, &targetedPosition);
+            CombatTurret.command = TurretCommand.ShootNow;
         }
     }
     else if (time() - turretLastUseTime > 5f)

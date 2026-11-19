@@ -74,53 +74,74 @@ partial struct CombatTurretProcessorSystem : ISystem
                 turret.ValueRW.BulletReloadProgress += SystemAPI.Time.DeltaTime;
             }
 
-            if (mapped.CombatTurret.InputShoot != 0)
+            switch (mapped.CombatTurret.Command)
             {
-                int projectileIndex = turret.ValueRO.Projectile;
-                if (projectileIndex == -1) continue;
-
-                if (turret.ValueRO.CurrentMagazineSize <= 0 || turret.ValueRO.BulletReloadProgress < turret.ValueRO.BulletReload)
-                { continue; }
-
-                turret.ValueRW.CurrentMagazineSize--;
-                turret.ValueRW.BulletReloadProgress = 0f;
-
-                if (turret.ValueRW.CurrentMagazineSize <= 0)
+                case TurretCommand.None:
+                    break;
+                case TurretCommand.ShootNow:
                 {
-                    turret.ValueRW.MagazineReloadProgress = 0f;
+                    mapped.CombatTurret.Command = TurretCommand.None;
+
+                    if (turret.ValueRO.CurrentMagazineSize <= 0 || turret.ValueRO.BulletReloadProgress < turret.ValueRO.BulletReload)
+                    { continue; }
+
+                    goto shoot;
                 }
-
-                mapped.CombatTurret.InputShoot = 0;
-
-                RefRO<LocalToWorld> shootPosition = SystemAPI.GetComponentRO<LocalToWorld>(turret.ValueRO.ShootPosition);
-
-                float3 velocity = math.normalize((random.NextFloat3Direction() * turret.ValueRO.Spread) + shootPosition.ValueRO.Forward) * projectiles[projectileIndex].Speed;
-
-                if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
-
-                Entity instance = commandBuffer.Instantiate(projectiles[turret.ValueRO.Projectile].Prefab);
-                commandBuffer.SetComponent(instance, LocalTransform.FromPosition(shootPosition.ValueRO.Position));
-                commandBuffer.SetComponent<Projectile>(instance, new()
+                case TurretCommand.ShootOnce:
                 {
+                    if (turret.ValueRO.CurrentMagazineSize <= 0 || turret.ValueRO.BulletReloadProgress < turret.ValueRO.BulletReload)
+                    { continue; }
+
+                    mapped.CombatTurret.Command = TurretCommand.None;
+                    goto shoot;
+                }
+                default:
+                    mapped.CombatTurret.Command = TurretCommand.None;
+                    break;
+            }
+
+            continue;
+        shoot:;
+
+            int projectileIndex = turret.ValueRO.Projectile;
+            if (projectileIndex == -1) continue;
+
+            turret.ValueRW.CurrentMagazineSize--;
+            turret.ValueRW.BulletReloadProgress = 0f;
+
+            if (turret.ValueRW.CurrentMagazineSize <= 0)
+            {
+                turret.ValueRW.MagazineReloadProgress = 0f;
+            }
+
+            RefRO<LocalToWorld> shootPosition = SystemAPI.GetComponentRO<LocalToWorld>(turret.ValueRO.ShootPosition);
+
+            float3 velocity = math.normalize((random.NextFloat3Direction() * turret.ValueRO.Spread) + shootPosition.ValueRO.Forward) * projectiles[projectileIndex].Speed;
+
+            if (!commandBuffer.IsCreated) commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+
+            Entity instance = commandBuffer.Instantiate(projectiles[turret.ValueRO.Projectile].Prefab);
+            commandBuffer.SetComponent(instance, LocalTransform.FromPosition(shootPosition.ValueRO.Position));
+            commandBuffer.SetComponent<Projectile>(instance, new()
+            {
+                Velocity = velocity,
+                Damage = projectiles[projectileIndex].Damage,
+                MetalImpactEffect = projectiles[projectileIndex].MetalImpactEffect,
+                DustImpactEffect = projectiles[projectileIndex].DustImpactEffect,
+            });
+
+            new UnitLog_CombatTurret_Shoot(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex).Write(logBuffer);
+
+            if (turret.ValueRO.ShootEffect != -1)
+            {
+                NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ShootRpc()
+                {
+                    Position = shootPosition.ValueRO.Position,
                     Velocity = velocity,
-                    Damage = projectiles[projectileIndex].Damage,
-                    MetalImpactEffect = projectiles[projectileIndex].MetalImpactEffect,
-                    DustImpactEffect = projectiles[projectileIndex].DustImpactEffect,
+                    ProjectileIndex = projectileIndex,
+                    VisualEffectIndex = turret.ValueRO.ShootEffect,
+                    Source = SystemAPI.GetComponentRO<GhostInstance>(entity).ValueRO,
                 });
-
-                new UnitLog_CombatTurret_Shoot(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex).Write(logBuffer);
-
-                if (turret.ValueRO.ShootEffect != -1)
-                {
-                    NetcodeUtils.CreateRPC(commandBuffer, state.WorldUnmanaged, new ShootRpc()
-                    {
-                        Position = shootPosition.ValueRO.Position,
-                        Velocity = velocity,
-                        ProjectileIndex = projectileIndex,
-                        VisualEffectIndex = turret.ValueRO.ShootEffect,
-                        Source = SystemAPI.GetComponentRO<GhostInstance>(entity).ValueRO,
-                    });
-                }
             }
         }
     }

@@ -420,8 +420,6 @@ MonoBehaviour:
   NetworkReceiveLED: {fileID: 1386654647350174443}
   NetworkSendLED: {fileID: 0}
   CustomLED: {fileID: 0}
-  USBLED: {fileID: 0}
-  USBPosition: {fileID: 0}
   Script: 
 --- !u!114 &1437835957762175760
 MonoBehaviour:
@@ -461,9 +459,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RadioAuthoring
   TransmissionPoint: {fileID: 0}
-  TxPowerDbm: 25
-  RxGainDbi: 0
-  SensitivityDbm: -62
+  TxPowerDbm: 15
+  RxGainDbi: 1
+  NoiseFigureDb: 8
   MinBeamHalvings: 0
   MaxBeamHalvings: 2
   BearingSectors: 16

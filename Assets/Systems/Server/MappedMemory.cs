@@ -28,13 +28,40 @@ public struct MappedMemory_Vehicle
     public i8 InputSteer;
 }
 
+public enum TurretCommand : byte
+{
+    None,
+    ShootNow,
+    ShootOnce,
+}
+
 /// <summary>
 /// Size: 17
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct MappedMemory_CombatTurret
 {
-    public u8 InputShoot;
+    public TurretCommand Command;
+    public f32 TurretTargetRotation;
+    public f32 TurretTargetAngle;
+    public f32 TurretCurrentRotation;
+    public f32 TurretCurrentAngle;
+}
+
+public enum BuilderTurretCommand : byte
+{
+    None,
+    Build,
+    OkResponse,
+}
+
+/// <summary>
+/// Size: 17
+/// </summary>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct MappedMemory_BuilderTurret
+{
+    public BuilderTurretCommand Command;
     public f32 TurretTargetRotation;
     public f32 TurretTargetAngle;
     public f32 TurretCurrentRotation;
@@ -135,6 +162,7 @@ public struct MappedMemory
     const int GenericModulesSize = 27;
 
     [FieldOffset(GenericModulesSize)] public MappedMemory_CombatTurret CombatTurret;
+    [FieldOffset(GenericModulesSize)] public MappedMemory_BuilderTurret BuilderTurret;
     [FieldOffset(GenericModulesSize)] public MappedMemory_Extractor Extractor;
     //[FieldOffset(GenericModulesSize)] public MappedMemory_Transporter Transporter;
     //[FieldOffset(GenericModulesSize)] public MappedMemory_Facility Facility;

@@ -246,7 +246,7 @@ partial struct WirelessTransmissionSystemServer : ISystem
         float3 cellCenter = Cell.ToWorld(cell) + new float3(Cell.Size / 2, 0f, Cell.Size / 2);
         float cellRadius = math.sqrt(Cell.Size * Cell.Size) / 2f;
 
-        float3 d = cellCenter - transmitterPosition;
+        float3 d = cellCenter - (transmitterPosition * new float3(1f, 0f, 1f));
         float D = math.length(d);
         if (D <= cellRadius) return true;
 

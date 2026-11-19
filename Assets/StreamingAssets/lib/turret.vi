@@ -45,7 +45,7 @@ float calculate_angle(float targetDistance, float height)
     }
 }
 
-byte calculate_angle(float targetDistance, float height, float* angle)
+bool calculate_angle(float targetDistance, float height, float* angle)
 {
     float discriminant = (
         (PROJECTILE_V2 * PROJECTILE_V2) -
@@ -54,7 +54,7 @@ byte calculate_angle(float targetDistance, float height, float* angle)
 
     if (discriminant < 0f)
     {
-        return (byte)0;
+        return false;
     }
     else if (1)
     {
@@ -62,7 +62,7 @@ byte calculate_angle(float targetDistance, float height, float* angle)
             (PROJECTILE_V2 + sqrt(discriminant)) /
             (G * targetDistance)
         ) - (PI * 0.5f);
-        return (byte)1;
+        return true;
     }
     else
     {
@@ -70,7 +70,7 @@ byte calculate_angle(float targetDistance, float height, float* angle)
             (PROJECTILE_V2 - sqrt(discriminant)) /
             (G * targetDistance)
         ) - (PI * 0.5f);
-        return (byte)1;
+        return true;
     }
 }
 
@@ -88,7 +88,7 @@ export byte targetat(float2 target, float2* targetedPosition)
     if (target.x == 0f &&
         target.y == 0f)
     {
-        return (byte)0;
+        return false;
     }
 
     if (targetedPosition.x != target.x ||
@@ -111,17 +111,17 @@ export byte targetat(float2 target, float2* targetedPosition)
 
     if ((diff1 < 0.1f || TAU - diff1 < 0.1f) && (diff2 < 0.01f || TAU - diff2 < 0.01f))
     {
-        return (byte)1;
+        return true;
     }
 
-    return (byte)0;
+    return false;
 }
 
 //const float ProjectileV = 110f;
 //const float ProjectileV2 = ProjectileV * ProjectileV;
 //const float ProjectileV4 = ProjectileV2 * ProjectileV2;
 
-byte solve_ballistic_arc(float3 selfWorldPosition, float3 targetWorldPosition, float3* shootDirection)
+bool solve_ballistic_arc(float3 selfWorldPosition, float3 targetWorldPosition, float3* shootDirection)
 {
     float ProjectileV;
     query_attribute(1, &ProjectileV);
@@ -133,7 +133,7 @@ byte solve_ballistic_arc(float3 selfWorldPosition, float3 targetWorldPosition, f
 
     float root = ProjectileV4 - G * (G * groundDistance * groundDistance + 2.0 * diff.y * ProjectileV2);
 
-    if (root < 0) return (byte)0;
+    if (root < 0) return false;
 
     root = sqrt(root);
     float gx = G * groundDistance;
@@ -144,15 +144,15 @@ byte solve_ballistic_arc(float3 selfWorldPosition, float3 targetWorldPosition, f
     float3 groundDir = new float3(diff.x, 0f, diff.z) / groundDistance;
     *shootDirection = groundDir * cos(lowAng) + new float3(0.0, 1.0, 0.0) * sin(lowAng);
 
-    return (byte)1;
+    return true;
 }
 
-export byte targetat(float3 target, float3* targetedPosition)
+export bool targetat(float3 target, float3* targetedPosition)
 {
     if (target.x == 0f &&
         target.z == 0f)
     {
-        return (byte)0;
+        return false;
     }
 
     float3 targetLocal = target;
@@ -164,7 +164,7 @@ export byte targetat(float3 target, float3* targetedPosition)
         float3 result;
         if (!solve_ballistic_arc(toglobal(new float3(0.0, 0.436 + 0.073, 0.077)), target, &result))
         {
-            return (byte)0;
+            return false;
         }
 
         tolocald(&result);
@@ -183,18 +183,18 @@ export byte targetat(float3 target, float3* targetedPosition)
 
     if ((diff1 < 0.1f || TAU - diff1 < 0.1f) && (diff2 < 0.01f || TAU - diff2 < 0.01f))
     {
-        return (byte)1;
+        return true;
     }
 
-    return (byte)0;
+    return false;
 }
 
-export byte targetat_simple(float2 target, float2* targetedPosition)
+export bool targetat_simple(float2 target, float2* targetedPosition)
 {
     if (target.x == 0f &&
         target.y == 0f)
     {
-        return (byte)0;
+        return false;
     }
 
     if (targetedPosition.x != target.x ||
@@ -212,10 +212,10 @@ export byte targetat_simple(float2 target, float2* targetedPosition)
 
     if (diff < 0.1f || TAU - diff < 0.1f)
     {
-        return (byte)1;
+        return true;
     }
 
-    return (byte)0;
+    return false;
 }
 
 export byte targetat_simple(float3 target, float3* targetedPosition)
@@ -223,7 +223,7 @@ export byte targetat_simple(float3 target, float3* targetedPosition)
     if (target.x == 0f &&
         target.z == 0f)
     {
-        return (byte)0;
+        return false;
     }
 
     tolocal(&target);
@@ -249,28 +249,36 @@ export byte targetat_simple(float3 target, float3* targetedPosition)
 
     if ((diff1 < 0.1f || TAU - diff1 < 0.1f))
     {
-        return (byte)1;
+        return true;
     }
 
-    return (byte)0;
+    return false;
 }
 
 export void shootat(float2 target, float2* targetedPosition)
 {
-    CombatTurret.shoot = targetat(target, targetedPosition);
+    if (targetat(target, targetedPosition)) {
+        CombatTurret.command = TurretCommand.ShootNow;
+    }
 }
 
 export void shootat(float3 target, float3* targetedPosition)
 {
-    CombatTurret.shoot = targetat(target, targetedPosition);
+    if (targetat(target, targetedPosition)) {
+        CombatTurret.command = TurretCommand.ShootNow;
+    }
 }
 
 export void shootat_simple(float2 target, float2* targetedPosition)
 {
-    CombatTurret.shoot = targetat_simple(target, targetedPosition);
+    if (targetat_simple(target, targetedPosition)) {
+        CombatTurret.command = TurretCommand.ShootNow;
+    }
 }
 
 export void shootat_simple(float3 target, float3* targetedPosition)
 {
-    CombatTurret.shoot = targetat_simple(target, targetedPosition);
+    if (targetat_simple(target, targetedPosition)) {
+        CombatTurret.command = TurretCommand.ShootNow;
+    }
 }

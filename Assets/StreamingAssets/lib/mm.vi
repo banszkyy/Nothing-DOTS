@@ -11,9 +11,16 @@ struct MappedMemory_Vehicle
     i8 steer;
 }
 
+export enum TurretCommand : byte
+{
+    None,
+    ShootNow,
+    ShootOnce,
+}
+
 struct MappedMemory_CombatTurret
 {
-    byte shoot;
+    TurretCommand command;
     float target_rotation;
     float target_angle;
     float current_rotation;
