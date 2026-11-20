@@ -125,7 +125,7 @@ public class ScriptsManager : Singleton<ScriptsManager>, IUISetup, IUICleanup
                     }
                     element.DiagnosticLocationRemote.style.display = isLocal ? DisplayStyle.None : DisplayStyle.Flex;
                     element.DiagnosticLocation.style.display = DisplayStyle.Flex;
-                    element.DiagnosticLocation.text = $"{file}:{diagnosticAt.Position.Range.Start.ToStringMin()}";
+                    element.DiagnosticLocation.text = $"{file}:{diagnosticAt.Position.Range.Start.ToReadable()}";
                 }
                 else
                 {

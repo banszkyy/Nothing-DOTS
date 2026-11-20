@@ -1065,7 +1065,7 @@ public class TerminalManager : Singleton<TerminalManager>, IUISetup<Entity>, IUI
                                 }
                                 element.DiagnosticLocationRemote.style.display = isExternal ? DisplayStyle.Flex : DisplayStyle.None;
                                 element.DiagnosticLocation.style.display = DisplayStyle.Flex;
-                                element.DiagnosticLocation.text = $"{(localPath is null ? null : localPath.StartsWith(FileChunkManagerSystem.BasePath) ? Path.GetRelativePath(FileChunkManagerSystem.BasePath, localPath) : localPath) ?? diagnosticAt.File.ToString()}:{diagnosticAt.Position.Range.Start.ToStringMin()}";
+                                element.DiagnosticLocation.text = $"{(localPath is null ? null : localPath.StartsWith(FileChunkManagerSystem.BasePath) ? Path.GetRelativePath(FileChunkManagerSystem.BasePath, localPath) : localPath) ?? diagnosticAt.File.ToString()}:{diagnosticAt.Position.Range.Start.ToReadable()}";
                             }
                             else
                             {
