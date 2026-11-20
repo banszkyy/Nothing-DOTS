@@ -12,23 +12,15 @@ using Unity.Transforms;
 public struct QuadrantEntity
 {
     public readonly Entity Entity;
-    public readonly Collider Collider;
-    public float3 Position;
-    public float3 ResolvedOffset;
     public uint Key;
     public uint Layer;
 
     public QuadrantEntity(
         Entity entity,
-        Collider collider,
-        float3 position,
         uint key,
         uint layer)
     {
         Entity = entity;
-        Collider = collider;
-        Position = position;
-        ResolvedOffset = default;
         Key = key;
         Layer = layer;
     }
@@ -47,11 +39,11 @@ public struct Cell : IEquatable<Cell>
     [FieldOffset(0)] public short x;
     [FieldOffset(2)] public short y;
 
-    public static readonly Collider Collider = new AABBCollider(true, new AABB()
+    public static readonly AABB AABB = new()
     {
         Center = new float3(Size / 2f, Size / 2f, Size / 2f),
         Extents = new float3(Size / 2f, Size / 2f, Size / 2f),
-    });
+    };
 
     public Cell(uint key)
     {
@@ -239,15 +231,11 @@ public partial struct QuadrantSystem : ISystem
                     cell.Value.RemoveAtSwapBack(i);
                     i--;
                 }
-                //else
-                //{
-                //    CollisionSystem.Debug(cell.Value[i].Collider, cell.Value[i].Position, Color.lightGreen);
-                //}
             }
         }
 
-        foreach (var (inQuadrant, collider, transform, entity) in
-            SystemAPI.Query<RefRW<QuadrantEntityIdentifier>, RefRO<Collider>, RefRO<LocalToWorld>>()
+        foreach (var (inQuadrant, transform, entity) in
+            SystemAPI.Query<RefRW<QuadrantEntityIdentifier>, RefRO<LocalTransform>>()
             .WithEntityAccess())
         {
             Cell.ToGrid(transform.ValueRO.Position, out Cell cell);
@@ -258,12 +246,6 @@ public partial struct QuadrantSystem : ISystem
 
                 if (inQuadrant.ValueRO.Key == cell.key)
                 {
-                    for (int i = 0; i < list.Length; i++)
-                    {
-                        if (list[i].Entity != entity) continue;
-                        list[i] = list[i] with { Position = transform.ValueRO.Position };
-                        break;
-                    }
                     continue;
                 }
                 else
@@ -283,12 +265,7 @@ public partial struct QuadrantSystem : ISystem
             if (!HashMap.ContainsKey(cell.key))
             { HashMap.Add(cell.key, new(32, Allocator.Persistent)); }
 
-            HashMap[cell.key].Add(new QuadrantEntity(
-                entity,
-                collider.ValueRO,
-                transform.ValueRO.Position,
-                cell.key,
-                inQuadrant.ValueRO.Layer));
+            HashMap[cell.key].Add(new QuadrantEntity(entity, cell.key, inQuadrant.ValueRO.Layer));
         }
     }
 }

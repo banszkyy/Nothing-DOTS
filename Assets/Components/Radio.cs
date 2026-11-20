@@ -2,6 +2,13 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
+public enum RadioLedStatus : byte
+{
+    Success,
+    Jammed,
+    Overflow,
+}
+
 struct Radio : IComponentData
 {
     public float3 WirelessTransmissionPoint;

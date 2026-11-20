@@ -49,12 +49,12 @@ public struct BlinkingLED
     }
 }
 
-public struct BlinkingStatusLED
+public struct BlinkingStatusLED<T> where T : struct, Enum
 {
     [GhostField(SendData = false)] public Entity Entity;
     [GhostField(SendData = false)] public float LastBlinked;
     [GhostField(SendData = false)] public uint LastBlinkedLocal;
-    [GhostField] public byte Status;
+    [GhostField] public T Status;
     [GhostField] public uint LastBlinkedNet;
 
     public BlinkingStatusLED(Entity led)
@@ -62,13 +62,13 @@ public struct BlinkingStatusLED
         Entity = led;
     }
 
-    public void Blink(byte status)
+    public void Blink(T status)
     {
         LastBlinkedNet = unchecked(LastBlinkedNet + 1);
         Status = status;
     }
 
-    public bool ReceiveBlink(float now, float flashTime, out byte status)
+    public bool ReceiveBlink(float now, float flashTime, out T status)
     {
         if (LastBlinkedLocal != LastBlinkedNet)
         {
@@ -169,7 +169,7 @@ struct Processor : IComponentData
     public FixedList512Bytes<byte> StdOutBuffer;
 
     [GhostField] public StatusLED<ProcessorStatus> StatusLED;
-    [GhostField] public BlinkingStatusLED NetworkReceiveLED;
+    [GhostField] public BlinkingStatusLED<RadioLedStatus> NetworkReceiveLED;
     [GhostField] public BlinkingLED NetworkSendLED;
     [GhostField] public BlinkingLED CustomLED;
 }

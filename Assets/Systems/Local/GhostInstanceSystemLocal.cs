@@ -1,17 +1,15 @@
+using Unity.Burst;
 using Unity.Entities;
 using Unity.NetCode;
 using UnityEngine;
 
+[BurstCompile]
 [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation)]
 partial struct GhostInstanceSystemLocal : ISystem
 {
     int IdCounter;
 
-    void ISystem.OnCreate(ref SystemState state)
-    {
-
-    }
-
+    [BurstCompile]
     void ISystem.OnUpdate(ref SystemState state)
     {
         foreach (RefRW<GhostInstance> ghost in SystemAPI.Query<RefRW<GhostInstance>>())

@@ -55,11 +55,13 @@ partial struct LedSystemClient : ISystem
             if (processor.ValueRO.NetworkReceiveLED.Entity != Entity.Null)
             {
                 _emissionColorQ.GetRefRW(processor.ValueRO.NetworkReceiveLED.Entity).ValueRW.Value =
-                    processor.ValueRW.NetworkReceiveLED.ReceiveBlink((float)t.ElapsedTime, LedFlashTime, out byte status) ?
+                    processor.ValueRW.NetworkReceiveLED.ReceiveBlink((float)t.ElapsedTime, LedFlashTime, out RadioLedStatus status) ?
                     (status switch
                     {
-                        2 => Red,
-                        _ => Blue,
+                        RadioLedStatus.Success => Blue,
+                        RadioLedStatus.Jammed => Red,
+                        RadioLedStatus.Overflow => Amber,
+                        _ => throw new UnreachableException(),
                     }) :
                     Off;
             }

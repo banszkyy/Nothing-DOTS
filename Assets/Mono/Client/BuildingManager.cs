@@ -497,6 +497,7 @@ public class BuildingManager : Singleton<BuildingManager>, IUISetup, IUICleanup
             map,
             placeholderCollider,
             position,
+            ConnectionManager.ClientOrDefaultWorld.EntityManager,
             out _,
             out _);
 

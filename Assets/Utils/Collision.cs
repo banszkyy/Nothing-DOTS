@@ -1,13 +1,12 @@
-using Unity.Burst;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
-[BurstCompile]
 public static class Collision
 {
     #region With normals
 
-    [BurstCompile]
     static bool CircleAABBIntersect(
         in float3 sphereOrigin, float sphereRadius,
         in float3 aabbOrigin, in AABB aabb,
@@ -33,7 +32,6 @@ public static class Collision
         return true;
     }
 
-    [BurstCompile]
     static bool CircleCircleIntersect(
         in float3 originA, float radiusA,
         in float3 originB, float radiusB,
@@ -55,7 +53,6 @@ public static class Collision
         return true;
     }
 
-    [BurstCompile]
     static bool AABBAABBIntersect(
         in float3 originA, in AABB a,
         in float3 originB, in AABB b,
@@ -91,7 +88,6 @@ public static class Collision
         return false;
     }
 
-    [BurstCompile]
     public static bool Intersect(
         in Collider a, in float3 positionA,
         in Collider b, in float3 positionB,
@@ -102,8 +98,8 @@ public static class Collision
             b.Type == ColliderType.Sphere)
         {
             return CircleCircleIntersect(
-                positionA + a.Sphere.Offset, a.Sphere.Radius,
-                positionB + b.Sphere.Offset, b.Sphere.Radius,
+                positionA + a.Sphere.Offset + a.ResolvedOffset, a.Sphere.Radius,
+                positionB + b.Sphere.Offset + b.ResolvedOffset, b.Sphere.Radius,
                 out normal, out depth
             );
         }
@@ -111,8 +107,8 @@ public static class Collision
                  b.Type == ColliderType.AABB)
         {
             return CircleAABBIntersect(
-                positionA + a.Sphere.Offset, a.Sphere.Radius,
-                positionB, b.AABB.AABB,
+                positionA + a.Sphere.Offset + a.ResolvedOffset, a.Sphere.Radius,
+                positionB + b.ResolvedOffset, b.AABB.AABB,
                 out normal, out depth
             );
         }
@@ -120,8 +116,8 @@ public static class Collision
                  b.Type == ColliderType.Sphere)
         {
             return CircleAABBIntersect(
-                positionB + b.Sphere.Offset, b.Sphere.Radius,
-                positionA, a.AABB.AABB,
+                positionB + b.Sphere.Offset + b.ResolvedOffset, b.Sphere.Radius,
+                positionA + a.ResolvedOffset, a.AABB.AABB,
                 out normal, out depth
             );
         }
@@ -129,24 +125,25 @@ public static class Collision
                  b.Type == ColliderType.AABB)
         {
             return AABBAABBIntersect(
-                positionA, a.AABB.AABB,
-                positionB, b.AABB.AABB,
+                positionA + a.ResolvedOffset, a.AABB.AABB,
+                positionB + b.ResolvedOffset, b.AABB.AABB,
                 out normal, out depth
             );
         }
         else
         {
-            Debug.LogWarning(string.Format($"{DebugEx.AnyPrefix} Unsupported collision combination: `{{0}}` - `{{1}}`", a.Type, b.Type));
+            Debug.LogError(string.Format($"{DebugEx.AnyPrefix} Unsupported collision combination: `{{0}}` - `{{1}}`", a.Type, b.Type));
             normal = default;
             depth = default;
             return false;
         }
     }
 
-    [BurstCompile]
     public static bool Intersect(
         in NativeParallelHashMap<uint, NativeList<QuadrantEntity>>.ReadOnly quadrantMap,
         in Collider collider, in float3 colliderPosition,
+        in ComponentLookup<Collider> colliderLookup,
+        in ComponentLookup<LocalTransform> transformLookup,
         out float3 normal, out float depth
     )
     {
@@ -157,7 +154,28 @@ public static class Collision
 
         for (int i = 0; i < quadrant.Length; i++)
         {
-            if (Intersect(quadrant[i].Collider, quadrant[i].Position, collider, colliderPosition, out normal, out depth))
+            if (Intersect(colliderLookup.GetRefRO(quadrant[i].Entity).ValueRO, transformLookup.GetRefRO(quadrant[i].Entity).ValueRO.Position, collider, colliderPosition, out normal, out depth))
+            { return true; }
+        }
+
+        return false;
+    }
+
+    public static bool Intersect(
+        in NativeParallelHashMap<uint, NativeList<QuadrantEntity>>.ReadOnly quadrantMap,
+        in Collider collider, in float3 colliderPosition,
+        in EntityManager entityManager,
+        out float3 normal, out float depth
+    )
+    {
+        normal = default;
+        depth = default;
+
+        if (!quadrantMap.TryGetValue(Cell.ToGrid(colliderPosition).key, out var quadrant)) return false;
+
+        for (int i = 0; i < quadrant.Length; i++)
+        {
+            if (Intersect(entityManager.GetComponentData<Collider>(quadrant[i].Entity), entityManager.GetComponentData<LocalTransform>(quadrant[i].Entity).Position, collider, colliderPosition, out normal, out depth))
             { return true; }
         }
 
@@ -168,19 +186,16 @@ public static class Collision
 
     #region  Without normals
 
-    [BurstCompile]
     static bool CircleAABBIntersect(
         in float3 sphereOrigin, float sphereRadius,
         in float3 aabbOrigin, in AABB aabb
     ) => math.distancesq(sphereOrigin, math.clamp(sphereOrigin, aabb.Min + aabbOrigin, aabb.Max + aabbOrigin)) < sphereRadius * sphereRadius;
 
-    [BurstCompile]
     static bool CircleCircleIntersect(
         in float3 originA, float radiusA,
         in float3 originB, float radiusB
     ) => math.distancesq(originA, originB) <= radiusA + radiusB;
 
-    [BurstCompile]
     static bool AABBAABBIntersect(
         in float3 originA, in AABB a,
         in float3 originB, in AABB b
@@ -193,7 +208,32 @@ public static class Collision
         a.Min.z + originA.z <= b.Max.z + originB.z &&
         a.Max.z + originA.z >= b.Min.z + originB.z;
 
-    [BurstCompile]
+    public static bool Intersect(
+        in Collider a, in float3 positionA,
+        in Cell b
+    )
+    {
+        if (a.Type == ColliderType.Sphere)
+        {
+            return CircleAABBIntersect(
+                positionA + a.Sphere.Offset, a.Sphere.Radius,
+                Cell.ToWorld(b), Cell.AABB
+            );
+        }
+        else if (a.Type == ColliderType.AABB)
+        {
+            return AABBAABBIntersect(
+                positionA, a.AABB.AABB,
+                Cell.ToWorld(b), Cell.AABB
+            );
+        }
+        else
+        {
+            Debug.LogError(string.Format($"{DebugEx.AnyPrefix} Unsupported collision combination: `{{0}}` - Cell", a.Type));
+            return false;
+        }
+    }
+
     public static bool Intersect(
         in Collider a, in float3 positionA,
         in Collider b, in float3 positionB
@@ -233,7 +273,7 @@ public static class Collision
         }
         else
         {
-            Debug.LogWarning(string.Format($"{DebugEx.AnyPrefix} Unsupported collision combination: `{{0}}` - `{{1}}`", a.Type, b.Type));
+            Debug.LogError(string.Format($"{DebugEx.AnyPrefix} Unsupported collision combination: `{{0}}` - `{{1}}`", a.Type, b.Type));
             return false;
         }
     }

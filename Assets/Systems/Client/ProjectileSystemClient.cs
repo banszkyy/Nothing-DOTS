@@ -32,6 +32,8 @@ partial struct ProjectileSystemClient : ISystem
 
         DamageQ.Update(ref state);
         var map = QuadrantSystem.GetMap(ref state);
+        var colliderLookup = SystemAPI.GetComponentLookup<Collider>();
+        var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>();
 
         foreach (var (transform, projectile, entity) in
             SystemAPI.Query<RefRW<LocalTransform>, RefRW<Projectile>>()
@@ -56,7 +58,7 @@ partial struct ProjectileSystemClient : ISystem
             Ray ray = new(lastPosition, direction, travelDistance, Layers.BuildingOrUnit);
 
             bool didHitTerrain = TerrainGenerator.Instance.Raycast(ray.Start, ray.Direction, math.distance(lastPosition, newPosition), out float terrainHit, out float3 normal);
-            bool didHitUnit = QuadrantRayCast.Raycast(map, ray, out Hit unitHit) && DamageQ.HasBuffer(unitHit.Entity.Entity);
+            bool didHitUnit = QuadrantRayCast.Raycast(map, ray, colliderLookup, transformLookup, out Hit unitHit) && DamageQ.HasBuffer(unitHit.Entity.Entity);
 
             float distance;
             bool metalHit;

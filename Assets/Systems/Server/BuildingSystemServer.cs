@@ -412,6 +412,8 @@ public partial struct BuildingSystemServer : ISystem
         Player _player = SystemAPI.GetComponent<Player>(player);
 
         DynamicBuffer<BufferedBuilding> buildings = SystemAPI.GetBuffer<BufferedBuilding>(SystemAPI.GetSingletonEntity<BuildingDatabase>());
+        var colliderLookup = SystemAPI.GetComponentLookup<Collider>();
+        var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>();
 
         BufferedBuilding building = default;
 
@@ -445,6 +447,8 @@ public partial struct BuildingSystemServer : ISystem
                 map,
                 collider,
                 position,
+                colliderLookup,
+                transformLookup,
                 out _,
                 out _);
 

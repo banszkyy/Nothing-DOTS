@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
 using Unity.Entities;
 
 public static class DynamicBufferExtensions
@@ -26,6 +27,7 @@ public static class DynamicBufferExtensions
     }
 
     public static unsafe ref T RefOf<T>(this DynamicBuffer<T> buffer, int i) where T : unmanaged => ref Unsafe.AsRef<T>(&((T*)buffer.GetUnsafePtr())[i]);
+    public static unsafe ref T RefOf<T>(this NativeList<T> list, int i) where T : unmanaged => ref Unsafe.AsRef<T>(&((T*)list.GetUnsafePtr())[i]);
 
     public static unsafe Span<T> AsSpan<T>(this DynamicBuffer<T> buffer) where T : unmanaged => new(buffer.GetUnsafePtr(), buffer.Length);
     public static unsafe ReadOnlySpan<T> AsReadOnlySpan<T>(this DynamicBuffer<T> buffer) where T : unmanaged => new(buffer.GetUnsafeReadOnlyPtr(), buffer.Length);

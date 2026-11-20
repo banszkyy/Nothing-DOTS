@@ -163,11 +163,15 @@ unsafe partial struct CollisionSystem : ISystem
             for (int i = 0; i < quadrant.Length; i++)
             {
                 QuadrantEntity* a = &quadrant.GetUnsafePtr()[i];
+                var aCollider = SystemAPI.GetComponentRW<Collider>(a->Entity);
+                var aTransform = SystemAPI.GetComponentRW<LocalTransform>(a->Entity);
 
                 for (int j = i + 1; j < quadrant.Length; j++)
                 {
                     QuadrantEntity* b = &quadrant.GetUnsafePtr()[j];
-                    HandleCollision(a, b, false, ref state);
+                    var bCollider = SystemAPI.GetComponentRW<Collider>(b->Entity);
+                    var bTransform = SystemAPI.GetComponentRW<LocalTransform>(b->Entity);
+                    HandleCollision(aTransform.ValueRO.Position, bTransform.ValueRO.Position, ref aCollider.ValueRW, ref bCollider.ValueRW, false, ref state);
                 }
 
                 for (int x = -1; x <= 1; x++)
@@ -178,28 +182,32 @@ unsafe partial struct CollisionSystem : ISystem
                         if (p == otherP) continue;
                         if (!map.TryGetValue(otherP.key, out NativeList<QuadrantEntity> otherQuadrant)) continue;
                         if (!Collision.Intersect(
-                            a->Collider, a->Position,
-                            Cell.Collider, Cell.ToWorld(otherP)))
+                            aCollider.ValueRO, aTransform.ValueRO.Position,
+                            otherP))
                         { continue; }
 
                         for (int j = 0; j < otherQuadrant.Length; j++)
                         {
                             QuadrantEntity* b = &otherQuadrant.GetUnsafePtr()[j];
-                            HandleCollision(a, b, true, ref state);
+                            var bCollider = SystemAPI.GetComponentRW<Collider>(b->Entity);
+                            var bTransform = SystemAPI.GetComponentRW<LocalTransform>(b->Entity);
+                            HandleCollision(aTransform.ValueRO.Position, bTransform.ValueRO.Position, ref aCollider.ValueRW, ref bCollider.ValueRW, true, ref state);
                         }
                     }
                 }
 
-                if (!a->ResolvedOffset.Equals(default))
+                if (!aCollider.ValueRO.ResolvedOffset.Equals(default))
                 {
                     RefRW<LocalTransform> transform = SystemAPI.GetComponentRW<LocalTransform>(a->Entity);
 #if DEBUG_COLLISIONS
                     DebugEx.Label(transform.ValueRO.Position, a->ResolvedOffset.ToString());
                     DebugEx.DrawLine(transform.ValueRO.Position, transform.ValueRO.Position + a->ResolvedOffset, Color.blue, 0.3f, false);
 #endif
-                    transform.ValueRW.Position += a->ResolvedOffset;
-                    a->ResolvedOffset = default;
+                    transform.ValueRW.Position += aCollider.ValueRO.ResolvedOffset;
+                    aCollider.ValueRW.ResolvedOffset = default;
                 }
+
+                aCollider.ValueRW.LastPosition = aTransform.ValueRO.Position;
             }
         }
         enumerator.Dispose();
@@ -207,11 +215,11 @@ unsafe partial struct CollisionSystem : ISystem
 
     static readonly ProfilerMarker _handleCollision = new("CollisionSystem.HandleCollision");
     [BurstCompile]
-    void HandleCollision(QuadrantEntity* a, QuadrantEntity* b, bool skipB, ref SystemState state)
+    void HandleCollision(in float3 aPosition, in float3 bPosition, ref Collider aCollider, ref Collider bCollider, bool skipB, ref SystemState state)
     {
-        if (skipB && a->Collider.IsStatic) return;
-        if (a->Collider.IsStatic && b->Collider.IsStatic) return;
-        if (!a->Collider.IsEnabled || !b->Collider.IsEnabled) return;
+        if (skipB && aCollider.IsStatic) return;
+        if ((aCollider.IsStatic || aCollider.LastPosition.Equals(aPosition)) && (bCollider.IsStatic || bCollider.LastPosition.Equals(bPosition))) return;
+        if (!aCollider.IsEnabled || !bCollider.IsEnabled) return;
 
         // if (a->LastPosition.Equals(a->Position) &&
         //     b->LastPosition.Equals(b->Position))
@@ -231,16 +239,16 @@ unsafe partial struct CollisionSystem : ISystem
 #endif
 
         if (!Collision.Intersect(
-            a->Collider, a->Position,
-            b->Collider, b->Position,
+            aCollider, aPosition,
+            bCollider, bPosition,
             out float3 normal, out float depth
             ))
         {
 #if DEBUG_COLLISIONS
-            //Debug(a->Collider, a->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
+            //Debug(aCollider, a->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
             //if (!skipB)
             //{
-            //    Debug(b->Collider, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
+            //    Debug(bCollider, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f, false);
             //}
 #endif
 
@@ -248,48 +256,44 @@ unsafe partial struct CollisionSystem : ISystem
         }
 
 #if DEBUG_COLLISIONS
-        Debug(a->Collider, a->Position, Color.green, 0.1f);
+        Debug(aCollider, a->Position, Color.green, 0.1f);
         if (!skipB)
         {
             DebugEx.DrawLine(a->Position, b->Position, Color.Lerp(Color.green, Color.white, 0.5f), 0.1f);
-            Debug(b->Collider, b->Position, Color.green, 0.1f);
+            Debug(bCollider, b->Position, Color.green, 0.1f);
         }
 #endif
 
-        DebugEx.DrawLine(a->Position, a->Position + normal, Color.Lerp(Color.magenta, Color.white, 0.5f), 0.1f);
+        //DebugEx.DrawLine(a->Position, a->Position + normal, Color.Lerp(Color.magenta, Color.white, 0.5f), 0.1f);
 
         normal.y = 0f;
         float displaceVelocity = math.clamp(depth, 0f, SystemAPI.Time.DeltaTime);
 
-        if (a->Collider.IsStatic)
+        if (aCollider.IsStatic)
         {
             if (!skipB)
             {
                 float3 displaceB = normal * -displaceVelocity;
 
-                b->ResolvedOffset += displaceB;
-                b->Position += displaceB;
+                bCollider.ResolvedOffset += displaceB;
             }
         }
-        else if (b->Collider.IsStatic)
+        else if (bCollider.IsStatic)
         {
             float3 displaceA = normal * depth;
 
-            a->ResolvedOffset += displaceA;
-            a->Position += displaceA;
+            aCollider.ResolvedOffset += displaceA;
         }
         else
         {
             float3 displaceA = normal * (displaceVelocity * +0.5f);
             float3 displaceB = normal * (displaceVelocity * -0.5f);
 
-            a->ResolvedOffset += displaceA;
-            a->Position += displaceA;
+            aCollider.ResolvedOffset += displaceA;
 
             if (!skipB)
             {
-                b->ResolvedOffset += displaceB;
-                b->Position += displaceB;
+                bCollider.ResolvedOffset += displaceB;
             }
         }
     }

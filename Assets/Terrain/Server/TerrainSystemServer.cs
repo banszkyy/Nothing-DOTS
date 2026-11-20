@@ -110,7 +110,6 @@ partial struct TerrainSystemServer : ISystem
         results.Dispose();
     }
 
-    [BurstCompile]
     public static void GenerateChunkFeatures(
         in int2 chunkCoord,
         in NativeArray<float>.ReadOnly heightmap,
@@ -147,14 +146,12 @@ partial struct TerrainSystemServer : ISystem
         }
     }
 
-    [BurstCompile]
     public static void ChunkToWorld(in int2 chunkCoord, out float2 worldPosition)
         => worldPosition = (float2)chunkCoord * MeshWorldSize;
 
     public static float2 ChunkToWorld(int2 chunkCoord)
         => (float2)chunkCoord * MeshWorldSize;
 
-    [BurstCompile]
     public static void WorldToChunk(in float2 worldPosition, out int2 chunkCoord)
         => chunkCoord = (int2)math.round(worldPosition / MeshWorldSize);
 
@@ -166,7 +163,6 @@ partial struct TerrainSystemServer : ISystem
     /// <summary>
     /// Chunk relative world to data coord
     /// </summary>
-    [BurstCompile]
     public static void WorldToData(in float2 worldPosition, out int2 dataCoord)
         => dataCoord = (int2)((worldPosition - _topLeft) * new float2(1f, -1f) / MeshWorldSize * (NumVertsPerLine - 3)) + new int2(1, 1);
 
@@ -179,7 +175,6 @@ partial struct TerrainSystemServer : ISystem
     /// <summary>
     /// Data coord to chunk relative world
     /// </summary>
-    [BurstCompile]
     public static void DataToWorld(in int2 dataCoord, out float2 worldPosition)
         => worldPosition = _topLeft + new float2(dataCoord.x - 1, dataCoord.y - 1) / (NumVertsPerLine - 3) * new float2(1f, -1f) * MeshWorldSize;
 
@@ -189,7 +184,6 @@ partial struct TerrainSystemServer : ISystem
     public static float2 DataToWorld(int2 dataCoord)
         => _topLeft + new float2(dataCoord.x - 1, dataCoord.y - 1) / (NumVertsPerLine - 3) * new float2(1f, -1f) * MeshWorldSize;
 
-    [BurstCompile]
     bool GetOrCreateChunk(in float2 position, out NativeArray<float>.ReadOnly heightmap, bool neighbours)
     {
         WorldToChunk(position + (new float2(DataPointWorldSize, DataPointWorldSize) * 0.5f), out int2 chunkCoord);
@@ -211,7 +205,6 @@ partial struct TerrainSystemServer : ISystem
         return true;
     }
 
-    [BurstCompile]
     public bool TrySample(in float2 position, out float height, bool neighbours = false)
     {
         WorldToChunk(position + new float2(DataPointWorldSize, DataPointWorldSize) * 0.5f, out int2 chunkCoord);
@@ -234,7 +227,6 @@ partial struct TerrainSystemServer : ISystem
         return true;
     }
 
-    [BurstCompile]
     public bool TrySample(in float2 position, out float height, out float3 normal, bool neighbours = false)
     {
         WorldToChunk(position + new float2(DataPointWorldSize, DataPointWorldSize) * 0.5f, out int2 chunkCoord);
@@ -258,7 +250,6 @@ partial struct TerrainSystemServer : ISystem
         return true;
     }
 
-    [BurstCompile]
     public bool TrySample(in float2 aabbMin, in float2 aabbMax, out float height, out float3 normal)
     {
         normal = default;
@@ -287,7 +278,6 @@ partial struct TerrainSystemServer : ISystem
         return true;
     }
 
-    [BurstCompile]
     public static float Sample(in NativeArray<float>.ReadOnly heightmap, in float2 position, in int2 chunkCoord, in int2 dataCoord)
     {
         float h00 = heightmap[dataCoord.x + dataCoord.y * NumVertsPerLine];
@@ -323,7 +313,6 @@ partial struct TerrainSystemServer : ISystem
         }
     }
 
-    [BurstCompile]
     public static float Sample(in NativeArray<float>.ReadOnly heightmap, in float2 position, in int2 chunkCoord, in int2 dataCoord, out float3 normal)
     {
         normal = new float3(0f, 1f, 0f);

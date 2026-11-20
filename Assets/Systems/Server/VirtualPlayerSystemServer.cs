@@ -280,6 +280,8 @@ partial struct VirtualPlayerSystemServer : ISystem
         Collider placeholderCollider = new AABBCollider(true, new AABB() { Extents = new float3(1f, 1f, 1f) });
         var coreComputerP = origin;
         var validPosition = float3.zero;
+        var colliderLookup = SystemAPI.GetComponentLookup<Collider>();
+        var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>();
 
         for (int retry = 0; retry < 20; retry++)
         {
@@ -291,6 +293,8 @@ partial struct VirtualPlayerSystemServer : ISystem
                 map,
                 placeholderCollider,
                 position,
+                colliderLookup,
+                transformLookup,
                 out _,
                 out _);
 

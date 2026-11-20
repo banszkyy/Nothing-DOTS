@@ -33,6 +33,8 @@ partial struct ProjectileSystemLocal : ISystem
 
         DamageQ.Update(ref state);
         var map = QuadrantSystem.GetMap(ref state);
+        var colliderLookup = SystemAPI.GetComponentLookup<Collider>();
+        var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>();
 
         foreach (var (transform, projectile, entity) in
             SystemAPI.Query<RefRW<LocalTransform>, RefRW<Projectile>>()
@@ -58,7 +60,7 @@ partial struct ProjectileSystemLocal : ISystem
             DynamicBuffer<BufferedDamage> damage = default;
 
             bool didHitTerrain = terrainSystem.Raycast(ray.Start, ray.Direction, math.distance(lastPosition, newPosition), out float terrainHit, out float3 normal);
-            bool didHitUnit = QuadrantRayCast.Raycast(map, ray, out Hit unitHit) && DamageQ.TryGetBuffer(unitHit.Entity.Entity, out damage);
+            bool didHitUnit = QuadrantRayCast.Raycast(map, ray, colliderLookup, transformLookup, out Hit unitHit) && DamageQ.TryGetBuffer(unitHit.Entity.Entity, out damage);
 
             float distance;
             bool metalHit;

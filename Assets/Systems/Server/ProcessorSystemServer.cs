@@ -1,4 +1,4 @@
-#define UNITY_PROFILER
+#define _UNITY_PROFILER
 #if UNITY_EDITOR && EDITOR_DEBUG
 #define DEBUG_LINES
 #endif
@@ -12,7 +12,9 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
+#if UNITY_PROFILER
 using Unity.Profiling;
+#endif
 using Unity.Transforms;
 using System.Runtime.InteropServices;
 using System.Linq;
@@ -35,7 +37,6 @@ enum UserUIDirection : byte
     VerticalReverse,
 }
 
-[BurstCompile]
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 struct UserUIElement
 {
@@ -51,14 +52,12 @@ struct UserUIElement
     public UserUIElementMeta Meta;
 }
 
-[BurstCompile]
 [StructLayout(LayoutKind.Explicit)]
 struct UserUIElementMeta
 {
     [FieldOffset(0)] public UserUIElementLabel Label;
     [FieldOffset(0)] public UserUIElementImage Image;
 }
-
 [BurstCompile]
 [StructLayout(LayoutKind.Sequential)]
 struct UserUIElementLabel
@@ -67,7 +66,6 @@ struct UserUIElementLabel
     public FixedBytes30 Text;
 }
 
-[BurstCompile]
 [StructLayout(LayoutKind.Sequential)]
 struct UserUIElementImage
 {
@@ -122,7 +120,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
         return ref Unsafe.AsRef<MappedMemory>(((byte*)memory.GetUnsafePtr()) + MappedMemoryStart);
     }
 
-    [BurstCompile]
     public ref struct ProcessorRef
     {
         public required void* Memory;
@@ -133,7 +130,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
 
         public readonly Span<byte> MemorySpan => new(Memory, MemorySize);
 
-        [BurstCompile]
         public void Push(scoped ReadOnlySpan<byte> data)
         {
             Registers->StackPointer += data.Length * ProcessorState.StackDirection;
@@ -154,7 +150,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
             *Signal = LanguageCore.Runtime.Signal.UserCrash;
         }
 
-        [BurstCompile]
         public void DoCrash(in FixedString32Bytes message)
         {
             Push(new Span<byte>(message.GetUnsafePtr(), message.Length));
@@ -163,7 +158,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
             *Signal = LanguageCore.Runtime.Signal.UserCrash;
         }
 
-        [BurstCompile]
         public readonly void GetStringU8(int pointer, out FixedString32Bytes @string)
         {
             @string = new();
@@ -177,7 +171,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
             }
         }
 
-        [BurstCompile]
         public readonly void GetStringU8(int pointer, out FixedString64Bytes @string)
         {
             @string = new();
@@ -192,7 +185,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
         }
     }
 
-    [BurstCompile]
     public struct WorldRef
     {
         public required EntityCommandBuffer.ParallelWriter CommandBuffer;
@@ -202,7 +194,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
         public required NativeList<EntityOwnedData<UserUIElement>>.ParallelWriter UIElements;
     }
 
-    [BurstCompile]
     public ref struct EntityRef
     {
         public required Entity Entity;
@@ -215,7 +206,6 @@ unsafe partial struct ProcessorSystemServer : ISystem
         public required SpawnedGhost Ghost;
     }
 
-    [BurstCompile]
     public ref struct FunctionScope
     {
         public required WorldRef WorldRef;
@@ -246,6 +236,7 @@ unsafe partial struct ProcessorSystemServer : ISystem
 
     EntityQuery _query;
 
+    [BurstCompile]
     void ISystem.OnCreate(ref SystemState state)
     {
         //state.RequireForUpdate<WorldLabelSettings>();
@@ -573,42 +564,16 @@ unsafe partial struct ProcessorSystemServer : ISystem
     public static readonly ProfilerMarker __ProcessorJobInner = new("ProcessorJobInner");
 #endif
 
+    // TODO [BurstCompile]
     public static void HandleTick(ref Processor processor, ref ProcessorState processorState)
     {
+#if UNITY_PROFILER
         __ProcessorJobInner.Begin();
+#endif
         try
         {
-            for (int i = 0; i < processor.CyclesPerTick && !processorState.IsDone; i++)
+            for (int i = 0; i < processor.CyclesPerTick && !processorState.IsDone && processorState.Signal == Signal.None; i++)
             {
-                if (processorState.Signal != Signal.None)
-                {
-                    if (!processor.SignalNotified)
-                    {
-                        processor.SignalNotified = true;
-                        switch (processorState.Signal)
-                        {
-                            case Signal.UserCrash:
-                                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Crashed ({{0}})", processorState.Crash));
-                                break;
-                            case Signal.StackOverflow:
-                                Debug.LogWarning($"{DebugEx.ServerPrefix} Stack Overflow");
-                                break;
-                            case Signal.Halt:
-                                break;
-                            case Signal.UndefinedExternalFunction:
-                                Debug.LogWarning(string.Format($"{DebugEx.ServerPrefix} Undefined external function {{0}}", processorState.Crash));
-                                break;
-                            case Signal.PointerOutOfRange:
-                                Debug.LogWarning($"{DebugEx.ServerPrefix} Pointer out of Range");
-                                break;
-                            case Signal.None:
-                                break;
-                            default:
-                                throw new UnreachableException();
-                        }
-                    }
-                    break;
-                }
                 processor.SignalNotified = false;
 
                 if (processor.IsKeyRequested)
@@ -628,16 +593,15 @@ unsafe partial struct ProcessorSystemServer : ISystem
         {
             Debug.LogError(ex.ToString());
         }
+#if UNITY_PROFILER
         __ProcessorJobInner.End();
+#endif
     }
 }
 
+[BurstCompile]
 unsafe partial struct ProcessorChunkJob : IJobChunk
 {
-#if UNITY_PROFILER
-    public static readonly ProfilerMarker __ProcessorJobOuter = new("ProcessorJobOuter");
-#endif
-
     [ReadOnly] public required NativeArray<ExternalFunctionScopedSync>.ReadOnly scopedExternalFunctions;
     public required ProcessorSystemServer.WorldRef worldRef;
 
@@ -654,6 +618,10 @@ unsafe partial struct ProcessorChunkJob : IJobChunk
     public required BufferTypeHandle<RadarContact> RadarContactHandle;
     [ReadOnly] public required ComponentTypeHandle<Factory> FactoryHandle;
     [ReadOnly] public required ComponentTypeHandle<PlayerInterface> PlayerInterfaceHandle;
+
+#if UNITY_PROFILER
+    public static readonly ProfilerMarker __ProcessorJobOuter = new("ProcessorJobOuter");
+#endif
 
     public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
     {
@@ -680,7 +648,9 @@ unsafe partial struct ProcessorChunkJob : IJobChunk
             ref readonly LocalTransform localTransform = ref localTransforms[i];
             DynamicBuffer<BufferedLogPiece> _log = bufferedLogPieces[i];
 
+#if UNITY_PROFILER
             using ProfilerMarker.AutoScope _1 = __ProcessorJobOuter.Auto();
+#endif
 
             if (!processor.Source.Code.IsCreated)
             {

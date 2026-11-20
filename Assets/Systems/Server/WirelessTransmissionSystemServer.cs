@@ -182,7 +182,7 @@ partial struct WirelessTransmissionSystemServer : ISystem
 
                             if (jamMw != 0f && !TryDeliver(srcRadio.ValueRO, srcRadio.ValueRO.WirelessTransmissionPoint, req, dstRadio.ValueRO, srcTransform.ValueRO.InverseTransformPoint(dstPoint), radioEnvironment, obstructions, 10f * math.log10(1f + (jamMw / math.pow(10f, (radioEnvironment.SensitivityDbm(dstRadio.ValueRO) - radioEnvironment.RequiredSnrDb) / 10f))), out pkt))
                             {
-                                dstProcessor.ValueRW.NetworkReceiveLED.Blink(2);
+                                dstProcessor.ValueRW.NetworkReceiveLED.Blink(RadioLedStatus.Jammed);
                                 DebugEx.DrawLine(srcPoint, dstPoint, Color.orange, 0.3f);
                                 DebugEx.DrawSphere(dstPoint, 1f, Color.orange, 0.3f);
                                 continue;
@@ -190,8 +190,6 @@ partial struct WirelessTransmissionSystemServer : ISystem
 
                             DebugEx.DrawLine(srcPoint, dstPoint, Color.green, 0.3f);
                             DebugEx.DrawSphere(dstPoint, 1f, Color.green, 0.3f);
-
-                            dstProcessor.ValueRW.NetworkReceiveLED.Blink(1);
 
                             ref FixedList128Bytes<BufferedUnitTransmission> transmissions = ref dstRadio.ValueRW.IncomingTransmissions;
 
@@ -206,7 +204,15 @@ partial struct WirelessTransmissionSystemServer : ISystem
                                 new UnitLog_Transmission_WirelessIn(MonoTime.UnixSeconds, ++log.ValueRW.LastIndex, otherIncomingMetadata, transmission.Data, SystemAPI.GetComponent<GhostInstance>(srcEntity)).Write(logBuffer);
                             }
 
-                            if (transmissions.Length >= transmissions.Capacity) transmissions.RemoveAt(0);
+                            if (transmissions.Length >= transmissions.Capacity)
+                            {
+                                dstProcessor.ValueRW.NetworkReceiveLED.Blink(RadioLedStatus.Overflow);
+                                transmissions.RemoveAt(0);
+                            }
+                            else
+                            {
+                                dstProcessor.ValueRW.NetworkReceiveLED.Blink(RadioLedStatus.Success);
+                            }
                             transmissions.Add(new()
                             {
                                 Data = transmission.Data,

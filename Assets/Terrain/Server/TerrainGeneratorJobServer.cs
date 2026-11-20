@@ -4,14 +4,14 @@ using Unity.Burst;
 using Unity.Jobs;
 using Unity.Collections.LowLevel.Unsafe;
 
-[BurstCompile(CompileSynchronously = true)]
+[BurstCompile]
 partial struct TerrainGeneratorJobServer : IJobFor
 {
     [ReadOnly] public NativeArray<int2>.ReadOnly Queue;
     [NativeDisableContainerSafetyRestriction] public NativeArray<NativeArray<float>>.ReadOnly Result;
     public NativeHeightMapSettings HeightMapSettings;
 
-    [BurstCompile(CompileSynchronously = true)]
+    [BurstCompile]
     public void Execute(int index)
     {
         int2 coord = Queue[index];

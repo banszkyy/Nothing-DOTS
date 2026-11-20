@@ -43,13 +43,16 @@ public enum ColliderType : byte
 [StructLayout(LayoutKind.Explicit)]
 public struct Collider : IComponentData
 {
-    [FieldOffset(0)] public readonly ColliderType Type;
+    [FieldOffset(0)] public float3 LastPosition;
+    [FieldOffset(12)] public float3 ResolvedOffset;
 
-    [FieldOffset(1)] public readonly SphereCollider Sphere;
-    [FieldOffset(1)] public readonly AABBCollider AABB;
+    [FieldOffset(24)] public readonly ColliderType Type;
 
-    [FieldOffset(1), MarshalAs(UnmanagedType.U1)] public bool IsEnabled;
-    [FieldOffset(2), MarshalAs(UnmanagedType.U1)] public readonly bool IsStatic;
+    [FieldOffset(25)] public readonly SphereCollider Sphere;
+    [FieldOffset(25)] public readonly AABBCollider AABB;
+
+    [FieldOffset(25), MarshalAs(UnmanagedType.U1)] public bool IsEnabled;
+    [FieldOffset(26), MarshalAs(UnmanagedType.U1)] public readonly bool IsStatic;
 
     public Collider(SphereCollider sphere) : this()
     {

@@ -234,6 +234,7 @@ public class UnitManager : Singleton<UnitManager>, IUISetup, IUICleanup
             map,
             placeholderCollider,
             position,
+            ConnectionManager.ClientOrDefaultWorld.EntityManager,
             out _,
             out _);
 

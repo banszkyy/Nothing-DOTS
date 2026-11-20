@@ -18,6 +18,8 @@ public partial struct BuilderSystemServer : ISystem
         if (t.IsPaused) return;
 
         var map = QuadrantSystem.GetMap(ref state);
+        var colliderLookup = SystemAPI.GetComponentLookup<Collider>();
+        var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>();
 
         foreach (var (processor, memory, turret) in
             SystemAPI.Query<RefRW<Processor>, DynamicBuffer<ProcessorMemoryBuffer>, RefRW<BuilderTurret>>())
@@ -48,7 +50,7 @@ public partial struct BuilderSystemServer : ISystem
             DebugEx.DrawLine(ray.Start, ray.End, Color.white, 0.2f, false);
 #endif
 
-            if (!QuadrantRayCast.Raycast(map, ray, out Hit hit))
+            if (!QuadrantRayCast.Raycast(map, ray, colliderLookup, transformLookup, out Hit hit))
             { continue; }
 
 #if DEBUG_LINES

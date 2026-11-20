@@ -145,7 +145,7 @@ partial struct WiredTransmissionSystemServer : ISystem
                 if (!other.ValueRO.Source.Code.IsCreated || other.ValueRO.Signal != LanguageCore.Runtime.Signal.None) continue;
                 RefRW<Radio> otherRadio = radioQ.GetRefRW(connector.Entity);
 
-                other.ValueRW.NetworkReceiveLED.Blink(1);
+                other.ValueRW.NetworkReceiveLED.Blink(RadioLedStatus.Success);
 
 #if DEBUG_LINES
                 float3 p = SystemAPI.GetComponentRO<LocalTransform>(connector.Entity).ValueRO.TransformPoint(SystemAPI.GetComponentRO<Connector>(connector.Entity).ValueRO.PortPositions[connector.Port]);

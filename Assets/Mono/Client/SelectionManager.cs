@@ -699,7 +699,7 @@ public class SelectionManager : Singleton<SelectionManager>
     public static bool AnyRaycast(UnityEngine.Ray ray, uint layer, out float hit)
     {
         NativeParallelHashMap<uint, NativeList<QuadrantEntity>>.ReadOnly map = QuadrantSystem.GetMap(ConnectionManager.ClientOrDefaultWorld.Unmanaged);
-        if (QuadrantRayCast.Raycast(map, new Ray(ray, WorldRaycastDistanceLimit, layer), out var unitHit))
+        if (QuadrantRayCast.Raycast(map, new Ray(ray, WorldRaycastDistanceLimit, layer), ConnectionManager.ClientOrDefaultWorld.EntityManager, out var unitHit))
         {
             hit = unitHit.Distance;
             if (WorldRaycast(ray, out float _hit)) hit = Math.Min(hit, _hit);
@@ -715,7 +715,7 @@ public class SelectionManager : Singleton<SelectionManager>
     public static bool Raycast(UnityEngine.Ray ray, uint layer, out Hit hit)
     {
         NativeParallelHashMap<uint, NativeList<QuadrantEntity>>.ReadOnly map = QuadrantSystem.GetMap(ConnectionManager.ClientOrDefaultWorld.Unmanaged);
-        if (!QuadrantRayCast.Raycast(map, new Ray(ray, WorldRaycastDistanceLimit, layer), out hit)) return false;
+        if (!QuadrantRayCast.Raycast(map, new Ray(ray, WorldRaycastDistanceLimit, layer), ConnectionManager.ClientOrDefaultWorld.EntityManager, out hit)) return false;
         if (WorldRaycast(ray, out float worldHitDistance) && hit.Distance > worldHitDistance + 5f) return false;
         return true;
     }

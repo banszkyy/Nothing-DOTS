@@ -191,6 +191,7 @@ partial struct ProcessorDebugSystemServer : ISystem
                 }
 
                 processorState.Tick();
+                processorState.ThrowIfCrashed();
 
                 if (processor.DebugContext.Stopped
                     is StopReason.StepForwardUnfinished
